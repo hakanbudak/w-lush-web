@@ -1,0 +1,248 @@
+/* w-lush — light & airy wellness clinic
+   Açık yeşil-mavi pastel + bol beyaz, fresh & professional.
+   Tasarım sistemi referans "Ana Ekran" dosyasından birebir taşındı. */
+
+:root {
+  /* Backgrounds — much lighter, airier */
+  --cream: #F4F8F4;        /* hafif yeşil tonlu off-white sayfa fonu */
+  --cream-2: #EAF1EA;      /* yumuşak sage tint */
+  --cream-3: #DCE7DD;      /* hover/seçili surface */
+  --paper: #FFFFFF;        /* tüm kartlar saf beyaz */
+
+  /* Primary — soft sage emerald */
+  --forest: #5B9F7E;       /* primary marka rengi — açık zümrüt */
+  --forest-2: #3E7A5E;     /* hover/active deeper */
+  --forest-3: #B6D9C3;     /* light surface tint */
+
+  /* Accent — sky blue */
+  --champagne: #6AA8D4;
+  --champagne-2: #4A85B5;
+  --champagne-3: #DCEDF8;
+
+  /* Supplemental hues */
+  --sage: #7BB394;
+  --sage-2: #4F8B6C;
+  --sage-soft: #D8EBDF;
+
+  --lavender: #9F94C7;     /* AI tint */
+  --lavender-2: #6E60A6;
+  --lavender-soft: #E8E2F4;
+
+  --blush: #E8B0AB;        /* warnings */
+  --blush-soft: #F5DDD9;
+
+  --sand: #E5D9C0;
+  --sand-soft: #F2EBDB;
+
+  /* Ink — soft warm charcoal, not pure black */
+  --ink: #2A3530;
+  --ink-60: #2A353099;
+  --ink-40: #2A353066;
+  --ink-20: #2A353033;
+  --ink-08: #2A353014;
+  --line: #2A35300F;
+  --line-strong: #2A35301F;
+
+  --wa-green: #25D366;
+  --wa-bg: #ECE5DD;
+  --warn: #C97F58;
+  --good: #4F8B6C;
+  --bad: #C66B65;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+html, body {
+  background: var(--cream);
+  font-family: "Geist Sans", "Geist", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+body {
+  height: 100vh;
+  overflow: hidden; /* yalnızca içerik alanı kayar */
+}
+
+.wl {
+  font-family: "Geist Sans", "Geist", "DM Sans", -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+.wl-mono {
+  font-family: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  letter-spacing: -0.01em;
+}
+.wl-mono, [style*="Geist Mono"] { font-feature-settings: "tnum"; }
+
+/* ─── uygulama kabuğu (tam viewport, sabit sidebar) ─────────────────────── */
+.stage {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden; /* dış scroll yok; scroll yalnızca .wl-scroll içinde */
+}
+
+/* ─── card primitives ─────────────────────── */
+.wl-card {
+  background: var(--paper);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.wl-card-head {
+  padding: 18px 20px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.wl-card-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+  font-weight: 500;
+}
+.wl-card-link {
+  font-size: 12px;
+  color: var(--forest);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── badges & chips ─────────────────────── */
+.wl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.wl-chip-forest { background: var(--forest); color: var(--cream); }
+.wl-chip-champagne { background: var(--champagne-3); color: var(--champagne-2); }
+.wl-chip-cream { background: var(--cream-2); color: var(--ink-60); }
+.wl-chip-wa { background: #DCF8C6; color: #075E54; }
+.wl-chip-warn { background: var(--champagne-3); color: var(--champagne-2); }
+.wl-chip-good { background: var(--sage-soft); color: var(--sage-2); }
+.wl-chip-bad { background: var(--blush-soft); color: var(--bad); }
+.wl-chip-sage { background: var(--sage-soft); color: var(--sage-2); }
+.wl-chip-lavender { background: var(--lavender-soft); color: var(--lavender-2); }
+.wl-chip-blush { background: var(--blush-soft); color: var(--bad); }
+.wl-chip-ai {
+  background: linear-gradient(135deg, var(--lavender-soft), var(--blush-soft));
+  color: var(--lavender-2);
+}
+.wl-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ─── buttons ─────────────────────── */
+.wl-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter .15s;
+}
+.wl-btn:hover { filter: brightness(0.95); }
+.wl-btn-primary { background: var(--forest); color: var(--cream); }
+.wl-btn-gold { background: var(--ink); color: var(--cream); }
+.wl-btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+.wl-btn-sm { height: 32px; padding: 0 12px; font-size: 12px; }
+
+/* WhatsApp green */
+.wl-wa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--wa-green);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* table */
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.wl-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.wl-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.wl-table tr:last-child td { border-bottom: none; }
+.wl-table tbody tr.is-clickable { cursor: pointer; }
+.wl-table tbody tr.is-clickable:hover { background: var(--cream); }
+
+.wl-avatar-sm {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--cream-3);
+  color: var(--ink);
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+}
+.wl-avatar-stack { display: inline-flex; }
+.wl-avatar-stack > * { margin-left: -8px; }
+.wl-avatar-stack > *:first-child { margin-left: 0; }
+
+/* inputs */
+.wl-input {
+  height: 38px;
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+}
+.wl-input:focus { border-color: var(--forest); }
+
+/* scrollbars within artboards stay quiet */
+.wl ::-webkit-scrollbar { width: 6px; height: 6px; }
+.wl ::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 999px; }

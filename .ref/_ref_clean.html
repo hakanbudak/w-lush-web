@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+  <meta charset="utf-8">
+  <title>w-lush · Ana ekran</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("1b0fa27a-6411-4942-863f-deab75a1eb22") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("b1a57fc3-aed0-44fe-a305-22da9b889cd5") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("d4424127-8463-4022-b258-e3ffcd081aab") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("17feebdf-d401-48cf-afef-507f3bee5387") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("6b739e95-57d7-4250-b3c9-0a72e7536e0a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1b0fa27a-6411-4942-863f-deab75a1eb22") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b1a57fc3-aed0-44fe-a305-22da9b889cd5") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d4424127-8463-4022-b258-e3ffcd081aab") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("17feebdf-d401-48cf-afef-507f3bee5387") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6b739e95-57d7-4250-b3c9-0a72e7536e0a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1b0fa27a-6411-4942-863f-deab75a1eb22") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b1a57fc3-aed0-44fe-a305-22da9b889cd5") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d4424127-8463-4022-b258-e3ffcd081aab") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("17feebdf-d401-48cf-afef-507f3bee5387") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6b739e95-57d7-4250-b3c9-0a72e7536e0a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1b0fa27a-6411-4942-863f-deab75a1eb22") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("b1a57fc3-aed0-44fe-a305-22da9b889cd5") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("d4424127-8463-4022-b258-e3ffcd081aab") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("17feebdf-d401-48cf-afef-507f3bee5387") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("6b739e95-57d7-4250-b3c9-0a72e7536e0a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("1b0fa27a-6411-4942-863f-deab75a1eb22") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("b1a57fc3-aed0-44fe-a305-22da9b889cd5") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("d4424127-8463-4022-b258-e3ffcd081aab") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("17feebdf-d401-48cf-afef-507f3bee5387") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("6b739e95-57d7-4250-b3c9-0a72e7536e0a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e978d530-516a-4e23-a474-0c2f75cd5c5f") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("06bf054c-8baf-4f93-86e6-d6235d0f007e") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* symbols2 */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("26f6f9b9-d96b-4fe1-b8ca-bef1f7501aec") format('woff2');
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d9457047-0e5a-47c0-9566-b6279e8e7217") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("16e15132-f9ff-453c-b13b-dc80dda8fd43") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d82a735b-a399-4469-bad9-ed84ec1bdb1c") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("e978d530-516a-4e23-a474-0c2f75cd5c5f") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("06bf054c-8baf-4f93-86e6-d6235d0f007e") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* symbols2 */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("26f6f9b9-d96b-4fe1-b8ca-bef1f7501aec") format('woff2');
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d9457047-0e5a-47c0-9566-b6279e8e7217") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("16e15132-f9ff-453c-b13b-dc80dda8fd43") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d82a735b-a399-4469-bad9-ed84ec1bdb1c") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+
+  <style>/* w-lush — light & airy wellness clinic
+   Açık yeşil-mavi pastel + bol beyaz, fresh & professional */
+
+:root {
+  /* Backgrounds — much lighter, airier */
+  --cream: #F4F8F4;        /* hafif yeşil tonlu off-white sayfa fonu */
+  --cream-2: #EAF1EA;      /* yumuşak sage tint */
+  --cream-3: #DCE7DD;      /* hover/seçili surface */
+  --paper: #FFFFFF;        /* tüm kartlar saf beyaz */
+
+  /* Primary — soft sage emerald (forest yerine açık yeşil) */
+  --forest: #5B9F7E;       /* primary marka rengi — açık zümrüt */
+  --forest-2: #3E7A5E;     /* hover/active deeper */
+  --forest-3: #B6D9C3;     /* light surface tint */
+
+  /* Accent — sky blue (champagne yerine) */
+  --champagne: #6AA8D4;
+  --champagne-2: #4A85B5;
+  --champagne-3: #DCEDF8;
+
+  /* Supplemental hues */
+  --sage: #7BB394;         /* second green for variety */
+  --sage-2: #4F8B6C;
+  --sage-soft: #D8EBDF;
+
+  --lavender: #9F94C7;     /* AI tint */
+  --lavender-2: #6E60A6;
+  --lavender-soft: #E8E2F4;
+
+  --blush: #E8B0AB;        /* warnings */
+  --blush-soft: #F5DDD9;
+
+  --sand: #E5D9C0;
+  --sand-soft: #F2EBDB;
+
+  /* Ink — soft warm charcoal, not pure black */
+  --ink: #2A3530;
+  --ink-60: #2A353099;
+  --ink-40: #2A353066;
+  --ink-20: #2A353033;
+  --ink-08: #2A353014;
+  --line: #2A35300F;
+  --line-strong: #2A35301F;
+
+  --wa-green: #25D366;
+  --wa-bg: #ECE5DD;
+  --warn: #C97F58;
+  --good: #4F8B6C;
+  --bad: #C66B65;
+}
+
+* { box-sizing: border-box; }
+
+.wl {
+  font-family: "Geist", "DM Sans", -apple-system, sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+.wl-serif {
+  font-family: "Instrument Serif", "Newsreader", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.wl-mono {
+  font-family: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
+  letter-spacing: -0.01em;
+}
+
+/* ─── shared top nav ─────────────────────── */
+.wl-nav {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  gap: 32px;
+  background: var(--cream);
+  flex-shrink: 0;
+}
+.wl-nav-brand {
+  font-family: "Instrument Serif", serif;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wl-nav-tabs { flex-shrink: 0; }
+.wl-nav-right { flex-shrink: 0; }
+.wl-nav-brand-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--champagne);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.wl-nav-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.wl-nav-tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wl-nav-tab.active {
+  color: var(--forest);
+  background: var(--cream-2);
+}
+.wl-nav-tab.ai {
+  color: var(--champagne-2);
+}
+.wl-nav-tab .caret {
+  opacity: 0.4;
+  font-size: 9px;
+}
+.wl-nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wl-search {
+  width: 280px;
+  height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 14px 0 38px;
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  position: relative;
+}
+.wl-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.wl-search-wrap svg {
+  position: absolute;
+  left: 14px;
+  color: var(--ink-40);
+}
+.wl-search-wrap .kbd {
+  position: absolute;
+  right: 10px;
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  color: var(--ink-40);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: var(--cream);
+}
+.wl-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--cream);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.wl-icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-60);
+  cursor: pointer;
+  position: relative;
+}
+.wl-icon-btn:hover { background: var(--cream-2); }
+.wl-icon-btn .dot {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--champagne);
+  border: 2px solid var(--cream);
+}
+
+/* ─── card primitives ─────────────────────── */
+.wl-card {
+  background: var(--paper);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.wl-card-head {
+  padding: 18px 20px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.wl-card-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+  font-weight: 500;
+}
+.wl-card-link {
+  font-size: 12px;
+  color: var(--forest);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── badges & chips ─────────────────────── */
+.wl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.wl-chip-forest { background: var(--forest); color: var(--cream); }
+.wl-chip-champagne { background: var(--champagne-3); color: var(--champagne-2); }
+.wl-chip-cream { background: var(--cream-2); color: var(--ink-60); }
+.wl-chip-wa { background: #DCF8C6; color: #075E54; }
+.wl-chip-warn { background: var(--champagne-3); color: var(--champagne-2); }
+.wl-chip-good { background: var(--sage-soft); color: var(--sage-2); }
+.wl-chip-bad { background: var(--blush-soft); color: var(--bad); }
+.wl-chip-sage { background: var(--sage-soft); color: var(--sage-2); }
+.wl-chip-lavender { background: var(--lavender-soft); color: var(--lavender-2); }
+.wl-chip-blush { background: var(--blush-soft); color: var(--bad); }
+.wl-chip-ai {
+  background: linear-gradient(135deg, var(--lavender-soft), var(--blush-soft));
+  color: var(--lavender-2);
+}
+.wl-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ─── buttons ─────────────────────── */
+.wl-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter .15s;
+}
+.wl-btn:hover { filter: brightness(0.95); }
+.wl-btn-primary { background: var(--forest); color: var(--cream); }
+.wl-btn-gold { background: var(--ink); color: var(--cream); }
+.wl-btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+.wl-btn-sm { height: 32px; padding: 0 12px; font-size: 12px; }
+
+/* WhatsApp green */
+.wl-wa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--wa-green);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* table */
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.wl-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.wl-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.wl-table tr:last-child td { border-bottom: none; }
+
+.wl-avatar-sm {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--cream-3);
+  color: var(--ink);
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+}
+.wl-avatar-stack { display: inline-flex; }
+.wl-avatar-stack > * { margin-left: -8px; }
+.wl-avatar-stack > *:first-child { margin-left: 0; }
+
+/* scrollbars within artboards stay quiet */
+.wl ::-webkit-scrollbar { width: 6px; height: 6px; }
+.wl ::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 999px; }
+</style>
+
+  <style>
+    html, body { margin: 0; padding: 0; background: var(--cream-2); font-family: "Geist", sans-serif; transition: background .25s ease; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      padding: 0;
+    }
+    .stage {
+      width: 1440px;
+      height: 1024px;
+      box-shadow: 0 24px 80px -20px rgba(42,53,48,0.15);
+      overflow: hidden;
+      border-radius: 12px;
+      margin: 32px 0;
+    }
+  </style>
+
+  <script src="2eb9c4b7-4c9f-42d9-81d5-9b51cf6d53c8" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="b9143b53-aa68-4773-8871-125b675a0d80" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="c4a7a18a-fe4a-4120-a5b9-c95e4db1614b" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  
+  <div id="root"></div>
+
+  <script type="text/babel" src="60e61b45-14cf-4178-83e1-e43c050084d0"></script>
+  <script type="text/babel" src="a959b899-782b-4f18-957a-d1fa65435f42"></script>
+
+  <script type="text/babel">
+    // Tweakable palette presets — full token swap per palette
+    const PALETTES = {
+      "Sage Green": {
+        cream: '#F4F8F4', cream2: '#EAF1EA', cream3: '#DCE7DD',
+        primary: '#5B9F7E', primary2: '#3E7A5E', primary3: '#B6D9C3',
+        accent: '#6AA8D4', accent2: '#4A85B5', accent3: '#DCEDF8',
+      },
+      "Sky Blue": {
+        cream: '#F4F7FB', cream2: '#E8EFF7', cream3: '#D8E3F0',
+        primary: '#5B89C4', primary2: '#3E68A0', primary3: '#BFD3E9',
+        accent: '#6FB89F', accent2: '#4F947E', accent3: '#DCEDE4',
+      },
+      "Mint Teal": {
+        cream: '#F2F8F7', cream2: '#E5F0EE', cream3: '#D2E5E2',
+        primary: '#4FA89D', primary2: '#357F76', primary3: '#B5DCD6',
+        accent: '#7DA3C8', accent2: '#557FA6', accent3: '#DCE8F3',
+      },
+      "Soft Emerald": {
+        cream: '#F5F9F6', cream2: '#E9F1EC', cream3: '#D5E6DA',
+        primary: '#3F8A6A', primary2: '#2C6850', primary3: '#A8CDBA',
+        accent: '#85B0D3', accent2: '#5C8AB0', accent3: '#DCE9F4',
+      },
+    };
+
+    const PALETTE_NAMES = Object.keys(PALETTES);
+
+    function applyPalette(name) {
+      const p = PALETTES[name];
+      if (!p) return;
+      const r = document.documentElement;
+      r.style.setProperty('--cream', p.cream);
+      r.style.setProperty('--cream-2', p.cream2);
+      r.style.setProperty('--cream-3', p.cream3);
+      r.style.setProperty('--forest', p.primary);
+      r.style.setProperty('--forest-2', p.primary2);
+      r.style.setProperty('--forest-3', p.primary3);
+      r.style.setProperty('--champagne', p.accent);
+      r.style.setProperty('--champagne-2', p.accent2);
+      r.style.setProperty('--champagne-3', p.accent3);
+    }
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "palette": "Sage Green",
+      "showAiBanner": true,
+      "showRevenueChart": true,
+      "compact": false
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      React.useEffect(() => { applyPalette(t.palette); }, [t.palette]);
+
+      const dashboardStyle = t.compact ? { transform: 'scale(0.96)', transformOrigin: 'top center' } : {};
+
+      return (
+        <>
+          <div className="stage" style={dashboardStyle}>
+            <Dashboard showAiBanner={t.showAiBanner} showRevenueChart={t.showRevenueChart} />
+          </div>
+
+          <TweaksPanel title="w-lush · Tweaks">
+            <TweakSection label="Renk paleti" />
+            <TweakSelect
+              label="Palet"
+              value={t.palette}
+              options={PALETTE_NAMES}
+              onChange={(v) => setTweak('palette', v)}
+            />
+            <TweakSection label="Bölümler" />
+            <TweakToggle label="AI banner" value={t.showAiBanner} onChange={(v) => setTweak('showAiBanner', v)} />
+            <TweakToggle label="Gelir grafiği" value={t.showRevenueChart} onChange={(v) => setTweak('showRevenueChart', v)} />
+            <TweakSection label="Yoğunluk" />
+            <TweakToggle label="Kompakt mod" value={t.compact} onChange={(v) => setTweak('compact', v)} />
+          </TweaksPanel>
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+
+
+</body></html>
