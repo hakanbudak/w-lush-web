@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/icons';
 import { Avatar, Chip } from '../components/ui';
+import { listAppointments, type Appointment } from '../api/clinic';
 
 /* ───────── veri modeli ───────── */
 type Channel = 'wa' | 'web' | 'man';
@@ -88,6 +89,104 @@ const channelChip = (c: Channel) =>
     <Chip tone="cream" small>Manuel</Chip>
   );
 
+/* ───────── WhatsApp randevuları (canlı /api/appointments) ───────── */
+const AYLAR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+const GUNAD = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']; // JS getDay: 0=Paz
+
+function fmtDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getDate()} ${AYLAR[d.getMonth()]} ${GUNAD[d.getDay()]}`;
+}
+
+function maskPhone(p: string): string {
+  return p.length < 6 ? p : `${p.slice(0, 4)}••••${p.slice(-2)}`;
+}
+
+function statusInfo(s: string): { tone: 'good' | 'blush' | 'cream'; label: string } {
+  if (s === 'confirmed' || s === 'onayli') return { tone: 'good', label: 'Onaylı' };
+  if (s === 'cancelled' || s === 'iptal') return { tone: 'blush', label: 'İptal' };
+  return { tone: 'cream', label: 'Bekliyor' };
+}
+
+function WhatsAppRandevulari() {
+  const [items, setItems] = useState<Appointment[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    listAppointments()
+      .then(setItems)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  return (
+    <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ color: 'var(--wa-green)', display: 'flex' }}>{Icon.whatsapp}</span>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>WhatsApp Randevuları</div>
+          <span style={{ fontSize: 11, color: 'var(--ink-40)' }}>· bot üzerinden alınan gerçek kayıtlar</span>
+        </div>
+        <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={load} disabled={loading}>
+          {loading ? '…' : 'Yenile'}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ fontSize: 12, color: 'var(--bad)', padding: '12px 20px' }}>
+          {error} — API çalışıyor mu? (uvicorn :8000)
+        </div>
+      )}
+      {!error && loading && !items && (
+        <div style={{ fontSize: 13, color: 'var(--ink-40)', padding: '16px 20px' }}>Yükleniyor…</div>
+      )}
+      {!error && items && items.length === 0 && (
+        <div style={{ fontSize: 13, color: 'var(--ink-40)', padding: '16px 20px' }}>
+          Henüz WhatsApp'tan randevu yok. Bot üzerinden bir randevu alınınca burada görünür.
+        </div>
+      )}
+      {items && items.length > 0 && (
+        <table className="wl-table" style={{ width: '100%' }}>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Saat</th>
+              <th>Hizmet</th>
+              <th>Müşteri</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((a) => {
+              const st = statusInfo(a.status);
+              return (
+                <tr key={a.id}>
+                  <td>{fmtDate(a.appt_date)}</td>
+                  <td className="wl-mono">{a.appt_time}</td>
+                  <td style={{ fontWeight: 500 }}>{a.service_name}</td>
+                  <td className="wl-mono" style={{ color: 'var(--ink-60)' }}>
+                    {a.customer_name || maskPhone(a.phone)}
+                  </td>
+                  <td>
+                    <Chip tone={st.tone} small>
+                      {st.label}
+                    </Chip>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 /* ───────── sayfa ───────── */
 export default function RandevuTakvimi() {
   const [view, setView] = useState<'gun' | 'hafta'>('gun');
@@ -138,6 +237,9 @@ export default function RandevuTakvimi() {
           <span style={{ color: 'var(--wa-green)', display: 'flex' }}>{Icon.whatsapp}</span>Berfin’e gönder
         </button>
       </div>
+
+      {/* WhatsApp'tan gelen gerçek randevular (canlı /api/appointments) */}
+      <WhatsAppRandevulari />
 
       {/* kontrol satırı */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
