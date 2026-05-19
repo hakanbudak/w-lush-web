@@ -1,6 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { Avatar, Chip } from '../components/ui';
+import {
+  createService,
+  deleteService,
+  listServices,
+  updateService,
+  type Service,
+} from '../api/clinic';
 
 /* ───────── yardımcılar ───────── */
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
@@ -76,14 +83,7 @@ const STAFF = [
   { name: 'Nil A.', role: 'Cilt uzmanı', exp: 'Cilt bakımı', active: false },
 ];
 
-const SERVICES = [
-  { name: 'Hydrafacial · Premium', cat: 'Cilt bakımı', dur: '60 dk', price: '₺ 3.200', active: true },
-  { name: 'Lazer Epilasyon · Tüm vücut', cat: 'Lazer', dur: '60 dk', price: '₺ 2.450', active: true },
-  { name: 'Botoks · Alın', cat: 'Enjeksiyon', dur: '30 dk', price: '₺ 5.400', active: true },
-  { name: 'Dolgu · Dudak', cat: 'Enjeksiyon', dur: '45 dk', price: '₺ 6.800', active: true },
-  { name: 'Mezoterapi · Saç', cat: 'Mezoterapi', dur: '45 dk', price: '₺ 4.100', active: true },
-  { name: 'Konsültasyon', cat: 'Konsültasyon', dur: '20 dk', price: 'Ücretsiz', active: true },
-];
+// Hizmetler artık API'den geliyor (bkz. HizmetSection). Statik liste kaldırıldı.
 
 const PACKAGES = [
   { name: 'Cilt Bakımı 10’lu', sessions: '10 seans', price: '₺ 26.000', save: '%19 avantaj' },
@@ -96,6 +96,190 @@ const TEMPLATES = [
   { name: 'Randevu onayı', when: 'Randevu oluşunca', text: 'Randevunuz oluşturuldu ✅ {tarih} {saat} · {hizmet} · {uzman}. Görüşmek üzere!' },
   { name: 'Kampanya / yeniden kazanım', when: 'AI önerisiyle', text: '{ad}, sizi özledik 💚 {hizmet} için size özel %{indirim} indirim tanımladık. Detay için yazmanız yeterli.' },
 ];
+
+/* ───────── Hizmetler & paketler — canlı API (/api/services) ───────── */
+type Row = Service & { _new?: boolean };
+
+function HizmetSection() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    listServices()
+      .then(setRows)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  const patch = (i: number, p: Partial<Row>) =>
+    setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...p } : row)));
+
+  const addRow = () =>
+    setRows((r) => [
+      ...r,
+      { id: -Date.now(), name: '', price: 0, active: true, sort_order: r.length, _new: true },
+    ]);
+
+  async function save(i: number) {
+    const row = rows[i];
+    if (!row.name.trim()) {
+      setError('Hizmet adı boş olamaz');
+      return;
+    }
+    setBusy(row.id);
+    setError(null);
+    const body = {
+      name: row.name.trim(),
+      price: Number(row.price) || 0,
+      active: row.active,
+      sort_order: row.sort_order,
+    };
+    try {
+      const saved = row._new
+        ? await createService(body)
+        : await updateService(row.id, body);
+      setRows((r) => r.map((x, idx) => (idx === i ? saved : x)));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove(i: number) {
+    const row = rows[i];
+    if (row._new) {
+      setRows((r) => r.filter((_, idx) => idx !== i));
+      return;
+    }
+    if (!window.confirm(`"${row.name}" silinsin mi?`)) return;
+    setBusy(row.id);
+    try {
+      await deleteService(row.id);
+      setRows((r) => r.filter((_, idx) => idx !== i));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>
+            Hizmetler & fiyatlar
+            <span style={{ fontSize: 11, color: 'var(--ink-40)', fontWeight: 400, marginLeft: 8 }}>
+              · WhatsApp botu bu listeyi kullanır
+            </span>
+          </div>
+          <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={addRow}>
+            {Icon.plus}Hizmet ekle
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ fontSize: 12, color: 'var(--bad)', background: 'var(--cream)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+            {error} — API çalışıyor mu? (uvicorn :8000)
+          </div>
+        )}
+
+        {loading ? (
+          <div style={{ fontSize: 13, color: 'var(--ink-40)', padding: '20px 0' }}>Yükleniyor…</div>
+        ) : (
+          <table className="wl-table" style={{ border: '1px solid var(--line)', borderRadius: 10 }}>
+            <thead>
+              <tr>
+                <th>Hizmet</th>
+                <th style={{ width: 150, textAlign: 'right' }}>Fiyat (₺)</th>
+                <th style={{ width: 80 }}>Durum</th>
+                <th style={{ width: 150 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ color: 'var(--ink-40)', fontSize: 13 }}>
+                    Henüz hizmet yok — "Hizmet ekle" ile başlayın.
+                  </td>
+                </tr>
+              )}
+              {rows.map((s, i) => (
+                <tr key={s.id}>
+                  <td>
+                    <input
+                      className="wl-input"
+                      value={s.name}
+                      placeholder="Hizmet adı"
+                      onChange={(e) => patch(i, { name: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="wl-input wl-mono"
+                      type="number"
+                      min={0}
+                      value={s.price}
+                      style={{ textAlign: 'right' }}
+                      onChange={(e) => patch(i, { price: Number(e.target.value) })}
+                    />
+                  </td>
+                  <td>
+                    <Toggle on={s.active} onClick={() => patch(i, { active: !s.active })} />
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        className="wl-btn wl-btn-sm"
+                        disabled={busy === s.id}
+                        style={{ background: 'var(--forest)', color: 'var(--cream)', borderRadius: 8 }}
+                        onClick={() => save(i)}
+                      >
+                        {busy === s.id ? '…' : <>{Icon.check}Kaydet</>}
+                      </button>
+                      <button
+                        className="wl-btn wl-btn-ghost wl-btn-sm"
+                        style={{ borderRadius: 8 }}
+                        onClick={() => remove(i)}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
+          Paketler
+          <span style={{ fontSize: 11, color: 'var(--ink-40)', fontWeight: 400, marginLeft: 8 }}>
+            · statik (sonraki adımda API)
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {PACKAGES.map((p) => (
+            <div key={p.name} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-40)', marginTop: 2 }}>{p.sessions}</div>
+              <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', marginTop: 12 }}>{p.price}</div>
+              <Chip tone="sage" small style={{ marginTop: 8 }}>{p.save}</Chip>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Sistem() {
   const [sec, setSec] = useState<Section>('klinik');
@@ -210,45 +394,7 @@ export default function Sistem() {
             </div>
           )}
 
-          {sec === 'hizmet' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Hizmetler & fiyatlar</div>
-                  <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }}>{Icon.plus}Hizmet ekle</button>
-                </div>
-                <table className="wl-table" style={{ border: '1px solid var(--line)', borderRadius: 10 }}>
-                  <thead>
-                    <tr><th>Hizmet</th><th>Kategori</th><th>Süre</th><th style={{ textAlign: 'right' }}>Fiyat</th><th>Durum</th></tr>
-                  </thead>
-                  <tbody>
-                    {SERVICES.map((s) => (
-                      <tr key={s.name}>
-                        <td style={{ fontWeight: 500 }}>{s.name}</td>
-                        <td><Chip tone="cream" small>{s.cat}</Chip></td>
-                        <td style={{ color: 'var(--ink-60)' }} className="wl-mono">{s.dur}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }} className="wl-mono">{s.price}</td>
-                        <td><Chip tone="good" small>{Icon.check}Aktif</Chip></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Paketler</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-                  {PACKAGES.map((p) => (
-                    <div key={p.name} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-40)', marginTop: 2 }}>{p.sessions}</div>
-                      <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', marginTop: 12 }}>{p.price}</div>
-                      <Chip tone="sage" small style={{ marginTop: 8 }}>{p.save}</Chip>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {sec === 'hizmet' && <HizmetSection />}
 
           {sec === 'whatsapp' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
