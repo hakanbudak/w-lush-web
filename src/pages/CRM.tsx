@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { Avatar, Chip } from '../components/ui';
+import { listRequests, type ClinicRequest } from '../api/clinic';
 
 /* ───────── aday verisi ───────── */
 type Stage = 'yeni' | 'temas' | 'konsult' | 'musteri';
@@ -195,6 +196,105 @@ function LeadEditor({
   );
 }
 
+/* ───────── WhatsApp "Diğer" talepleri (canlı /api/requests) ───────── */
+const AYLAR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+function fmtDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${d.getDate()} ${AYLAR[d.getMonth()]} ${hh}:${mm}`;
+}
+
+function maskPhone(p: string): string {
+  return p.length < 6 ? p : `${p.slice(0, 4)}••••${p.slice(-2)}`;
+}
+
+function reqStatus(s: string): { tone: 'good' | 'champagne' | 'cream'; label: string } {
+  if (s === 'handled' || s === 'islendi') return { tone: 'good', label: 'İşlendi' };
+  if (s === 'new') return { tone: 'champagne', label: 'Yeni' };
+  return { tone: 'cream', label: s };
+}
+
+function WhatsAppTalepleri() {
+  const [items, setItems] = useState<ClinicRequest[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    listRequests()
+      .then(setItems)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  return (
+    <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ color: 'var(--wa-green)', display: 'flex' }}>{Icon.whatsapp}</span>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>WhatsApp Talepleri</div>
+          <span style={{ fontSize: 11, color: 'var(--ink-40)' }}>· bot "Diğer" akışından gelen gerçek mesajlar</span>
+        </div>
+        <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={load} disabled={loading}>
+          {loading ? '…' : 'Yenile'}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ fontSize: 12, color: 'var(--bad)', padding: '12px 20px' }}>
+          {error} — API çalışıyor mu? (uvicorn :8000)
+        </div>
+      )}
+      {!error && loading && !items && (
+        <div style={{ fontSize: 13, color: 'var(--ink-40)', padding: '16px 20px' }}>Yükleniyor…</div>
+      )}
+      {!error && items && items.length === 0 && (
+        <div style={{ fontSize: 13, color: 'var(--ink-40)', padding: '16px 20px' }}>
+          Henüz talep yok. WhatsApp'ta "Diğer" seçilip mesaj yazılınca burada görünür.
+        </div>
+      )}
+      {items && items.length > 0 && (
+        <table className="wl-table" style={{ width: '100%' }}>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Müşteri</th>
+              <th>Mesaj</th>
+              <th style={{ width: 90 }}>Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((r) => {
+              const st = reqStatus(r.status);
+              return (
+                <tr key={r.id}>
+                  <td className="wl-mono" style={{ color: 'var(--ink-60)', whiteSpace: 'nowrap' }}>
+                    {fmtDateTime(r.created_at)}
+                  </td>
+                  <td className="wl-mono" style={{ color: 'var(--ink-60)' }}>
+                    {r.customer_name || maskPhone(r.phone)}
+                  </td>
+                  <td style={{ fontSize: 13 }}>{r.message}</td>
+                  <td>
+                    <Chip tone={st.tone} small>
+                      {st.label}
+                    </Chip>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 /* ───────── sayfa ───────── */
 export default function CRM() {
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
@@ -239,6 +339,9 @@ export default function CRM() {
         <button className="wl-btn wl-btn-sm" style={{ background: 'var(--cream-2)', color: 'var(--ink)', borderRadius: 8, fontSize: 12 }}>Sıcakları sırala</button>
         <button className="wl-btn wl-btn-sm" style={{ background: 'var(--lavender-2)', color: 'var(--cream)', borderRadius: 8 }}>{Icon.sparkle}Toplu WA taslağı</button>
       </div>
+
+      {/* WhatsApp 'Diğer' talepleri (canlı /api/requests) */}
+      <WhatsAppTalepleri />
 
       {/* kontrol satırı: görünüm + yeni aday */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
