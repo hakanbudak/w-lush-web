@@ -90,6 +90,12 @@ export interface Appointment {
 export const listAppointments = () =>
   request<Appointment[]>('/api/appointments');
 
+export const confirmAppointment = (id: number) =>
+  request<Appointment>(`/api/appointments/${id}/confirm`, { method: 'POST' });
+
+export const cancelAppointment = (id: number) =>
+  request<Appointment>(`/api/appointments/${id}/cancel`, { method: 'POST' });
+
 export interface ClinicRequest {
   id: number;
   phone: string;
