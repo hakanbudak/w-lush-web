@@ -1,9 +1,35 @@
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import { NAV } from '../config/nav';
 import { Icon } from './icons';
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /** 232px sol sidebar — referans dosyadan birebir, nav öğeleri router'a bağlı. */
 export default function Sidebar() {
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Dışarı tıklayınca popover kapansın
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [menuOpen]);
+
+  const displayName = user?.name || user?.email || '—';
+  const clinicName = user?.clinic.name || 'Klinik';
+
   return (
     <aside
       style={{
@@ -35,9 +61,17 @@ export default function Sidebar() {
         >
           w
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em' }}>w-lush</div>
-          <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>Maslak şubesi</div>
+          <div
+            style={{
+              fontSize: 11, color: 'var(--ink-40)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}
+            title={clinicName}
+          >
+            {clinicName}
+          </div>
         </div>
       </div>
 
@@ -150,12 +184,14 @@ export default function Sidebar() {
 
       {/* user */}
       <div
+        ref={menuRef}
         style={{
           padding: '12px 16px',
           borderTop: '1px solid var(--line)',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
+          position: 'relative',
         }}
       >
         <div
@@ -171,15 +207,64 @@ export default function Sidebar() {
             fontWeight: 500,
           }}
         >
-          DA
+          {initials(displayName)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            Defne Aydın
+          <div
+            style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            title={displayName}
+          >
+            {displayName}
           </div>
-          <div style={{ fontSize: 10, color: 'var(--ink-40)' }}>Yönetici</div>
+          <div
+            style={{ fontSize: 10, color: 'var(--ink-40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            title={user?.email}
+          >
+            {user?.email}
+          </div>
         </div>
-        <span style={{ color: 'var(--ink-40)', display: 'flex', cursor: 'pointer' }}>{Icon.more}</span>
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          title="Hesap menüsü"
+          style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--ink-40)', display: 'flex', padding: 4, borderRadius: 6,
+          }}
+        >
+          {Icon.more}
+        </button>
+
+        {menuOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 4px)',
+              right: 12,
+              minWidth: 160,
+              background: 'var(--paper)',
+              border: '1px solid var(--line)',
+              borderRadius: 10,
+              boxShadow: '0 8px 24px -8px rgba(42,53,48,0.18)',
+              padding: 4,
+              zIndex: 10,
+            }}
+          >
+            <button
+              onClick={() => { setMenuOpen(false); logout(); }}
+              style={{
+                width: '100%', textAlign: 'left', background: 'transparent',
+                border: 'none', cursor: 'pointer', padding: '8px 12px',
+                borderRadius: 6, fontSize: 13, color: 'var(--bad)',
+                fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--cream-2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              Çıkış yap
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
