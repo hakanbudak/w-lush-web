@@ -20,5 +20,3 @@ export const NAV: NavItem[] = [
   { key: 'rapor', label: 'Rapor', title: 'Rapor', path: '/rapor', icon: 'chart' },
   { key: 'sistem', label: 'Sistem', title: 'Sistem · Ayarlar', path: '/sistem', icon: 'settings' },
 ];
-
-export const TODAY_LABEL = 'Cumartesi · 16 Mayıs 2026';

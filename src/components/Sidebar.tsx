@@ -3,6 +3,14 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { NAV } from '../config/nav';
 import { Icon } from './icons';
+import { getConnection, type WaStatus } from '../api/whatsapp';
+import { listRequests } from '../api/clinic';
+
+const WA_LABEL: Record<WaStatus, { dot: string; text: string }> = {
+  connected: { dot: 'var(--wa-green)', text: 'Bağlı' },
+  requested: { dot: 'var(--champagne-2)', text: 'Bekliyor' },
+  none: { dot: 'var(--ink-30, #c9c9c9)', text: 'Bağlı değil' },
+};
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -16,6 +24,14 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [waStatus, setWaStatus] = useState<WaStatus>('none');
+  const [crmCount, setCrmCount] = useState<number | null>(null);
+
+  // WhatsApp durumu + CRM talep sayısı — canlı (açılışta bir kez).
+  useEffect(() => {
+    getConnection().then((c) => setWaStatus(c.status)).catch(() => {});
+    listRequests().then((r) => setCrmCount(r.length)).catch(() => {});
+  }, []);
 
   // Dışarı tıklayınca popover kapansın
   useEffect(() => {
@@ -77,7 +93,10 @@ export default function Sidebar() {
 
       {/* nav items */}
       <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV.map((n) => (
+        {NAV.map((n) => {
+          // CRM rozeti canlı talep sayısı; diğerleri config'teki sabit değer.
+          const count = n.key === 'crm' ? crmCount : n.count ?? null;
+          return (
           <NavLink
             key={n.key}
             to={n.path}
@@ -101,7 +120,7 @@ export default function Sidebar() {
                   {Icon[n.icon]}
                 </span>
                 <span style={{ flex: 1 }}>{n.label}</span>
-                {n.count != null && (
+                {count != null && count > 0 && (
                   <span
                     style={{
                       fontSize: 10,
@@ -112,13 +131,14 @@ export default function Sidebar() {
                       fontFamily: 'Geist Mono, monospace',
                     }}
                   >
-                    {n.count}
+                    {count}
                   </span>
                 )}
               </>
             )}
           </NavLink>
-        ))}
+          );
+        })}
 
         {/* Yönetici linki — yalnızca platform admin görür */}
         {user?.is_admin && (
@@ -149,38 +169,6 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* AI block — pinned */}
-      <div
-        style={{
-          padding: '12px 16px',
-          margin: '16px 12px 0',
-          borderRadius: 10,
-          background: 'linear-gradient(135deg, var(--lavender-soft), var(--champagne-3))',
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <span style={{ color: 'var(--lavender-2)', display: 'flex' }}>{Icon.sparkle}</span>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--lavender-2)' }}>AI Asistan</div>
-          <span
-            style={{
-              marginLeft: 'auto',
-              fontSize: 9,
-              padding: '1px 5px',
-              borderRadius: 4,
-              background: 'rgba(125,111,163,0.18)',
-              color: 'var(--lavender-2)',
-              fontWeight: 600,
-            }}
-          >
-            YENİ
-          </span>
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--lavender-2)', lineHeight: 1.4 }}>
-          “Pınar K.’nın seansını yarına al ve hatırlatma gönder”
-        </div>
-      </div>
-
       <div style={{ flex: 1 }} />
 
       {/* whatsapp status */}
@@ -193,7 +181,14 @@ export default function Sidebar() {
           gap: 10,
         }}
       >
-        <span style={{ color: 'var(--wa-green)', display: 'flex' }}>{Icon.whatsapp}</span>
+        <span
+          style={{
+            color: waStatus === 'connected' ? 'var(--wa-green)' : 'var(--ink-40)',
+            display: 'flex',
+          }}
+        >
+          {Icon.whatsapp}
+        </span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12, fontWeight: 500 }}>WhatsApp</div>
           <div
@@ -205,7 +200,8 @@ export default function Sidebar() {
               gap: 4,
             }}
           >
-            <span className="wl-dot" style={{ background: 'var(--wa-green)' }} /> Bağlı · 12 yeni
+            <span className="wl-dot" style={{ background: WA_LABEL[waStatus].dot }} />
+            {WA_LABEL[waStatus].text}
           </div>
         </div>
       </div>
