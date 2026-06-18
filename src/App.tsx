@@ -11,6 +11,7 @@ import RandevuTakvimi from './pages/RandevuTakvimi';
 import Rapor from './pages/Rapor';
 import Signup from './pages/Signup';
 import Sistem from './pages/Sistem';
+import Yonetici from './pages/Yonetici';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/gider" element={<Giderler />} />
           <Route path="/rapor" element={<Rapor />} />
           <Route path="/sistem" element={<Sistem />} />
+          <Route path="/yonetici" element={<Yonetici />} />
           <Route path="*" element={<AnaEkran />} />
         </Route>
       </Route>

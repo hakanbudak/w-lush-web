@@ -119,6 +119,34 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
+
+        {/* Yönetici linki — yalnızca platform admin görür */}
+        {user?.is_admin && (
+          <NavLink
+            to="/yonetici"
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 10px',
+              borderRadius: 8,
+              fontSize: 13,
+              textDecoration: 'none',
+              color: isActive ? 'var(--ink)' : 'var(--ink-60)',
+              background: isActive ? 'var(--cream-2)' : 'transparent',
+              fontWeight: isActive ? 500 : 400,
+            })}
+          >
+            {({ isActive }) => (
+              <>
+                <span style={{ color: isActive ? 'var(--forest)' : 'var(--ink-40)', display: 'flex' }}>
+                  {Icon.whatsapp}
+                </span>
+                <span style={{ flex: 1 }}>Yönetici</span>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
       {/* AI block — pinned */}
