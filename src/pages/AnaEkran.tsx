@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/icons';
 import { KpiCard } from '../components/ui';
+import { useAuth } from '../auth/AuthContext';
+import {
+  listAppointments,
+  listRequests,
+  type Appointment,
+  type ClinicRequest,
+} from '../api/clinic';
 import {
   CampaignModal,
   MessageComposerModal,
@@ -45,7 +52,7 @@ const INBOX = [
   { n: 'Ceren Ö.', m: 'Teşekkürler! 💚', t: '2 sa', u: 0 },
 ];
 
-export default function AnaEkran() {
+function RichDashboard() {
   const [apptView, setApptView] = useState<'liste' | 'takvim'>('liste');
   const [modal, setModal] = useState<'campaign' | 'suggestions' | null>(null);
   const [msgTo, setMsgTo] = useState<string | null>(null);
@@ -275,4 +282,190 @@ export default function AnaEkran() {
       {msgTo && <MessageComposerModal presetTo={msgTo} onClose={() => setMsgTo(null)} />}
     </>
   );
+}
+
+/* ── Boş-durum kartı (liste/grafik henüz veri yokken) ─────── */
+function EmptyState({
+  icon,
+  title,
+  sub,
+  cta,
+}: {
+  icon: ReactNode;
+  title: string;
+  sub: string;
+  cta?: { label: string; to: string };
+}) {
+  return (
+    <div
+      style={{
+        padding: '40px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: 6,
+      }}
+    >
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          background: 'var(--cream-2)',
+          display: 'grid',
+          placeItems: 'center',
+          color: 'var(--ink-40)',
+          marginBottom: 6,
+        }}
+      >
+        {icon}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
+      <div style={{ fontSize: 12, color: 'var(--ink-40)', maxWidth: 280, lineHeight: 1.5 }}>{sub}</div>
+      {cta && (
+        <Link
+          to={cta.to}
+          className="wl-btn wl-btn-sm"
+          style={{ marginTop: 10, background: 'var(--lavender-2)', color: 'var(--cream)', borderRadius: 8, fontSize: 12, textDecoration: 'none' }}
+        >
+          {cta.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/* ── İlk-deneyim dashboard'u (yeni / verisi boş klinik) ───── */
+function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
+  const steps = [
+    { done: true, title: 'Hesabını oluşturdun', sub: `${clinicName} hazır`, to: null },
+    { done: false, title: 'Hizmet & fiyatlarını gözden geçir', sub: '5 örnek hizmet hazır — kendine göre düzenle', to: '/sistem?sec=hizmet' },
+    { done: false, title: 'WhatsApp numaranı bağla', sub: 'Bot randevu almaya başlasın', to: '/sistem?sec=whatsapp' },
+  ];
+
+  return (
+    <>
+      {/* Hoş geldin + kurulum kartı */}
+      <div style={{ background: 'linear-gradient(110deg, var(--paper) 0%, var(--paper) 50%, var(--lavender-soft) 100%)', border: '1px solid var(--line)', borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+          <span style={{ color: 'var(--lavender-2)' }}>{Icon.sparkle}</span>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Hoş geldin, {clinicName}! 👋</div>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--ink-40)', marginBottom: 18 }}>
+          Kliniğini kurmak için birkaç adım kaldı. Tamamladıkça panelin canlanacak.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px' }}>
+              <div style={{ width: 24, height: 24, borderRadius: 999, background: s.done ? 'var(--sage)' : 'var(--cream-2)', color: s.done ? 'var(--cream)' : 'var(--ink-40)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                {s.done ? Icon.check : i}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: s.done ? 'var(--ink-40)' : 'var(--ink)', textDecoration: s.done ? 'line-through' : 'none' }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-40)', marginTop: 1 }}>{s.sub}</div>
+              </div>
+              {s.to && (
+                <Link to={s.to} className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  Aç {Icon.arrow}
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI satırı — hepsi sıfır */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <KpiCard label="Günlük gelir" value="₺ 0" delta="Veri bekliyor" deltaTone="warn" accent="var(--forest)" />
+        <KpiCard label="Doluluk" value="%0" delta="0 randevu" deltaTone="warn" accent="var(--sage)" />
+        <KpiCard label="Yeni aday" value="0" delta="Henüz yok" deltaTone="warn" accent="var(--champagne)" />
+        <KpiCard label="Bekleyen WA" value="0" delta="Bot hazır" deltaTone="warn" accent="var(--lavender)" />
+      </div>
+
+      {/* Ana 2 kolon: randevular + sağ stack */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+        <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', fontSize: 14, fontWeight: 600 }}>Bugünün randevuları</div>
+          <EmptyState
+            icon={Icon.calendar}
+            title="Henüz randevu yok"
+            sub="WhatsApp botun ilk randevuyu aldığında burada görünecek."
+            cta={{ label: "WhatsApp'ı bağla", to: '/sistem?sec=whatsapp' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--lavender-2)' }}>{Icon.sparkle}</span>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>AI önerileri</div>
+            </div>
+            <EmptyState
+              icon={Icon.sparkle}
+              title="Öneriler veri biriktikçe gelir"
+              sub="Birkaç randevu ve mesajdan sonra AI kliniğine özel öneriler sunmaya başlar."
+            />
+          </div>
+
+          <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--wa-green)' }}>{Icon.whatsapp}</span>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>WhatsApp</div>
+            </div>
+            <EmptyState
+              icon={Icon.whatsapp}
+              title="Henüz mesaj yok"
+              sub="Müşterilerin WhatsApp'tan yazdığında konuşmalar burada listelenecek."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Gelir grafiği — boş */}
+      <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', fontSize: 13, fontWeight: 600 }}>Gelir trendi</div>
+        <EmptyState
+          icon={Icon.chart}
+          title="Gelir verisi birikiyor"
+          sub="İlk randevular tamamlandıkça gelir grafiğin burada oluşacak."
+        />
+      </div>
+    </>
+  );
+}
+
+/* ── Veri-farkında sarmalayıcı: boş klinik → ilk-deneyim ──── */
+export default function AnaEkran() {
+  const { user } = useAuth();
+  const [appts, setAppts] = useState<Appointment[] | null>(null);
+  const [reqs, setReqs] = useState<ClinicRequest[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([listAppointments(), listRequests()])
+      .then(([a, r]) => {
+        setAppts(a);
+        setReqs(r);
+      })
+      .catch(() => {
+        setAppts([]);
+        setReqs([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-40)', fontSize: 13 }}>
+        Yükleniyor…
+      </div>
+    );
+  }
+
+  const hasData = (appts?.length ?? 0) > 0 || (reqs?.length ?? 0) > 0;
+  if (!hasData) {
+    return <FirstTimeDashboard clinicName={user?.clinic.name ?? 'klinik'} />;
+  }
+  return <RichDashboard />;
 }

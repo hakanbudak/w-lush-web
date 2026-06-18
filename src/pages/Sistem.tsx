@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { Avatar, Chip } from '../components/ui';
+import WhatsAppConnect from '../components/WhatsAppConnect';
 import {
   createPackage,
   createService,
@@ -654,7 +655,11 @@ function RandevuAyarlari() {
 }
 
 export default function Sistem() {
-  const [sec, setSec] = useState<Section>('klinik');
+  // Derin bağlantı: /sistem?sec=whatsapp → ilgili bölümü doğrudan aç.
+  const initialSec = new URLSearchParams(window.location.search).get('sec');
+  const [sec, setSec] = useState<Section>(
+    SECTIONS.some((s) => s.key === initialSec) ? (initialSec as Section) : 'klinik',
+  );
   const [flags, setFlags] = useState({
     autoDraft: true,
     autoReminder: true,
@@ -762,17 +767,8 @@ export default function Sistem() {
 
           {sec === 'whatsapp' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 10, background: 'var(--cream)', border: '1px solid var(--line)' }}>
-                <span style={{ color: 'var(--wa-green)', display: 'flex' }}>{Icon.whatsapp}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>WhatsApp Business · +90 212 555 04 12</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span className="wl-dot" style={{ background: 'var(--wa-green)' }} />
-                    {flags.waConnected ? 'Bağlı · 12 yeni mesaj' : 'Bağlantı kesildi'}
-                  </div>
-                </div>
-                <Toggle on={flags.waConnected} onClick={() => tog('waConnected')} />
-              </div>
+              {/* Canlı bağlantı durumu (Model A) */}
+              <WhatsAppConnect />
               {TEMPLATES.map((t) => (
                 <div key={t.name} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
