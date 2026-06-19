@@ -6,8 +6,10 @@ import { useAuth } from '../auth/AuthContext';
 import {
   listAppointments,
   listRequests,
+  listServices,
   type Appointment,
   type ClinicRequest,
+  type Service,
 } from '../api/clinic';
 import { getConnection } from '../api/whatsapp';
 import {
@@ -290,12 +292,17 @@ type Step = { done: boolean; title: string; sub: string; cta: { label: string; t
 
 function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
   const [waConnected, setWaConnected] = useState(false);
+  const [services, setServices] = useState<Service[] | null>(null);
 
-  // WhatsApp adımı gerçek bağlantı durumunu yansıtsın (bağlıysa ✓).
+  // WhatsApp adımı gerçek bağlantı durumunu yansıtsın (bağlıysa ✓) +
+  // gerçek hizmet listesini çek (panel boş görünmesin).
   useEffect(() => {
     getConnection()
       .then((c) => setWaConnected(c.status === 'connected'))
       .catch(() => {});
+    listServices()
+      .then(setServices)
+      .catch(() => setServices([]));
   }, []);
 
   const steps: Step[] = [
@@ -321,17 +328,22 @@ function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
   const doneCount = steps.filter((s) => s.done).length;
   const pct = Math.round((doneCount / steps.length) * 100);
 
+  const howItWorks = [
+    { icon: Icon.whatsapp, color: 'var(--wa-green)', title: 'Müşteri WhatsApp’tan yazar', sub: 'Kliniğinin numarasına mesaj atar.' },
+    { icon: Icon.calendar, color: 'var(--forest)', title: 'Bot karşılar, randevu alır', sub: 'Uygun saati sunar, fiyat sorusunu yanıtlar.' },
+    { icon: Icon.check, color: 'var(--sage-2)', title: 'Panelde görür, yönetirsin', sub: 'Randevu burada listelenir; onayla ya da ertele.' },
+  ];
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12 }}>
+    <>
+      {/* Hero — tam genişlik */}
       <div
         style={{
-          width: '100%',
-          maxWidth: 860,
-          background: 'linear-gradient(135deg, var(--paper) 0%, var(--lavender-soft) 150%)',
+          background: 'linear-gradient(120deg, var(--paper) 0%, var(--paper) 45%, var(--lavender-soft) 130%)',
           border: '1px solid var(--line)',
           borderRadius: 16,
-          padding: 32,
-          boxShadow: '0 14px 44px -28px rgba(42,53,48,0.28)',
+          padding: 28,
+          boxShadow: '0 14px 44px -30px rgba(42,53,48,0.28)',
         }}
       >
         {/* başlık */}
@@ -350,7 +362,7 @@ function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
         </div>
 
         {/* ilerleme */}
-        <div style={{ margin: '24px 0 20px' }}>
+        <div style={{ margin: '22px 0 18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink-60)' }}>Kurulum</span>
             <span className="wl-mono" style={{ fontSize: 11, color: 'var(--ink-40)' }}>{doneCount}/{steps.length} adım · %{pct}</span>
@@ -373,7 +385,7 @@ function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
                 border: `1px solid ${s.done ? 'var(--sage)' : 'var(--line)'}`,
                 borderRadius: 12,
                 padding: 16,
-                minHeight: 132,
+                minHeight: 128,
               }}
             >
               <div style={{ width: 28, height: 28, borderRadius: 999, background: s.done ? 'var(--sage)' : 'var(--cream-2)', color: s.done ? 'var(--cream)' : 'var(--ink-60)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>
@@ -400,7 +412,56 @@ function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
           ))}
         </div>
       </div>
-    </div>
+
+      {/* Alt satır: gerçek hizmet listesi + nasıl çalışır */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+        {/* Hizmetlerin (gerçek veri) */}
+        <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              Hizmetlerin
+              {services && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-40)' }}>{services.length} hizmet</span>}
+            </div>
+            <Link to="/sistem?sec=hizmet" className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8, fontSize: 12, textDecoration: 'none' }}>
+              Düzenle {Icon.arrow}
+            </Link>
+          </div>
+          {services === null ? (
+            <div style={{ padding: 24, fontSize: 12, color: 'var(--ink-40)' }}>Yükleniyor…</div>
+          ) : services.length === 0 ? (
+            <div style={{ padding: 24, fontSize: 12, color: 'var(--ink-40)' }}>
+              Henüz hizmet yok. <Link to="/sistem?sec=hizmet" style={{ color: 'var(--forest)' }}>Ekle →</Link>
+            </div>
+          ) : (
+            services.map((s, i, arr) => (
+              <div key={s.id} style={{ padding: '12px 18px', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ flex: 1, fontSize: 13, color: s.active ? 'var(--ink)' : 'var(--ink-40)' }}>{s.name}</span>
+                {!s.active && <span className="wl-chip wl-chip-cream" style={{ height: 18, fontSize: 10 }}>Pasif</span>}
+                <span className="wl-mono" style={{ fontSize: 13, fontWeight: 500 }}>₺ {s.price.toLocaleString('tr-TR')}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Nasıl çalışır */}
+        <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', fontSize: 14, fontWeight: 600 }}>Nasıl çalışır?</div>
+          <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {howItWorks.map((h, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--cream-2)', display: 'grid', placeItems: 'center', color: h.color, flexShrink: 0 }}>
+                  {h.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{h.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-60)', marginTop: 2, lineHeight: 1.45 }}>{h.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
