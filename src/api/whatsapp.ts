@@ -34,3 +34,24 @@ export const requestConnection = (body?: { desired_number?: string; note?: strin
     method: 'POST',
     body: JSON.stringify(body ?? {}),
   });
+
+// --- Yönetici (is_admin) uçları ---
+
+export interface AdminClinic {
+  id: number;
+  name: string;
+  slug: string;
+  whatsapp: WaConnection;
+}
+
+export const getAdminClinics = () =>
+  request<AdminClinic[]>('/api/admin/clinics');
+
+export const assignWhatsapp = (
+  clinicId: number,
+  body: { phone_number_id: string; display_number?: string },
+) =>
+  request<WaConnection>(`/api/admin/clinics/${clinicId}/whatsapp`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });

@@ -1,6 +1,8 @@
 // WhatsApp bağlantı kartı (Model A): durum gösterir + talep oluşturur.
 // none → "talep oluştur" · requested → "kuruluyor" · connected → "✓ bağlı".
-import { useEffect, useState, type CSSProperties } from 'react';
+// Durum bir kliniğin ömründe bir kez değişir → sürekli polling yerine
+// sekme odağa dönünce + "Yenile" butonuyla tazelenir.
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from './icons';
 import { getConnection, requestConnection, type WaConnection } from '../api/whatsapp';
 
@@ -15,13 +17,42 @@ export default function WhatsAppConnect() {
   const [conn, setConn] = useState<WaConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getConnection()
-      .then(setConn)
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    const next = await getConnection();
+    setConn(next);
+    return next;
   }, []);
+
+  // İlk yükleme
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+  }, [load]);
+
+  // Sekme/pencere odağa dönünce tazele (yönetici numarayı atamış olabilir).
+  // Sürekli polling yok — yalnızca kullanıcı geri döndüğünde bir istek.
+  useEffect(() => {
+    function onFocus() {
+      if (document.visibilityState === 'visible') load();
+    }
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [load]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function handleRequest() {
     setBusy(true);
@@ -82,10 +113,19 @@ export default function WhatsAppConnect() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>Bağlantı talebin alındı</div>
             <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>
-              WhatsApp numaran hazırlanıyor. Hazır olunca burada otomatik görünecek.
+              WhatsApp numaran hazırlanıyor. Hazır olduğunda, bu sayfaya
+              döndüğünde burada görünür.
               {conn?.requested_at && ` · Talep: ${fmtDate(conn.requested_at)}`}
             </div>
           </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="wl-btn wl-btn-sm"
+            style={{ fontSize: 12, borderRadius: 8 }}
+          >
+            {refreshing ? 'Yenileniyor…' : 'Yenile'}
+          </button>
           <span className="wl-chip wl-chip-warn" style={{ height: 20, fontSize: 11 }}>Bekliyor</span>
         </div>
       </div>
