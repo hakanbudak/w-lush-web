@@ -18,13 +18,25 @@ const displayName = (c: Conversation): string => c.customer_name || c.phone;
 export default function Mesajlar() {
   const [items, setItems] = useState<Conversation[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  // Seçili konuşmanın kendisi (yalnızca telefonu değil) tutulur: liste
+  // yenilendiğinde (100 satır sınırı veya geçici hata) bu satır artık
+  // dönmese bile Thread unmount olup taslak kaybolmasın.
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  // Aynı anda yalnızca en son isteğin sonucu items'ı güncelleyebilir.
+  const requestIdRef = useRef(0);
 
   const loadList = useCallback(() => {
+    const requestId = ++requestIdRef.current;
     setListError(null);
     listConversations()
-      .then(setItems)
-      .catch(() => setListError('Konuşmalar yüklenemedi.'));
+      .then((data) => {
+        if (requestIdRef.current !== requestId) return;
+        setItems(data);
+      })
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return;
+        setListError('Konuşmalar yüklenemedi.');
+      });
   }, []);
 
   useEffect(() => {
@@ -40,10 +52,18 @@ export default function Mesajlar() {
     };
   }, [loadList]);
 
-  const current = items?.find((c) => c.phone === selected) ?? null;
+  // Taze liste geldiğinde seçili konuşmanın güncel kopyasını tercih et;
+  // listede artık yoksa (100 satır sınırı, geçici hata) elde tutulanı koru.
+  useEffect(() => {
+    if (!items || !selectedConversation) return;
+    const fresh = items.find((c) => c.phone === selectedConversation.phone);
+    if (fresh && fresh !== selectedConversation) setSelectedConversation(fresh);
+  }, [items, selectedConversation]);
+
+  const current = selectedConversation;
 
   return (
-    <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+    <div style={{ display: 'flex', gap: 16, height: '100%' }}>
       <div
         style={{
           width: 320,
@@ -103,15 +123,17 @@ export default function Mesajlar() {
             <button
               key={c.phone}
               type="button"
-              onClick={() => setSelected(c.phone)}
+              onClick={() => setSelectedConversation(c)}
               aria-label={c.waiting ? `${displayName(c)}, cevap bekliyor` : displayName(c)}
-              aria-current={c.phone === selected}
+              aria-current={c.phone === selectedConversation?.phone}
               style={{
                 display: 'flex', gap: 8, width: '100%', textAlign: 'left',
                 padding: '10px 14px', border: 'none',
                 borderBottom: '1px solid var(--line)',
                 borderLeft:
-                  c.phone === selected ? '3px solid var(--forest)' : '3px solid transparent',
+                  c.phone === selectedConversation?.phone
+                    ? '3px solid var(--forest)'
+                    : '3px solid transparent',
                 background: c.waiting ? 'var(--cream)' : 'transparent',
                 fontFamily: 'inherit', cursor: 'pointer',
               }}
@@ -175,15 +197,28 @@ function Thread({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  // "Bota geri ver" hatası composer'ın hata slotundan ayrı tutulur; başlıktaki
+  // düğmenin hemen altında gösterilir ki hata, onu tetikleyen düğmeye yakın kalsın.
+  const [headerError, setHeaderError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef<number | null>(null);
+  // Yalnız en son isteğin sonucu messages'ı güncelleyebilir; hızlı "Yenile"
+  // tıklamaları veya yavaş ağda eski bir yanıt yeniyi ezmesin.
+  const requestIdRef = useRef(0);
   const { phone } = conversation;
 
   const load = useCallback(() => {
+    const requestId = ++requestIdRef.current;
     setError(null);
     getThread(phone)
-      .then(setMessages)
-      .catch(() => setError('Mesajlar yüklenemedi.'));
+      .then((data) => {
+        if (requestIdRef.current !== requestId) return;
+        setMessages(data);
+      })
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return;
+        setError('Mesajlar yüklenemedi.');
+      });
   }, [phone]);
 
   useEffect(() => {
@@ -223,12 +258,13 @@ function Thread({
   }
 
   function release() {
+    setHeaderError(null);
     releaseToBot(phone)
       .then(() => {
         load();
         onChanged();
       })
-      .catch(() => setSendError('Bota geri verilemedi.'));
+      .catch(() => setHeaderError('Bota geri verilemedi.'));
   }
 
   return (
@@ -247,18 +283,25 @@ function Thread({
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600 }}>{displayName(conversation)}</div>
+          {/* Kasıtlı olarak maskelenmemiş: operatör müşteriyi telefonla arayabilmek
+              için numarayı burada birebir okuyabilmeli (bkz. RandevuTakvimi'ndeki maskPhone). */}
           <div className="wl-mono" style={{ fontSize: 11, color: 'var(--ink-40)' }}>
             {conversation.phone}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={load}>
-            Yenile
-          </button>
-          {conversation.handoff && (
-            <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={release}>
-              Bota geri ver
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={load}>
+              Yenile
             </button>
+            {conversation.handoff && (
+              <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={release}>
+                Bota geri ver
+              </button>
+            )}
+          </div>
+          {headerError && (
+            <div style={{ fontSize: 11, color: 'var(--bad)' }}>{headerError}</div>
           )}
         </div>
       </div>
@@ -331,6 +374,13 @@ function Thread({
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+            aria-label="Cevap metni"
             placeholder="Cevabınızı yazın…"
             rows={2}
             style={{

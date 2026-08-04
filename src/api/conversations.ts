@@ -2,12 +2,15 @@
 import { toUtcIso } from '../utils/time';
 import { request } from './client';
 
+/** Mesaj yönü: "in" (müşteri) | "out" (operatör). */
+export type MessageDirection = 'in' | 'out';
+
 /** Gelen kutusundaki bir satır. `waiting`/`handoff` backend'de türetilir. */
 export interface Conversation {
   phone: string;
   customer_name: string;
   last_message: string;
-  last_direction: string; // "in" (müşteri) | "out" (operatör)
+  last_direction: MessageDirection;
   last_at: string; // ISO
   waiting: boolean; // son sözü müşteri söyledi
   handoff: boolean; // bot susmuş durumda (SILENT)
@@ -17,7 +20,7 @@ export interface Conversation {
 export interface ChatMessage {
   id: number;
   phone: string;
-  direction: string; // "in" | "out"
+  direction: MessageDirection;
   body: string;
   created_at: string; // ISO
 }
