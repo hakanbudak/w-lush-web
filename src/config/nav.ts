@@ -15,6 +15,7 @@ export const NAV: NavItem[] = [
   { key: 'crm', label: 'CRM', title: 'CRM · Danışan adayları', path: '/crm', icon: 'users', count: 12 },
   { key: 'danisan', label: 'Danışan', title: 'Danışan profili', path: '/danisan', icon: 'user' },
   { key: 'randevu', label: 'Randevu', title: 'Randevu takvimi', path: '/randevu', icon: 'calendar' },
+  { key: 'mesajlar', label: 'Mesajlar', title: 'Mesajlar', path: '/mesajlar', icon: 'whatsapp' },
   { key: 'gelir', label: 'Gelirler', title: 'Gelir raporu', path: '/gelir', icon: 'trending' },
   { key: 'gider', label: 'Giderler', title: 'Giderler', path: '/gider', icon: 'wallet' },
   { key: 'rapor', label: 'Rapor', title: 'Rapor', path: '/rapor', icon: 'chart' },
