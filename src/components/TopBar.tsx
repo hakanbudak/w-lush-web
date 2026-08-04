@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { NAV, TODAY_LABEL } from '../config/nav';
+import { NAV } from '../config/nav';
 import { Icon } from './icons';
 import { MessageComposerModal, NewAppointmentModal } from './modals';
+
+function todayLabel(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('tr-TR', { weekday: 'long' });
+  const rest = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return `${weekday.charAt(0).toLocaleUpperCase('tr-TR')}${weekday.slice(1)} · ${rest}`;
+}
 
 function usePageTitle(): string {
   const { pathname } = useLocation();
@@ -32,7 +39,7 @@ export default function TopBar() {
     >
       <div>
         <div style={{ fontSize: 11, color: 'var(--ink-40)', letterSpacing: '0.04em' }}>
-          {TODAY_LABEL}
+          {todayLabel()}
         </div>
         <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.015em', marginTop: 2 }}>
           {title}

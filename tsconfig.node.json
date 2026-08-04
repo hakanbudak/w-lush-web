@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "composite": true,
+    // Emit stays out of the repo: composite projects must emit, but the
+    // vite.config .js/.d.ts output is a build artifact, not source.
+    "outDir": "./node_modules/.tmp/tsconfig.node",
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
