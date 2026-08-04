@@ -70,7 +70,7 @@ metni gösterilir ve state değişmez.
 
 **Zil:** bugünkü 36×36 kutu korunur. Okunmamış 0 ise rozet **yok** (hep-yanan
 sahte nokta böylece düzelir). >0 ise sayı rozeti; 9 üstü `9+`. Rozet
-`--champagne-2` zemin üzerine koyu metin, `--paper` kenarlık.
+`--champagne-2` zemin üzerine `--paper` (açık) metin, `--paper` kenarlık.
 
 **Panel:** zilin altında sağa hizalı, 360 px genişlik, en fazla ~420 px yükseklik,
 içi kaydırmalı. `--paper` zemin, `--line` kenarlık, 8 px köşe, yumuşak gölge.
