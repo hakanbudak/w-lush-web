@@ -55,6 +55,7 @@ export default function NotificationBell() {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const navigate = useNavigate();
   // Yalnız en son isteğin sonucu items/loading'i güncelleyebilir; hızlı
   // aç/kapa/aç sırasında eski bir yanıt yeni olanı ezemez.
@@ -110,6 +111,7 @@ export default function NotificationBell() {
   // Panel her açıldığında taze liste.
   useEffect(() => {
     if (open) loadList();
+    else setActionError(null);
   }, [open, loadList]);
 
   // Dışarı tıklayınca veya Escape'e basınca kapan (Sidebar'daki çıkış
@@ -134,13 +136,14 @@ export default function NotificationBell() {
     if (!note.read) {
       markRead(note.id)
         .then(() => {
+          setActionError(null);
           setItems((prev) =>
             prev.map((n) => (n.id === note.id ? { ...n, read: true } : n)),
           );
           setUnread((n) => Math.max(0, n - 1));
         })
         .catch(() => {
-          setError('Okundu işaretlenemedi.');
+          setActionError('Okundu işaretlenemedi.');
           setOpen(true);
         });
     }
@@ -151,10 +154,11 @@ export default function NotificationBell() {
   function readAll() {
     markAllRead()
       .then(() => {
+        setActionError(null);
         setItems((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnread(0);
       })
-      .catch(() => setError('İşaretlenemedi.'));
+      .catch(() => setActionError('İşaretlenemedi.'));
   }
 
   return (
@@ -253,6 +257,12 @@ export default function NotificationBell() {
               </button>
             )}
           </div>
+
+          {actionError && (
+            <div style={{ padding: '8px 14px', fontSize: 12, color: 'var(--ink-60)' }}>
+              {actionError}
+            </div>
+          )}
 
           <div style={{ overflowY: 'auto' }}>
             {loading && (
