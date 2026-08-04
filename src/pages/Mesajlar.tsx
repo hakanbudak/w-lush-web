@@ -104,6 +104,8 @@ export default function Mesajlar() {
               key={c.phone}
               type="button"
               onClick={() => setSelected(c.phone)}
+              aria-label={c.waiting ? `${displayName(c)}, cevap bekliyor` : displayName(c)}
+              aria-current={c.phone === selected}
               style={{
                 display: 'flex', gap: 8, width: '100%', textAlign: 'left',
                 padding: '10px 14px', border: 'none',
@@ -174,6 +176,7 @@ function Thread({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef<number | null>(null);
   const { phone } = conversation;
 
   const load = useCallback(() => {
@@ -193,7 +196,14 @@ function Thread({
   }, [load]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
+    if (messages === null) return;
+    const prevCount = prevCountRef.current;
+    // Sadece konuşma büyüdüyse (veya ilk yüklemede) en alta kaydır;
+    // içerik değişmeyen bir arka plan poll'u kullanıcıyı geçmişten koparmasın.
+    if (prevCount === null || messages.length > prevCount) {
+      bottomRef.current?.scrollIntoView({ block: 'end' });
+    }
+    prevCountRef.current = messages.length;
   }, [messages]);
 
   function submit() {
