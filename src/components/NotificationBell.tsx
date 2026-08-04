@@ -9,6 +9,7 @@ import {
   type NotificationKind,
 } from '../api/notifications';
 import { Icon } from './icons';
+import { relativeTime } from '../utils/time';
 
 /** Sekme görünürken sayaç bu aralıkla tazelenir (ms). */
 const POLL_MS = 60_000;
@@ -22,30 +23,6 @@ const KIND_LABELS: Record<NotificationKind, string> = {
 
 const kindLabel = (kind: string): string =>
   KIND_LABELS[kind as NotificationKind] ?? 'Bildirim';
-
-/** "az önce" / "12 dk önce" / "3 sa önce" / "dün 14:20" / "9 Ağu 11:00" */
-function relativeTime(iso: string): string {
-  // `iso` api/notifications.ts'de normalize edilip UTC olarak (Z ekiyle)
-  // gelir; tarayıcı bunu doğru şekilde yerel saate çevirir. Yine de saat
-  // kayması diffMin'i negatif yapabilir, Math.max ile 0'a kelepçeleriz.
-  const then = new Date(iso);
-  const diffMin = Math.max(0, Math.floor((Date.now() - then.getTime()) / 60_000));
-
-  if (diffMin < 1) return 'az önce';
-  if (diffMin < 60) return `${diffMin} dk önce`;
-
-  const today = new Date();
-  const sameDay = then.toDateString() === today.toDateString();
-  if (sameDay) return `${Math.floor(diffMin / 60)} sa önce`;
-
-  const hhmm = then.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (then.toDateString() === yesterday.toDateString()) return `dün ${hhmm}`;
-
-  const dm = then.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-  return `${dm} ${hhmm}`;
-}
 
 /** Zil + okunmamış rozeti. Sayaç ucuz olduğu için sık, liste (Task 3) seyrek çekilir. */
 export default function NotificationBell() {
