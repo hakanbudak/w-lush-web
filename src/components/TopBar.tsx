@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { NAV } from '../config/nav';
 import { Icon } from './icons';
 import { MessageComposerModal, NewAppointmentModal } from './modals';
+import NotificationBell from './NotificationBell';
 
 function todayLabel(): string {
   const now = new Date();
@@ -101,32 +102,7 @@ export default function TopBar() {
           {Icon.plus}Yeni randevu
         </button>
         <div style={{ width: 1, height: 24, background: 'var(--line)', margin: '0 4px' }} />
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            display: 'grid',
-            placeItems: 'center',
-            color: 'var(--ink-60)',
-            position: 'relative',
-            cursor: 'pointer',
-          }}
-        >
-          {Icon.bell}
-          <span
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              width: 7,
-              height: 7,
-              borderRadius: 999,
-              background: 'var(--champagne-2)',
-              border: '2px solid var(--paper)',
-            }}
-          />
-        </div>
+        <NotificationBell />
       </div>
     </div>
 
