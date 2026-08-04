@@ -1,14 +1,68 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { unreadCount } from '../api/notifications';
+import { useNavigate } from 'react-router-dom';
+import {
+  listNotifications,
+  markAllRead,
+  markRead,
+  unreadCount,
+  type AppNotification,
+} from '../api/notifications';
 import { Icon } from './icons';
 
 /** Sekme görünürken sayaç bu aralıkla tazelenir (ms). */
 const POLL_MS = 60_000;
 
+const KIND_LABELS: Record<string, string> = {
+  booking: 'Yeni randevu',
+  reschedule: 'Erteleme',
+  cancellation: 'İptal',
+  request: 'Talep',
+};
+
+const kindLabel = (kind: string): string => KIND_LABELS[kind] ?? 'Bildirim';
+
+/** "az önce" / "12 dk önce" / "3 sa önce" / "dün 14:20" / "9 Ağu 11:00" */
+function relativeTime(iso: string): string {
+  // Backend naive UTC üretiyor (datetime.now sunucu saatinde); Z eki yoksa
+  // tarayıcı yerel saat varsayar — sunucu ve tarayıcı aynı makinede olduğu
+  // sürece bu doğrudur.
+  const then = new Date(iso);
+  const diffMin = Math.floor((Date.now() - then.getTime()) / 60_000);
+
+  if (diffMin < 1) return 'az önce';
+  if (diffMin < 60) return `${diffMin} dk önce`;
+
+  const today = new Date();
+  const sameDay = then.toDateString() === today.toDateString();
+  if (sameDay) return `${Math.floor(diffMin / 60)} sa önce`;
+
+  const hhmm = then.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (then.toDateString() === yesterday.toDateString()) return `dün ${hhmm}`;
+
+  const dm = then.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+  return `${dm} ${hhmm}`;
+}
+
 /** Zil + okunmamış rozeti. Sayaç ucuz olduğu için sık, liste (Task 3) seyrek çekilir. */
 export default function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const loadList = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    listNotifications()
+      .then(setItems)
+      .catch(() => setError('Bildirimler yüklenemedi.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Hata yutulur: sayaç son bilinen değerde kalır, sıfırlanmaz.
   const refreshCount = useCallback(() => {
@@ -38,11 +92,51 @@ export default function NotificationBell() {
     };
   }, [refreshCount]);
 
+  // Panel her açıldığında taze liste.
+  useEffect(() => {
+    if (open) loadList();
+  }, [open, loadList]);
+
+  // Dışarı tıklayınca kapan (Sidebar'daki çıkış popover'ıyla aynı desen).
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  function openItem(note: AppNotification) {
+    if (!note.read) {
+      markRead(note.id)
+        .then(() => {
+          setItems((prev) =>
+            prev.map((n) => (n.id === note.id ? { ...n, read: true } : n)),
+          );
+          setUnread((n) => Math.max(0, n - 1));
+        })
+        .catch(() => setError('Okundu işaretlenemedi.'));
+    }
+    setOpen(false);
+    navigate('/randevu');
+  }
+
+  function readAll() {
+    markAllRead()
+      .then(() => {
+        setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnread(0);
+      })
+      .catch(() => setError('İşaretlenemedi.'));
+  }
+
   return (
     <div ref={boxRef} style={{ position: 'relative' }}>
       <button
         type="button"
         aria-label={unread > 0 ? `Bildirimler (${unread} okunmamış)` : 'Bildirimler'}
+        onClick={() => setOpen((v) => !v)}
         style={{
           width: 36,
           height: 36,
@@ -83,6 +177,146 @@ export default function NotificationBell() {
           </span>
         )}
       </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 44,
+            right: 0,
+            width: 360,
+            maxHeight: 420,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--paper)',
+            border: '1px solid var(--line)',
+            borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+            zIndex: 50,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              borderBottom: '1px solid var(--line)',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Bildirimler</span>
+            {unread > 0 && (
+              <button
+                type="button"
+                onClick={readAll}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  fontFamily: 'inherit',
+                  fontSize: 11,
+                  color: 'var(--ink-60)',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Tümünü okundu işaretle
+              </button>
+            )}
+          </div>
+
+          <div style={{ overflowY: 'auto' }}>
+            {loading && (
+              <div style={{ padding: 16, fontSize: 12, color: 'var(--ink-40)' }}>Yükleniyor…</div>
+            )}
+
+            {error && !loading && (
+              <div style={{ padding: 16, fontSize: 12, color: 'var(--ink-60)' }}>
+                {error}{' '}
+                <button
+                  type="button"
+                  onClick={loadList}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    padding: 0,
+                    fontFamily: 'inherit',
+                    fontSize: 12,
+                    color: 'var(--forest)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Tekrar dene
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && items.length === 0 && (
+              <div style={{ padding: 16, fontSize: 12, color: 'var(--ink-40)', lineHeight: 1.5 }}>
+                Henüz bildirim yok — WhatsApp’tan randevu geldiğinde burada görünür.
+              </div>
+            )}
+
+            {!loading &&
+              !error &&
+              items.map((note) => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => openItem(note)}
+                  style={{
+                    display: 'flex',
+                    gap: 10,
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '10px 14px',
+                    border: 'none',
+                    borderBottom: '1px solid var(--line)',
+                    background: note.read ? 'transparent' : 'var(--cream)',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 999,
+                      marginTop: 6,
+                      flexShrink: 0,
+                      background: note.read ? 'transparent' : 'var(--champagne-2)',
+                    }}
+                  />
+                  <span style={{ minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 10,
+                        letterSpacing: '0.04em',
+                        color: 'var(--ink-40)',
+                      }}
+                    >
+                      {kindLabel(note.kind)} · {relativeTime(note.created_at)}
+                    </span>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 12,
+                        color: 'var(--ink)',
+                        lineHeight: 1.45,
+                        marginTop: 2,
+                      }}
+                    >
+                      {note.message}
+                    </span>
+                  </span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
