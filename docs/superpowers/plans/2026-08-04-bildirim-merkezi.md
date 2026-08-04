@@ -1,5 +1,7 @@
 # Bildirim Merkezi Implementation Plan
 
+**Durum: TAMAMLANDI** — frontend PR [#2](https://github.com/hakanbudak/w-lush-web/pull/2) merge edildi (2026-08-04). Tüm adımlar işaretli; bu dosya artık kayıt amaçlıdır.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** TopBar'daki dekoratif zil ikonunu, `/api/notifications` uçlarını kullanan canlı bir bildirim merkezine dönüştürmek.
@@ -59,7 +61,7 @@ Doğrulamalarda kullanılan test hesabı: `smoke2@example.com` / `Test12345!` (y
 
 `AppNotification` adı bilerek `Notification` değil: `Notification` tarayıcının global DOM tipi, aynı adı kullanmak gölgeleme yaratır.
 
-- [ ] **Step 1: `src/api/notifications.ts` dosyasını oluştur**
+- [x] **Step 1: `src/api/notifications.ts` dosyasını oluştur**
 
 ```ts
 // Operatör bildirimleri — backend: app/notifications/ (klinik kapsamlı, auth'lu).
@@ -100,7 +102,7 @@ export async function markAllRead(): Promise<number> {
 }
 ```
 
-- [ ] **Step 2: Backend sözleşmesinin bu tiplerle uyuştuğunu canlı doğrula**
+- [x] **Step 2: Backend sözleşmesinin bu tiplerle uyuştuğunu canlı doğrula**
 
 Bu script test verisi de üretir; sonraki task'lar buna dayanır.
 
@@ -145,12 +147,12 @@ PY
 
 Expected: `GET /api/notifications -> 200`, `unread-count -> 200 {"unread":N}`, son satır `SÖZLEŞME OK`. Kayıt yoksa `alanlar:` satırı basılmaz — bu normaldir, Task 3'te veri üretilecek.
 
-- [ ] **Step 3: Derlemeyi doğrula**
+- [x] **Step 3: Derlemeyi doğrula**
 
 Run: `npm run typecheck`
 Expected: çıktı yok, exit 0. (`echo $?` ile teyit et.)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/api/notifications.ts
@@ -175,7 +177,7 @@ Bu task'ın sonunda TopBar'daki zil **gerçek** okunmamış sayısını gösteri
 - Consumes: `unreadCount()` — Task 1; `Icon.bell` — `src/components/icons.tsx`
 - Produces: `export default function NotificationBell(): JSX.Element` (prop almaz)
 
-- [ ] **Step 1: `src/components/NotificationBell.tsx` dosyasını oluştur**
+- [x] **Step 1: `src/components/NotificationBell.tsx` dosyasını oluştur**
 
 ```tsx
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -270,7 +272,7 @@ export default function NotificationBell() {
 
 `boxRef` şimdilik kullanılmıyor gibi görünse de Task 3'teki dışarı-tıklama dinleyicisi ona bağlanacak; `noUnusedLocals` açık olduğu için `ref={boxRef}` ataması derlemeyi geçirir.
 
-- [ ] **Step 2: `TopBar.tsx`'te sahte zil bloğunu değiştir**
+- [x] **Step 2: `TopBar.tsx`'te sahte zil bloğunu değiştir**
 
 `src/components/TopBar.tsx` içinde, `Yeni randevu` butonundan sonraki ayırıcı `div`'in ardından gelen **zil `div`'inin tamamını** (`{Icon.bell}` ve koşulsuz noktayı içeren `<div style={{ width: 36, height: 36, ... }}>…</div>`) sil, yerine şunu koy:
 
@@ -286,12 +288,12 @@ import NotificationBell from './NotificationBell';
 
 `Icon` importu kalır (arama ikonu ve WhatsApp ikonu hâlâ kullanılıyor).
 
-- [ ] **Step 3: Derlemeyi doğrula**
+- [x] **Step 3: Derlemeyi doğrula**
 
 Run: `npm run typecheck && npm run build`
 Expected: ikisi de exit 0, build `✓ built in …` ile biter.
 
-- [ ] **Step 4: Canlı doğrula — rozet gerçek sayıyı gösteriyor**
+- [x] **Step 4: Canlı doğrula — rozet gerçek sayıyı gösteriyor**
 
 Önce backend'e üç bildirim düş:
 
@@ -315,7 +317,7 @@ Expected: zilin üstünde **3** yazan rozet; sayfayı yenilemeden başka sekmeye
 
 > Not: bu script `clinic_id=1`'e yazar. `smoke2@example.com` farklı bir kliniğe aitse rozet 0 kalır; `service.unread_count(db, <senin_clinic_id>)` ile kontrol et ve script'teki `1`'i değiştir.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/NotificationBell.tsx src/components/TopBar.tsx
@@ -337,7 +339,7 @@ focus, on tab visibility, and every 60s while the tab is visible."
 - Consumes: `listNotifications()`, `markRead(id)`, `markAllRead()`, `AppNotification` — Task 1; `useNavigate` — `react-router-dom`
 - Produces: yok (bileşen dışa açık yüzeyi değişmez)
 
-- [ ] **Step 1: Yardımcıları dosyanın en üstüne, bileşenin dışına ekle**
+- [x] **Step 1: Yardımcıları dosyanın en üstüne, bileşenin dışına ekle**
 
 ```tsx
 const KIND_LABELS: Record<string, string> = {
@@ -374,7 +376,7 @@ function relativeTime(iso: string): string {
 }
 ```
 
-- [ ] **Step 2: Bileşen state'ini ve panel davranışını ekle**
+- [x] **Step 2: Bileşen state'ini ve panel davranışını ekle**
 
 `NotificationBell` içinde, mevcut `unread`/`boxRef` tanımlarının altına:
 
@@ -455,7 +457,7 @@ Aksiyonlar (effect'lerin altına):
   }
 ```
 
-- [ ] **Step 3: Zil butonunu tıklanabilir yap ve paneli render et**
+- [x] **Step 3: Zil butonunu tıklanabilir yap ve paneli render et**
 
 Butona `onClick` ekle:
 
@@ -607,12 +609,12 @@ Rozet `<span>`'inden sonra, `</button>`'ın **ardına** paneli ekle:
       )}
 ```
 
-- [ ] **Step 4: Derlemeyi doğrula**
+- [x] **Step 4: Derlemeyi doğrula**
 
 Run: `npm run typecheck && npm run build`
 Expected: ikisi de exit 0.
 
-- [ ] **Step 5: Canlı doğrula — tüm etkileşimler**
+- [x] **Step 5: Canlı doğrula — tüm etkileşimler**
 
 Tarayıcıda giriş yapmış haldeyken sırayla:
 
@@ -625,7 +627,7 @@ Tarayıcıda giriş yapmış haldeyken sırayla:
 
 Expected: altı maddenin hepsi tarif edildiği gibi. 3. maddede rozet azalmıyorsa `setUnread` çağrısı eksiktir; 5. maddede panel kapanıyorsa `readAll` içine yanlışlıkla `setOpen(false)` konmuştur.
 
-- [ ] **Step 6: Boş durumu doğrula**
+- [x] **Step 6: Boş durumu doğrula**
 
 Yeni bir klinikle boş durumu gör:
 
@@ -645,7 +647,7 @@ PY
 Tarayıcıda çıkış yap, `bos@example.com` / `Test12345!` ile gir, zile tıkla.
 Expected: rozet yok; panelde "Henüz bildirim yok — WhatsApp'tan randevu geldiğinde burada görünür."
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/components/NotificationBell.tsx
@@ -663,12 +665,12 @@ so a failed call leaves the badge honest."
 
 **Files:** yok (yalnız doğrulama)
 
-- [ ] **Step 1: Temiz derleme**
+- [x] **Step 1: Temiz derleme**
 
 Run: `npm run typecheck && npm run build && echo "BUILD OK"`
 Expected: son satır `BUILD OK`.
 
-- [ ] **Step 2: Uçtan uca API duman testi**
+- [x] **Step 2: Uçtan uca API duman testi**
 
 Run:
 
@@ -695,12 +697,12 @@ PY
 
 Expected: son satır `SMOKE OK`.
 
-- [ ] **Step 3: Değişen dosyaları gözden geçir**
+- [x] **Step 3: Değişen dosyaları gözden geçir**
 
 Run: `git diff main --stat`
 Expected: yalnız 5 dosya — `src/api/notifications.ts` (yeni), `src/components/NotificationBell.tsx` (yeni), `src/components/TopBar.tsx` (değişti), `docs/superpowers/specs/…` + `docs/superpowers/plans/…` (dokümanlar). Başka dosya değiştiyse istenmeyen değişiklik vardır, geri al.
 
-- [ ] **Step 4: PR aç**
+- [x] **Step 4: PR aç**
 
 ```bash
 git push -u origin feature/notification-center
