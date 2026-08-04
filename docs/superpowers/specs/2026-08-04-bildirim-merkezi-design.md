@@ -37,7 +37,7 @@ Türler (`app/notifications/service.py`), `app/whatsapp/flow.py` tarafından ür
 
 Yeni iki dosya, mevcut bir dosyada değişiklik:
 
-- **`src/api/notifications.ts`** — `src/api/whatsapp.ts` kalıbı. `Notification`
+- **`src/api/notifications.ts`** — `src/api/whatsapp.ts` kalıbı. `AppNotification`
   tipi + `listNotifications()`, `unreadCount()`, `markRead(id)`, `markAllRead()`.
   Tek sorumluluk: HTTP. Bileşen bu modülün dışında `request()` çağırmaz.
 - **`src/components/NotificationBell.tsx`** — zil butonu, rozet ve popover panel.
@@ -111,7 +111,7 @@ Frontend'de test koşucusu yok; kanıt derleme + canlı kontrol:
 
 1. `npm run typecheck` → exit 0
 2. `npm run build` → exit 0
-3. Lokal backend'e (`:8000`) dört türden bildirim düşürülür, sonra:
+3. Lokal backend'e (`:8000`) üç türden bildirim düşürülür, sonra:
    - rozet doğru sayıyı gösteriyor
    - satıra tıklamak sayacı bir azaltıyor ve `/randevu`'ya gidiyor
    - "Tümünü okundu işaretle" rozeti kaldırıyor

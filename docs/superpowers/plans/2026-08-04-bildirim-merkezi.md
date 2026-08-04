@@ -698,7 +698,7 @@ Expected: son satır `SMOKE OK`.
 - [ ] **Step 3: Değişen dosyaları gözden geçir**
 
 Run: `git diff main --stat`
-Expected: yalnız 4 dosya — `src/api/notifications.ts` (yeni), `src/components/NotificationBell.tsx` (yeni), `src/components/TopBar.tsx` (değişti), `docs/superpowers/specs/…` + `docs/superpowers/plans/…` (dokümanlar). Başka dosya değiştiyse istenmeyen değişiklik vardır, geri al.
+Expected: yalnız 5 dosya — `src/api/notifications.ts` (yeni), `src/components/NotificationBell.tsx` (yeni), `src/components/TopBar.tsx` (değişti), `docs/superpowers/specs/…` + `docs/superpowers/plans/…` (dokümanlar). Başka dosya değiştiyse istenmeyen değişiklik vardır, geri al.
 
 - [ ] **Step 4: PR aç**
 
