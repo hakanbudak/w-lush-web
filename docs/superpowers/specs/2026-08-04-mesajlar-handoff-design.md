@@ -50,9 +50,10 @@ Klinik kapsamlı, `get_current_user` korumalı, mevcut uçlarla aynı kalıp.
 
 **Yerleşim:** yeni dosya açılmaz — `app/conversations/service.py`'ye
 `summaries(db, clinic_id, limit=100)`, `schemas.py`'ye `ConversationOut`,
-`router.py`'ye ucun kendisi eklenir. Uç, `/{phone}` yolundan **önce**
-tanımlanmalı; aksi halde FastAPI `/api/conversations`'ı `phone=""` olarak
-eşleştirmeye çalışır.
+`router.py`'ye ucun kendisi eklenir. İki yol (`""` ve `"/{phone}"`) farklı
+olduğu için gerçek bir çakışma yok, yine de yeni uç `/{phone}`'dan **önce**
+tanımlanır — sondaki eğik çizgi yönlendirmesinin `/api/conversations/`'ı
+`phone=""` olarak eşleştirmesine karşı savunma.
 
 ### Dokunulmayanlar
 
