@@ -7,6 +7,7 @@ import DanisanProfili from './pages/DanisanProfili';
 import GelirRaporu from './pages/GelirRaporu';
 import Giderler from './pages/Giderler';
 import Login from './pages/Login';
+import Mesajlar from './pages/Mesajlar';
 import RandevuTakvimi from './pages/RandevuTakvimi';
 import Rapor from './pages/Rapor';
 import Signup from './pages/Signup';
@@ -25,6 +26,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<AnaEkran />} />
           <Route path="/randevu" element={<RandevuTakvimi />} />
+          <Route path="/mesajlar" element={<Mesajlar />} />
           <Route path="/danisan" element={<DanisanProfili />} />
           <Route path="/crm" element={<CRM />} />
           <Route path="/gelir" element={<GelirRaporu />} />

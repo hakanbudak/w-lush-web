@@ -1,5 +1,6 @@
 // Operatör bildirimleri — backend: app/notifications/ (klinik kapsamlı, auth'lu).
 import { request } from './client';
+import { toUtcIso } from '../utils/time';
 
 /** Backend'in ürettiği türler (app/notifications/service.py). */
 export type NotificationKind = 'booking' | 'reschedule' | 'cancellation' | 'request';
@@ -16,15 +17,10 @@ export interface AppNotification {
   created_at: string; // ISO
 }
 
-/**
- * Backend `created_at`'i naive UTC üretiyor (offset/`Z` yok). Eki yoksa
- * tarayıcı yerel saat varsayar ve production'da (API UTC, tarayıcı UTC+3)
- * saatler saatlerce ileri kayar. Offset yoksa `Z` ekleyip UTC'ye sabitleriz.
- */
-function normalizeCreatedAt(note: AppNotification): AppNotification {
-  const hasOffset = /Z$|[+-]\d{2}:\d{2}$/.test(note.created_at);
-  return hasOffset ? note : { ...note, created_at: `${note.created_at}Z` };
-}
+const normalizeCreatedAt = (note: AppNotification): AppNotification => ({
+  ...note,
+  created_at: toUtcIso(note.created_at),
+});
 
 /** Yeniden eskiye sıralı, backend'de 100 ile sınırlı. */
 export const listNotifications = () =>
