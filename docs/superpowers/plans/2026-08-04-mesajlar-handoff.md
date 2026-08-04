@@ -1,5 +1,7 @@
 # Mesajlar / Handoff Ekranı Implementation Plan
 
+**Durum: TAMAMLANDI** — backend PR [selamet/w-lush#6](https://github.com/selamet/w-lush/pull/6) ve frontend PR [#3](https://github.com/hakanbudak/w-lush-web/pull/3) merge edildi (2026-08-04). Devamında gönderim sırası düzeltmesi backend PR [#8](https://github.com/selamet/w-lush/pull/8) ile geldi. Tüm adımlar işaretli; bu dosya artık kayıt amaçlıdır.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Operatörün, botun kendisine devrettiği müşteriye panelden cevap yazabilmesi.
@@ -81,7 +83,7 @@ PY
 - Consumes: `Message` (`app/conversations/models.py`), `Customer` (`app/customers/models.py`), `ConversationSession` (`app/whatsapp/models.py`), `get_current_user` (`app/core/deps.py`)
 - Produces: `GET /api/conversations` → `list[ConversationOut]`, alanlar: `phone: str`, `customer_name: str`, `last_message: str`, `last_direction: str`, `last_at: datetime`, `waiting: bool`, `handoff: bool`
 
-- [ ] **Step 1: `summaries()` fonksiyonunu `app/conversations/service.py` sonuna ekle**
+- [x] **Step 1: `summaries()` fonksiyonunu `app/conversations/service.py` sonuna ekle**
 
 Dosyanın en üstündeki import bloğunu şununla değiştir:
 
@@ -160,7 +162,7 @@ def summaries(db: Session, clinic_id: int, limit: int = 100) -> list[dict]:
     return rows[:limit]
 ```
 
-- [ ] **Step 2: `ConversationOut` şemasını `app/conversations/schemas.py` sonuna ekle**
+- [x] **Step 2: `ConversationOut` şemasını `app/conversations/schemas.py` sonuna ekle**
 
 ```python
 class ConversationOut(BaseModel):
@@ -175,7 +177,7 @@ class ConversationOut(BaseModel):
     handoff: bool
 ```
 
-- [ ] **Step 3: Ucu `app/conversations/router.py`'ye ekle**
+- [x] **Step 3: Ucu `app/conversations/router.py`'ye ekle**
 
 Import satırını genişlet:
 
@@ -195,7 +197,7 @@ def list_conversations(
     return service.summaries(db, current.clinic_id)
 ```
 
-- [ ] **Step 4: Lint ve import kapılarını çalıştır**
+- [x] **Step 4: Lint ve import kapılarını çalıştır**
 
 Run:
 
@@ -205,7 +207,7 @@ cd ~/Desktop/kişisel/w-lush && .venv/bin/ruff check app && .venv/bin/python -c 
 
 Expected: `All checks passed!` ve `import ok`.
 
-- [ ] **Step 5: Şemanın değişmediğini kanıtla**
+- [x] **Step 5: Şemanın değişmediğini kanıtla**
 
 Run:
 
@@ -216,7 +218,7 @@ f=$(ls -t alembic/versions/*drift_check.py | head -1); sed -n '/def upgrade/,/de
 
 Expected: `upgrade()` gövdesinde yalnız `pass` — yani drift yok. Geçici dosya silinir.
 
-- [ ] **Step 6: Ucu canlı doğrula**
+- [x] **Step 6: Ucu canlı doğrula**
 
 Önce yukarıdaki "Test verisi üretimi" bloğunu çalıştır, sonra:
 
@@ -253,7 +255,7 @@ PY
 
 Expected: `tokensiz: 401`; `status: 200`; iki satır — `905321112233` (`waiting=True handoff=True`) **üstte**, `905334445566` (`waiting=False handoff=False`) altta; son satır `UÇ OK`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush
@@ -283,7 +285,7 @@ Davranış değişmez; bu task yalnız `relativeTime`'ı ikinci tüketiciye haz�
 **Interfaces:**
 - Produces: `toUtcIso(raw: string): string`, `relativeTime(iso: string): string` — ikisi de `src/utils/time.ts`'ten
 
-- [ ] **Step 1: `src/utils/time.ts` dosyasını oluştur**
+- [x] **Step 1: `src/utils/time.ts` dosyasını oluştur**
 
 ```ts
 // Zaman biçimlendirme — bildirimler ve mesajlar aynı kuralları paylaşır.
@@ -325,7 +327,7 @@ export const clockTime = (iso: string): string =>
   new Date(iso).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 ```
 
-- [ ] **Step 2: `src/api/notifications.ts`'i ortak yardımcıya bağla**
+- [x] **Step 2: `src/api/notifications.ts`'i ortak yardımcıya bağla**
 
 `normalizeCreatedAt` fonksiyonunun **tamamını ve üstündeki yorum bloğunu** sil. Import satırının altına ekle:
 
@@ -344,7 +346,7 @@ const normalizeCreatedAt = (note: AppNotification): AppNotification => ({
 
 `listNotifications` ve `markRead` içindeki `normalizeCreatedAt` kullanımları **değişmez**.
 
-- [ ] **Step 3: `src/components/NotificationBell.tsx`'teki yerel kopyayı sil**
+- [x] **Step 3: `src/components/NotificationBell.tsx`'teki yerel kopyayı sil**
 
 `/** "az önce" / ... */` yorumuyla başlayan `function relativeTime(iso: string): string { … }` bloğunun tamamını sil. Dosyanın import bloğuna ekle:
 
@@ -354,12 +356,12 @@ import { relativeTime } from '../utils/time';
 
 Çağrı yerleri değişmez.
 
-- [ ] **Step 4: Derlemeyi doğrula**
+- [x] **Step 4: Derlemeyi doğrula**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && npm run typecheck && npm run build`
 Expected: ikisi de exit 0 (`echo $?` ile teyit et), build `✓ built in …` ile biter.
 
-- [ ] **Step 5: Bildirim panelinin bozulmadığını canlı doğrula**
+- [x] **Step 5: Bildirim panelinin bozulmadığını canlı doğrula**
 
 Run:
 
@@ -378,7 +380,7 @@ PY
 
 Expected: `notifications: 200 adet: N` (N ≥ 0). Bu task davranışı değiştirmediği için uç yanıtı Task 2 öncesiyle aynı olmalı.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush-web
@@ -409,7 +411,7 @@ to one module rather than being copied. No behaviour change."
   - `sendReply(phone: string, message: string): Promise<ChatMessage>`
   - `releaseToBot(phone: string): Promise<void>`
 
-- [ ] **Step 1: `src/api/conversations.ts` dosyasını oluştur**
+- [x] **Step 1: `src/api/conversations.ts` dosyasını oluştur**
 
 ```ts
 // Operatör ↔ müşteri konuşmaları — backend: app/conversations/.
@@ -462,12 +464,12 @@ export const releaseToBot = (phone: string) =>
   );
 ```
 
-- [ ] **Step 2: Derlemeyi doğrula**
+- [x] **Step 2: Derlemeyi doğrula**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && npm run typecheck`
 Expected: çıktı yok, exit 0.
 
-- [ ] **Step 3: Sözleşmenin backend'le uyuştuğunu canlı doğrula**
+- [x] **Step 3: Sözleşmenin backend'le uyuştuğunu canlı doğrula**
 
 Run:
 
@@ -496,7 +498,7 @@ PY
 
 Expected: `liste: 200 adet: 2`, `thread: 200 mesaj: N`, son satır `SÖZLEŞME OK`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush-web
@@ -523,7 +525,7 @@ UTC on ingest, same as the notifications module."
 - Consumes: Task 3'ün tamamı (`Conversation`, `ChatMessage`, `listConversations`, `getThread`, `sendReply`, `releaseToBot`), `relativeTime`/`clockTime` (`src/utils/time.ts`), `Icon` (`src/components/icons.tsx`)
 - Produces: `export default function Mesajlar(): JSX.Element`
 
-- [ ] **Step 1: `src/pages/Mesajlar.tsx` dosyasını oluştur**
+- [x] **Step 1: `src/pages/Mesajlar.tsx` dosyasını oluştur**
 
 ```tsx
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -873,7 +875,7 @@ function Thread({
 }
 ```
 
-- [ ] **Step 2: Route'u `src/App.tsx`'e ekle**
+- [x] **Step 2: Route'u `src/App.tsx`'e ekle**
 
 Import bloğuna (alfabetik sırada, `Login`'den sonra) ekle:
 
@@ -887,7 +889,7 @@ import Mesajlar from './pages/Mesajlar';
           <Route path="/mesajlar" element={<Mesajlar />} />
 ```
 
-- [ ] **Step 3: Menü öğesini `src/config/nav.ts`'e ekle**
+- [x] **Step 3: Menü öğesini `src/config/nav.ts`'e ekle**
 
 `randevu` satırının hemen **altına** ekle:
 
@@ -895,12 +897,12 @@ import Mesajlar from './pages/Mesajlar';
   { key: 'mesajlar', label: 'Mesajlar', title: 'Mesajlar', path: '/mesajlar', icon: 'whatsapp' },
 ```
 
-- [ ] **Step 4: Derlemeyi doğrula**
+- [x] **Step 4: Derlemeyi doğrula**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && npm run typecheck && npm run build`
 Expected: ikisi de exit 0.
 
-- [ ] **Step 5: Canlı doğrula — uçtan uca akış**
+- [x] **Step 5: Canlı doğrula — uçtan uca akış**
 
 Tarayıcıda `http://localhost:5173` → `smoke2@example.com` / `Test12345!` ile gir, sol menüden **Mesajlar**:
 
@@ -914,7 +916,7 @@ Tarayıcıda `http://localhost:5173` → `smoke2@example.com` / `Test12345!` ile
 
 Expected: yedi maddenin hepsi tarif edildiği gibi. 3. ve 5. maddeler `handoff` bayrağının gerçekten kullanıldığını kanıtlar; buton her ikisinde de görünüyorsa koşul unutulmuştur.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush-web
@@ -940,7 +942,7 @@ handoff. A failed send keeps the operator's text in the box."
 - Consumes: yok (silme işi)
 - Produces: yok
 
-- [ ] **Step 1: `WhatsAppTalepleri` bileşenini ve kullanımını sil**
+- [x] **Step 1: `WhatsAppTalepleri` bileşenini ve kullanımını sil**
 
 `src/pages/RandevuTakvimi.tsx` içinde:
 
@@ -951,22 +953,22 @@ handoff. A failed send keeps the operator's text in the box."
 
 `noUnusedLocals` açık olduğu için kullanılmayan bir şey kalırsa `npm run typecheck` zaten patlar — bu senin güvenlik ağın.
 
-- [ ] **Step 2: Derlemeyi doğrula**
+- [x] **Step 2: Derlemeyi doğrula**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && npm run typecheck && npm run build`
 Expected: ikisi de exit 0. Hata alırsan mesaj hangi ismin kullanılmadığını söyler; Adım 1/4'e dön.
 
-- [ ] **Step 3: Sidebar rozetinin bozulmadığını doğrula**
+- [x] **Step 3: Sidebar rozetinin bozulmadığını doğrula**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && grep -n "listRequests" src/components/Sidebar.tsx src/pages/*.tsx`
 Expected: `Sidebar.tsx` hâlâ `listRequests` kullanıyor (CRM rozeti için) ve `RandevuTakvimi.tsx` artık listede **yok**. Sidebar'daki kullanım silinmemeli.
 
-- [ ] **Step 4: Canlı doğrula**
+- [x] **Step 4: Canlı doğrula**
 
 Tarayıcıda `/randevu` sayfasını aç.
 Expected: sayfa normal açılıyor, altındaki "WhatsApp Talepleri" kartı **yok**, takvim ve diğer bloklar yerinde. Sol menüdeki CRM rozeti hâlâ çalışıyor.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush-web
@@ -984,7 +986,7 @@ for messages is better than two that disagree."
 
 **Files:** yok (yalnız doğrulama ve teslim)
 
-- [ ] **Step 1: Backend kapıları**
+- [x] **Step 1: Backend kapıları**
 
 Run:
 
@@ -994,12 +996,12 @@ cd ~/Desktop/kişisel/w-lush && .venv/bin/ruff check app && .venv/bin/python -c 
 
 Expected: `All checks passed!`, `import ok`, ve `git status -s` **boş** (geçici migration dosyası unutulmamış).
 
-- [ ] **Step 2: Frontend kapıları**
+- [x] **Step 2: Frontend kapıları**
 
 Run: `cd ~/Desktop/kişisel/w-lush-web && npm run typecheck && npm run build && echo "BUILD OK"`
 Expected: son satır `BUILD OK`.
 
-- [ ] **Step 3: Değişen dosyaları gözden geçir**
+- [x] **Step 3: Değişen dosyaları gözden geçir**
 
 Run:
 
@@ -1010,7 +1012,7 @@ cd ~/Desktop/kişisel/w-lush-web && git diff main --stat
 
 Expected — backend 3 dosya: `app/conversations/{service,schemas,router}.py`. Frontend 7 dosya: `src/utils/time.ts`, `src/api/{notifications,conversations}.ts`, `src/components/NotificationBell.tsx`, `src/pages/{Mesajlar,RandevuTakvimi}.tsx`, `src/App.tsx`, `src/config/nav.ts` + iki doküman. Başka dosya değiştiyse istenmeyen değişiklik vardır.
 
-- [ ] **Step 4: Backend PR'ı aç**
+- [x] **Step 4: Backend PR'ı aç**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush
@@ -1020,7 +1022,7 @@ gh pr create --base main --title "Add GET /api/conversations for the operator in
 
 PR gövdesi: ucun ne döndürdüğü, `waiting`/`handoff` alanlarının nasıl türetildiği, **şema değişmediği** (autogenerate boş), ve doğrulama çıktısı. **Claude atıfı yazma.**
 
-- [ ] **Step 5: Frontend PR'ı aç**
+- [x] **Step 5: Frontend PR'ı aç**
 
 ```bash
 cd ~/Desktop/kişisel/w-lush-web
