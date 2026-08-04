@@ -297,6 +297,7 @@ Expected: ikisi de exit 0, build `✓ built in …` ile biter.
 
 ```bash
 cd /Users/hakanbudak/Desktop/w-lush && .venv/bin/python - <<'PY'
+import app.main  # tüm modelleri kaydeder; yoksa SQLAlchemy NoReferencedTableError verir
 from app.core.database import SessionLocal
 from app.notifications import service
 with SessionLocal() as db:
