@@ -6,28 +6,30 @@ import {
   markRead,
   unreadCount,
   type AppNotification,
+  type NotificationKind,
 } from '../api/notifications';
 import { Icon } from './icons';
 
 /** Sekme görünürken sayaç bu aralıkla tazelenir (ms). */
 const POLL_MS = 60_000;
 
-const KIND_LABELS: Record<string, string> = {
+const KIND_LABELS: Record<NotificationKind, string> = {
   booking: 'Yeni randevu',
   reschedule: 'Erteleme',
   cancellation: 'İptal',
   request: 'Talep',
 };
 
-const kindLabel = (kind: string): string => KIND_LABELS[kind] ?? 'Bildirim';
+const kindLabel = (kind: string): string =>
+  KIND_LABELS[kind as NotificationKind] ?? 'Bildirim';
 
 /** "az önce" / "12 dk önce" / "3 sa önce" / "dün 14:20" / "9 Ağu 11:00" */
 function relativeTime(iso: string): string {
-  // Backend naive UTC üretiyor (datetime.now sunucu saatinde); Z eki yoksa
-  // tarayıcı yerel saat varsayar — sunucu ve tarayıcı aynı makinede olduğu
-  // sürece bu doğrudur.
+  // `iso` api/notifications.ts'de normalize edilip UTC olarak (Z ekiyle)
+  // gelir; tarayıcı bunu doğru şekilde yerel saate çevirir. Yine de saat
+  // kayması diffMin'i negatif yapabilir, Math.max ile 0'a kelepçeleriz.
   const then = new Date(iso);
-  const diffMin = Math.floor((Date.now() - then.getTime()) / 60_000);
+  const diffMin = Math.max(0, Math.floor((Date.now() - then.getTime()) / 60_000));
 
   if (diffMin < 1) return 'az önce';
   if (diffMin < 60) return `${diffMin} dk önce`;
@@ -54,14 +56,27 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  // Yalnız en son isteğin sonucu items/loading'i güncelleyebilir; hızlı
+  // aç/kapa/aç sırasında eski bir yanıt yeni olanı ezemez.
+  const requestIdRef = useRef(0);
 
   const loadList = useCallback(() => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     listNotifications()
-      .then(setItems)
-      .catch(() => setError('Bildirimler yüklenemedi.'))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (requestIdRef.current !== requestId) return;
+        setItems(data);
+      })
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return;
+        setError('Bildirimler yüklenemedi.');
+      })
+      .finally(() => {
+        if (requestIdRef.current !== requestId) return;
+        setLoading(false);
+      });
   }, []);
 
   // Hata yutulur: sayaç son bilinen değerde kalır, sıfırlanmaz.
@@ -97,14 +112,22 @@ export default function NotificationBell() {
     if (open) loadList();
   }, [open, loadList]);
 
-  // Dışarı tıklayınca kapan (Sidebar'daki çıkış popover'ıyla aynı desen).
+  // Dışarı tıklayınca veya Escape'e basınca kapan (Sidebar'daki çıkış
+  // popover'ıyla aynı desen).
   useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
       if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
     }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [open]);
 
   function openItem(note: AppNotification) {
@@ -116,7 +139,10 @@ export default function NotificationBell() {
           );
           setUnread((n) => Math.max(0, n - 1));
         })
-        .catch(() => setError('Okundu işaretlenemedi.'));
+        .catch(() => {
+          setError('Okundu işaretlenemedi.');
+          setOpen(true);
+        });
     }
     setOpen(false);
     navigate('/randevu');
@@ -136,6 +162,8 @@ export default function NotificationBell() {
       <button
         type="button"
         aria-label={unread > 0 ? `Bildirimler (${unread} okunmamış)` : 'Bildirimler'}
+        aria-haspopup="true"
+        aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         style={{
           width: 36,
@@ -165,7 +193,7 @@ export default function NotificationBell() {
               borderRadius: 999,
               background: 'var(--champagne-2)',
               border: '2px solid var(--paper)',
-              color: 'var(--ink)',
+              color: 'var(--paper)',
               fontSize: 10,
               fontWeight: 600,
               lineHeight: '16px',

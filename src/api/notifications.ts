@@ -16,9 +16,21 @@ export interface AppNotification {
   created_at: string; // ISO
 }
 
+/**
+ * Backend `created_at`'i naive UTC üretiyor (offset/`Z` yok). Eki yoksa
+ * tarayıcı yerel saat varsayar ve production'da (API UTC, tarayıcı UTC+3)
+ * saatler saatlerce ileri kayar. Offset yoksa `Z` ekleyip UTC'ye sabitleriz.
+ */
+function normalizeCreatedAt(note: AppNotification): AppNotification {
+  const hasOffset = /Z$|[+-]\d{2}:\d{2}$/.test(note.created_at);
+  return hasOffset ? note : { ...note, created_at: `${note.created_at}Z` };
+}
+
 /** Yeniden eskiye sıralı, backend'de 100 ile sınırlı. */
 export const listNotifications = () =>
-  request<AppNotification[]>('/api/notifications');
+  request<AppNotification[]>('/api/notifications').then((items) =>
+    items.map(normalizeCreatedAt),
+  );
 
 export async function unreadCount(): Promise<number> {
   const res = await request<{ unread: number }>('/api/notifications/unread-count');
@@ -26,7 +38,9 @@ export async function unreadCount(): Promise<number> {
 }
 
 export const markRead = (id: number) =>
-  request<AppNotification>(`/api/notifications/${id}/read`, { method: 'POST' });
+  request<AppNotification>(`/api/notifications/${id}/read`, { method: 'POST' }).then(
+    normalizeCreatedAt,
+  );
 
 export async function markAllRead(): Promise<number> {
   const res = await request<{ updated: number }>('/api/notifications/read-all', {
