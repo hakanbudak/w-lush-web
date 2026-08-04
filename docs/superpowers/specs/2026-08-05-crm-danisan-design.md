@@ -99,7 +99,7 @@ Yeni modül: `app/customers/router.py` + `app/customers/schemas.py`, `main.py`'y
 
 ### Performans
 
-Liste ucu N+1 yapmaz; `conversations.service.summaries()` yaklaşımı tekrarlanır: telefon başına son mesaj tek sorguda, randevu toplamları tek `GROUP BY` sorgusunda, isimler tek `IN` sorgusunda — toplam 3 sorgu.
+Liste ucu N+1 yapmaz; `conversations.service.summaries()` yaklaşımı tekrarlanır. Sorgu sayısı klinik başına **sabittir, telefon sayısından bağımsızdır**: mesajların telefona göre gruplanması, son mesaj gövdelerinin toplu çekilmesi, iptal olmayan randevular ve isimler — dört sorgu.
 
 ## Frontend
 
