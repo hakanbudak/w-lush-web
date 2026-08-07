@@ -143,8 +143,9 @@ export function KpiCard({
 }: {
   label: string;
   value: string;
-  delta: string;
-  deltaTone: 'good' | 'bad' | 'warn';
+  // Opsiyonel: önceki döneme kıyas verisi olmayan ekranlar rozet çizmez.
+  delta?: string;
+  deltaTone?: 'good' | 'bad' | 'warn';
   sparkline?: string;
   accent: string;
 }) {
@@ -165,25 +166,27 @@ export function KpiCard({
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em' }}>{value}</div>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            color:
-              deltaTone === 'good'
-                ? 'var(--sage-2)'
-                : deltaTone === 'warn'
-                ? 'var(--champagne-2)'
-                : 'var(--bad)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-          }}
-        >
-          {deltaTone === 'good' && Icon.trend}
-          {deltaTone === 'bad' && Icon.trendDown}
-          {delta}
-        </div>
+        {delta && (
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color:
+                deltaTone === 'good'
+                  ? 'var(--sage-2)'
+                  : deltaTone === 'warn'
+                  ? 'var(--champagne-2)'
+                  : 'var(--bad)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
+          >
+            {deltaTone === 'good' && Icon.trend}
+            {deltaTone === 'bad' && Icon.trendDown}
+            {delta}
+          </div>
+        )}
       </div>
       {sparkline && (
         <svg
