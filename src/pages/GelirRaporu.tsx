@@ -7,9 +7,12 @@ import {
   type PaymentMethod,
   type PaymentSummary,
 } from '../api/payments';
+import BreakdownBars from '../components/finance/BreakdownBars';
+import MonthlyBars from '../components/finance/MonthlyBars';
+import PeriodPicker from '../components/finance/PeriodPicker';
 import PaymentModal from '../components/PaymentModal';
 import { KpiCard } from '../components/ui';
-import { monthLabel, rangeFor, type Period } from '../utils/period';
+import { rangeFor, type Period } from '../utils/period';
 
 const fmt = (n: number): string => '₺ ' + n.toLocaleString('tr-TR');
 
@@ -19,14 +22,6 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
   transfer: 'Havale',
   other: 'Diğer',
 };
-
-const BAR_COLORS = [
-  'var(--champagne)',
-  'var(--forest)',
-  'var(--lavender)',
-  'var(--sage)',
-  'var(--ink-40)',
-];
 
 /** YYYY-MM-DD → "12 May" */
 const dayLabel = (isoDate: string): string =>
@@ -55,35 +50,12 @@ export default function GelirRaporu() {
   useEffect(load, [load]);
 
   const avg = summary && summary.count > 0 ? Math.round(summary.total / summary.count) : 0;
-  const maxMonth = summary ? Math.max(1, ...summary.by_month.map((m) => m.amount)) : 1;
 
   return (
     <>
       {/* dönem seçici */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <div
-          style={{
-            display: 'flex', background: 'var(--paper)', border: '1px solid var(--line)',
-            borderRadius: 8, padding: 3,
-          }}
-        >
-          {([['ay', 'Bu ay'], ['ceyrek', 'Çeyrek'], ['yil', 'Yıl']] as [Period, string][]).map(
-            ([k, lbl]) => (
-              <button
-                key={k}
-                onClick={() => setPeriod(k)}
-                className="wl-btn wl-btn-sm"
-                style={{
-                  height: 28, borderRadius: 6, fontSize: 12,
-                  background: period === k ? 'var(--cream-2)' : 'transparent',
-                  color: period === k ? 'var(--ink)' : 'var(--ink-60)',
-                }}
-              >
-                {lbl}
-              </button>
-            ),
-          )}
-        </div>
+        <PeriodPicker value={period} onChange={setPeriod} />
         <button
           type="button"
           className="wl-btn wl-btn-sm"
@@ -138,37 +110,15 @@ export default function GelirRaporu() {
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Hizmet kırılımı</div>
-              {summary.by_service.length === 0 && (
-                <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>
-                  Bu dönemde kayıtlı ödeme yok.
-                </div>
-              )}
-              {summary.by_service.map((s, i) => {
-                const pct = summary.total > 0 ? Math.round((s.amount / summary.total) * 100) : 0;
-                return (
-                  <div key={s.service_name || `_${i}`} style={{ marginBottom: 14 }}>
-                    <div
-                      style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        fontSize: 12, marginBottom: 6,
-                      }}
-                    >
-                      <span>{s.service_name || 'Belirtilmemiş'}</span>
-                      <span style={{ color: 'var(--ink-60)' }}>
-                        {fmt(s.amount)} · %{pct}
-                      </span>
-                    </div>
-                    <div style={{ height: 6, background: 'var(--cream)', borderRadius: 999 }}>
-                      <div
-                        style={{
-                          width: `${pct}%`, height: '100%', borderRadius: 999,
-                          background: BAR_COLORS[i % BAR_COLORS.length],
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              <BreakdownBars
+                items={summary.by_service.map((s, i) => ({
+                  key: s.service_name || `_${i}`,
+                  label: s.service_name || 'Belirtilmemiş',
+                  amount: s.amount,
+                }))}
+                total={summary.total}
+                empty="Bu dönemde kayıtlı ödeme yok."
+              />
             </div>
 
             <div
@@ -204,23 +154,7 @@ export default function GelirRaporu() {
             }}
           >
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Aylık seyir</div>
-            {summary.by_month.length === 0 && (
-              <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>Kayıt yok.</div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 120 }}>
-              {summary.by_month.map((m) => (
-                <div key={m.month} style={{ flex: 1, textAlign: 'center' }}>
-                  <div
-                    style={{
-                      height: Math.max(4, Math.round((m.amount / maxMonth) * 96)),
-                      background: 'var(--forest)', borderRadius: 6, marginBottom: 6,
-                    }}
-                    title={fmt(m.amount)}
-                  />
-                  <div style={{ fontSize: 10, color: 'var(--ink-40)' }}>{monthLabel(m.month)}</div>
-                </div>
-              ))}
-            </div>
+            <MonthlyBars items={summary.by_month} />
           </div>
 
           {/* son ödemeler */}
