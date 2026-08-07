@@ -28,6 +28,7 @@ export default function App() {
           <Route path="/randevu" element={<RandevuTakvimi />} />
           <Route path="/mesajlar" element={<Mesajlar />} />
           <Route path="/danisan" element={<DanisanProfili />} />
+          <Route path="/danisan/:phone" element={<DanisanProfili />} />
           <Route path="/crm" element={<CRM />} />
           <Route path="/gelir" element={<GelirRaporu />} />
           <Route path="/gider" element={<Giderler />} />
