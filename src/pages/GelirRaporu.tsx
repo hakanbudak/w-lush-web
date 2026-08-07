@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  deletePayment,
   getSummary,
   listPayments,
   type Payment,
   type PaymentMethod,
   type PaymentSummary,
 } from '../api/payments';
+import PaymentModal from '../components/PaymentModal';
 import { KpiCard } from '../components/ui';
 import { monthLabel, rangeFor, type Period } from '../utils/period';
 
@@ -35,6 +37,9 @@ export default function GelirRaporu() {
   const [summary, setSummary] = useState<PaymentSummary | null>(null);
   const [rows, setRows] = useState<Payment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  // Satır içi silme onayı: hangi kaydın "Emin misin?" durumunda olduğu.
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const load = useCallback(() => {
     const { start, end } = rangeFor(period);
@@ -79,6 +84,14 @@ export default function GelirRaporu() {
             ),
           )}
         </div>
+        <button
+          type="button"
+          className="wl-btn wl-btn-sm"
+          style={{ marginLeft: 'auto', borderRadius: 8, fontSize: 12 }}
+          onClick={() => setAdding(true)}
+        >
+          Gelir ekle
+        </button>
       </div>
 
       {error && (
@@ -253,11 +266,55 @@ export default function GelirRaporu() {
                   {METHOD_LABEL[p.method] ?? p.method}
                 </span>
                 <span style={{ width: 90, textAlign: 'right', fontWeight: 600 }}>{fmt(p.amount)}</span>
+                {confirmId === p.id ? (
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        deletePayment(p.id)
+                          .then(() => {
+                            setConfirmId(null);
+                            load();
+                          })
+                          .catch(() => setError('Ödeme silinemedi.'));
+                      }}
+                      style={{
+                        border: 'none', background: 'transparent', padding: 0, font: 'inherit',
+                        fontSize: 11, color: 'var(--bad)', cursor: 'pointer',
+                      }}
+                    >
+                      Sil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmId(null)}
+                      style={{
+                        border: 'none', background: 'transparent', padding: 0, font: 'inherit',
+                        fontSize: 11, color: 'var(--ink-40)', cursor: 'pointer',
+                      }}
+                    >
+                      Vazgeç
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmId(p.id)}
+                    style={{
+                      border: 'none', background: 'transparent', padding: 0, font: 'inherit',
+                      fontSize: 11, color: 'var(--ink-40)', cursor: 'pointer',
+                    }}
+                  >
+                    Kaldır
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </>
       )}
+
+      {adding && <PaymentModal onClose={() => setAdding(false)} onSaved={load} />}
     </>
   );
 }
