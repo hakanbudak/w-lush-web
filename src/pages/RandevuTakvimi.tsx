@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/icons';
 import { Avatar, Chip } from '../components/ui';
 import {
+  assignAppointmentStaff,
   cancelAppointment,
   confirmAppointment,
   listAppointments,
   type Appointment,
 } from '../api/clinic';
+import { listStaff, type StaffMember } from '../api/staff';
 
 /* ───────── veri modeli ───────── */
 type Channel = 'wa' | 'web' | 'man';
@@ -119,6 +121,7 @@ function WhatsAppRandevulari() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<number | null>(null);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
 
   function load() {
     setLoading(true);
@@ -129,6 +132,14 @@ function WhatsAppRandevulari() {
       .finally(() => setLoading(false));
   }
   useEffect(load, []);
+
+  // Seçicide yalnız aktif personel görünür; pasife alınmış biri geçmiş
+  // randevularda adıyla durur ama yeni atama alamaz.
+  useEffect(() => {
+    listStaff()
+      .then((rows) => setStaff(rows.filter((s) => s.active)))
+      .catch(() => setStaff([]));
+  }, []);
 
   async function act(id: number, kind: 'confirm' | 'cancel') {
     setBusy(id);
@@ -141,6 +152,20 @@ function WhatsAppRandevulari() {
         cur ? cur.map((a) => (a.id === id ? updated : a)) : cur,
       );
     } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function assign(id: number, staffId: number | null) {
+    setBusy(id);
+    setError(null);
+    try {
+      const updated = await assignAppointmentStaff(id, staffId);
+      setItems((cur) => (cur ? cur.map((a) => (a.id === id ? updated : a)) : cur));
+    } catch (e) {
+      // Seçim state'e yazılmadığı için ekran kendiliğinden eski değere döner.
       setError((e as Error).message);
     } finally {
       setBusy(null);
@@ -182,6 +207,7 @@ function WhatsAppRandevulari() {
                 <th>Saat</th>
                 <th>Hizmet</th>
                 <th>Müşteri</th>
+                <th style={{ width: 150 }}>Personel</th>
                 <th>Durum</th>
                 <th style={{ width: 76 }}></th>
               </tr>
@@ -198,6 +224,27 @@ function WhatsAppRandevulari() {
                     <td style={{ fontWeight: 500 }}>{a.service_name}</td>
                     <td className="wl-mono" style={{ color: 'var(--ink-60)' }}>
                       {a.customer_name || maskPhone(a.phone)}
+                    </td>
+                    <td>
+                      <select
+                        value={a.staff_id ?? ''}
+                        disabled={isBusy}
+                        onChange={(e) =>
+                          assign(a.id, e.target.value === '' ? null : Number(e.target.value))
+                        }
+                        style={{
+                          border: '1px solid var(--line)', borderRadius: 8, padding: '4px 8px',
+                          font: 'inherit', fontSize: 11, background: 'var(--cream)',
+                          maxWidth: 140,
+                        }}
+                      >
+                        <option value="">Atanmamış</option>
+                        {staff.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td>
                       <Chip tone={st.tone} small>
