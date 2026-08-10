@@ -84,6 +84,8 @@ export interface Appointment {
   service_name: string;
   appt_date: string;
   appt_time: string;
+  staff_id: number | null;
+  staff_name: string; // atanmamışsa ""
   status: string;
   created_at: string;
 }
@@ -95,6 +97,13 @@ export const confirmAppointment = (id: number) =>
 
 export const cancelAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/cancel`, { method: 'POST' });
+
+// Atama ucu randevuyu değiştirdiği için /api/appointments altında yaşıyor.
+export const assignAppointmentStaff = (id: number, staffId: number | null) =>
+  request<Appointment>(`/api/appointments/${id}/staff`, {
+    method: 'PUT',
+    body: JSON.stringify({ staff_id: staffId }),
+  });
 
 export interface ClinicRequest {
   id: number;
