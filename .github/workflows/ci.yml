@@ -28,6 +28,17 @@ jobs:
             echo "::error::Forbidden trailer found (Co-authored-by / Claude attribution). Remove it and re-push."
             exit 1
           fi
+          subjects=$(echo "$msgs" | grep -v '^$' || true)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            subjects=$(git log --format='%s' "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")
+          else
+            subjects=$(git log -1 --format='%s' "${{ github.sha }}")
+          fi
+          if [ -n "$(printf '%s' "$subjects" | LC_ALL=C tr -d '\000-\177')" ]; then
+            echo "::error::A commit subject is not plain ASCII. Commit messages are written in English."
+            printf '%s\n' "$subjects"
+            exit 1
+          fi
           echo "Commit messages are clean."
 
   check:
