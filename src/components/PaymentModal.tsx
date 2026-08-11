@@ -1,5 +1,7 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { listServices, type Service } from '../api/clinic';
 import { createPayment, type PaymentMethod } from '../api/payments';
+import CustomerPicker from './finance/CustomerPicker';
 import { Modal } from './modals';
 
 const METHODS: [PaymentMethod, string][] = [
@@ -41,8 +43,15 @@ export default function PaymentModal({
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
+  const [services, setServices] = useState<Service[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    listServices()
+      .then((rows) => setServices(rows.filter((s) => s.active)))
+      .catch(() => setServices([]));
+  }, []);
 
   const submit = () => {
     const value = Number(amount);
@@ -107,26 +116,27 @@ export default function PaymentModal({
         </label>
         <label style={labelStyle}>
           Hizmet
-          <input
+          <select
             value={serviceName}
             onChange={(e) => setServiceName(e.target.value)}
-            placeholder="Mezoterapi"
             style={field}
-          />
+          >
+            <option value="">Seçilmedi</option>
+            {services.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </label>
-        <label style={labelStyle}>
-          Danışan adı
-          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={field} />
-        </label>
-        <label style={labelStyle}>
-          Telefon (opsiyonel)
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="905321112233"
-            style={field}
-          />
-        </label>
+        <CustomerPicker
+          name={customerName}
+          phone={phone}
+          onChange={(next) => {
+            setCustomerName(next.name);
+            setPhone(next.phone);
+          }}
+        />
         <label style={labelStyle}>
           Not
           <input value={note} onChange={(e) => setNote(e.target.value)} style={field} />
