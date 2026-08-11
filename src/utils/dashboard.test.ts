@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  compareServices, dailyTotals, dayRange, last30, monthRange, occupancy,
+  compareServices, dailyTotals, dayRange, last30, monthFull, monthRange, occupancy,
   prev30, prevMonthToDate,
 } from './dashboard';
 import type { Payment } from '../api/payments';
@@ -103,6 +103,15 @@ describe('date ranges', () => {
     expect(prevMonthToDate(new Date(2026, 2, 31))).toEqual({
       start: '2026-02-01', end: '2026-02-28',
     });
+  });
+
+  it('covers the whole month, not just up to today', () => {
+    // Grafik olmamış günleri de çiziyor, aralık ay sonuna kadar gitmeli.
+    expect(monthFull(t)).toEqual({ start: '2026-08-01', end: '2026-08-31' });
+  });
+
+  it('knows a short month', () => {
+    expect(monthFull(new Date(2026, 1, 10)).end).toBe('2026-02-28');
   });
 
   it('crosses the new year', () => {

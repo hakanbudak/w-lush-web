@@ -20,7 +20,7 @@ export default function InboxPanel({ items }: { items: Conversation[] }) {
   const shown = items.slice(0, MAX);
 
   return (
-    <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
+    <div data-tour="inbox" style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 12 }}>
       <div
         style={{
           padding: '14px 16px', borderBottom: '1px solid var(--line)',

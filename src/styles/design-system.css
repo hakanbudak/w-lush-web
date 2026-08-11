@@ -307,3 +307,8 @@ body {
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to   { opacity: 1; transform: none; }
 }
+
+@keyframes wl-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
