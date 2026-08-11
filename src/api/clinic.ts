@@ -89,8 +89,14 @@ export interface Appointment {
   status: string;
   created_at: string;
 }
-export const listAppointments = () =>
-  request<Appointment[]>('/api/appointments');
+// Aralık verilmezse backend eski davranışını korur (tüm randevular, yeniden eskiye).
+export const listAppointments = (start?: string, end?: string) => {
+  const p = new URLSearchParams();
+  if (start) p.set('start', start);
+  if (end) p.set('end', end);
+  const q = p.toString();
+  return request<Appointment[]>(`/api/appointments${q ? `?${q}` : ''}`);
+};
 
 export const confirmAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/confirm`, { method: 'POST' });
