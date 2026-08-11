@@ -15,6 +15,24 @@ export const setUnauthorizedHandler = (fn: () => void): void => {
   onUnauthorized = fn;
 };
 
+/**
+ * Durum kodu okunabilen hata. Randevu formu 409 (slot dolu) ile 422'yi
+ * (slot tanımsız) ayırt etmek zorunda; metin eşleştirmesiyle yapılamaz.
+ *
+ * `message` biçimi bilerek değiştirilmedi — mevcut ekranlar hata metnini
+ * `e.message.split('detail":"')` ile ayıklıyor ve çalışmaya devam etmeli.
+ */
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+  constructor(status: number, detail: string, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -33,8 +51,14 @@ export async function request<T>(
     throw new Error('Yetkisiz (oturum sonlanmış olabilir)');
   }
   if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`API ${res.status}: ${detail || res.statusText}`);
+    const body = await res.text().catch(() => '');
+    let detail = '';
+    try {
+      detail = (JSON.parse(body) as { detail?: string }).detail ?? '';
+    } catch {
+      detail = '';
+    }
+    throw new ApiError(res.status, detail, `API ${res.status}: ${body || res.statusText}`);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
