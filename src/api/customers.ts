@@ -19,6 +19,7 @@ export interface NextAppointment {
 export interface CustomerSummary {
   phone: string;
   name: string; // "" olabilir — o zaman telefon gösterilir
+  first_seen: string; // ISO — ilk mesaj ya da ilk randevu, hangisi önceyse
   stage: Stage;
   warmth: Warmth | null;
   last_message: string;
@@ -59,6 +60,7 @@ export const listCustomers = () =>
   request<CustomerSummary[]>('/api/customers').then((rows) =>
     rows.map((r) => ({
       ...r,
+      first_seen: toUtcIso(r.first_seen),
       last_message_at: r.last_message_at ? toUtcIso(r.last_message_at) : null,
     })),
   );
