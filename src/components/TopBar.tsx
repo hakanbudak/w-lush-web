@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { NAV } from '../config/nav';
 import NotificationBell from './NotificationBell';
+import SearchBox from './shell/SearchBox';
 import { useTopBarActions } from './shell/TopBarActions';
 
 function todayLabel(): string {
@@ -48,9 +49,11 @@ export default function TopBar() {
         </div>
       </div>
 
-      <div style={{ flex: 1 }} />
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <SearchBox />
+      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div data-tour="actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {actions}
         {actions && (
           <span
