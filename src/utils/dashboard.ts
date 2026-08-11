@@ -17,6 +17,13 @@ export function monthRange(today = new Date()): { start: string; end: string } {
   return { start: iso(new Date(today.getFullYear(), today.getMonth(), 1)), end: iso(today) };
 }
 
+/** Ayın tamamı — grafik olmamış günleri de boş tırnak olarak çiziyor. */
+export function monthFull(today = new Date()): { start: string; end: string } {
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  return { start: iso(new Date(y, m, 1)), end: iso(new Date(y, m + 1, 0)) };
+}
+
 /** Geçen ayın 1'inden, geçen ayın "bugün"üne — ay kıyası için. */
 export function prevMonthToDate(today = new Date()): { start: string; end: string } {
   const y = today.getFullYear();

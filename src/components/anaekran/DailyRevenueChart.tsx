@@ -10,12 +10,16 @@ export default function DailyRevenueChart({
   days,
   monthToDate,
   prevMonthToDate,
+  today,
 }: {
   days: { day: string; amount: number }[];
   monthToDate: number;
   prevMonthToDate: number;
+  /** Bugünün ISO tarihi — çubuk rengi buna göre ayrışıyor. */
+  today: string;
 }) {
   const hasAny = days.some((d) => d.amount > 0);
+  // Ölçek yalnızca gerçekleşmiş günlerden: gelecek günler zaten 0.
   const max = Math.max(1, ...days.map((d) => d.amount));
 
   return (
@@ -67,18 +71,28 @@ export default function DailyRevenueChart({
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140 }}>
-            {days.map((d) => (
-              <div
-                key={d.day}
-                title={`${d.day} · ${money(d.amount)}`}
-                style={{
-                  flex: 1,
-                  height: Math.max(2, Math.round((d.amount / max) * 120)),
-                  background: d.amount > 0 ? 'var(--forest)' : 'var(--line)',
-                  borderRadius: 3,
-                }}
-              />
-            ))}
+            {days.map((d) => {
+              const future = d.day > today;
+              const isToday = d.day === today;
+              return (
+                <div
+                  key={d.day}
+                  title={`${d.day} · ${money(d.amount)}`}
+                  style={{
+                    flex: 1,
+                    height: future ? 3 : Math.max(2, Math.round((d.amount / max) * 120)),
+                    background: future
+                      ? 'var(--ink-08)'
+                      : isToday
+                        ? 'var(--forest)'
+                        : 'var(--navy)',
+                    borderRadius: 3,
+                    transformOrigin: 'bottom',
+                    animation: 'wl-grow .5s ease both',
+                  }}
+                />
+              );
+            })}
           </div>
           <div
             style={{

@@ -70,7 +70,7 @@ export default function Sidebar() {
         </span>
       </NavLink>
 
-      <nav style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <nav data-tour="nav" style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV.map((n) => {
           const badge =
             n.key === 'crm' ? badges.crm : n.key === 'mesajlar' ? badges.mesajlar : 0;
