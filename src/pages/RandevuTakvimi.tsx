@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  cancelAppointment,
-  confirmAppointment,
   getSettings,
   listAppointments,
   type Appointment,
   type AppointmentCreated,
 } from '../api/clinic';
 import { listStaff, type StaffMember } from '../api/staff';
-import AppointmentList from '../components/randevu/AppointmentList';
+import AppointmentDetail from '../components/randevu/AppointmentDetail';
 import AppointmentModal from '../components/randevu/AppointmentModal';
+import { staffColor, UNASSIGNED_COLOR } from '../components/randevu/staffColors';
+import { useSetTopBarActions } from '../components/shell/TopBarActions';
+import { useToast } from '../components/shell/Toast';
+import { Icon } from '../components/icons';
 import SlotGrid, { type SlotColumn, type SlotItem } from '../components/randevu/SlotGrid';
-import { Chip } from '../components/ui';
 import {
   addDays, dayLabel, fullDate, gridRows, isoDate, isoDay, startOfWeek,
 } from '../utils/calendar';
@@ -20,11 +22,6 @@ type View = 'gun' | 'hafta';
 
 const UNASSIGNED = 'none';
 
-const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
-  confirmed: { label: 'Onaylı', tone: 'good' },
-  pending: { label: 'Bekliyor', tone: 'warn' },
-  cancelled: { label: 'İptal', tone: 'bad' },
-};
 
 const maskPhone = (p: string): string => (p.length > 6 ? `${p.slice(0, 6)}•••${p.slice(-2)}` : p);
 
@@ -49,6 +46,8 @@ export default function RandevuTakvimi() {
     { date: string; time: string; staffId: number | null } | null
   >(null);
   const [notifyWarning, setNotifyWarning] = useState<string | null>(null);
+  const toast = useToast();
+  const navigate = useNavigate();
 
   // Görünen aralık: gün görünümünde tek gün, hafta görünümünde Pzt–Paz.
   const range = useMemo(() => {
@@ -84,24 +83,39 @@ export default function RandevuTakvimi() {
   // Gün görünümü: sütun = personel (+ Atanmamış). Hafta: sütun = açık günler.
   const columns: SlotColumn[] = useMemo(() => {
     if (view === 'gun') {
+      // Tasarım sırası: uzmanlar önce, "Atanmamış" en sonda.
       return [
-        { key: UNASSIGNED, title: 'Atanmamış' },
         ...staff.map((s) => ({ key: String(s.id), title: s.name, sub: s.role })),
+        { key: UNASSIGNED, title: 'Atanmamış', sub: '—' },
       ];
     }
     const first = startOfWeek(anchor);
     return Array.from({ length: 7 }, (_, i) => addDays(first, i))
       .filter((d) => openDays.includes(isoDay(d)))
-      .map((d) => ({ key: isoDate(d), title: dayLabel(d) }));
-  }, [view, staff, anchor, openDays]);
+      .map((d) => {
+        const key = isoDate(d);
+        const n = (items ?? []).filter(
+          (a) => a.appt_date === key && a.status !== 'cancelled',
+        ).length;
+        return { key, title: dayLabel(d), sub: `${n} randevu` };
+      });
+  }, [view, staff, anchor, openDays, items]);
 
   // Renk personelden gelir; atanmamış son rengi alır.
   const colorOf = useCallback(
-    (staffId: number | null) => {
-      if (staffId === null) return 4;
+    (staffId: number | null): number | null => {
+      if (staffId === null) return null;
       const idx = staff.findIndex((s) => s.id === staffId);
-      return idx < 0 ? 4 : idx;
+      return idx < 0 ? null : idx;
     },
+    [staff],
+  );
+
+  const legend = useMemo(
+    () => [
+      ...staff.map((s, i) => ({ label: s.name, color: staffColor(i) })),
+      { label: 'Atanmamış', color: UNASSIGNED_COLOR },
+    ],
     [staff],
   );
 
@@ -154,78 +168,56 @@ export default function RandevuTakvimi() {
 
   const step = (dir: -1 | 1) => setAnchor((d) => addDays(d, view === 'gun' ? dir : dir * 7));
 
-  const act = async (id: number, kind: 'confirm' | 'cancel') => {
-    setError(null);
-    try {
-      const updated = await (kind === 'confirm' ? confirmAppointment(id) : cancelAppointment(id));
-      setItems((cur) => (cur ? cur.map((a) => (a.id === id ? updated : a)) : cur));
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+
+  useSetTopBarActions(
+    <>
+      <div style={{ display: 'flex', background: 'var(--cream)', borderRadius: 9, padding: 3 }}>
+        {([['gun', 'Gün'], ['hafta', 'Hafta']] as [View, string][]).map(([k, lbl]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setView(k)}
+            className="wl-btn wl-btn-sm"
+            style={{
+              height: 28,
+              borderRadius: 7,
+              fontSize: 12,
+              background: view === k ? 'var(--paper)' : 'transparent',
+              color: view === k ? 'var(--ink)' : 'var(--ink-60)',
+              boxShadow: view === k ? '0 1px 2px rgba(23,35,61,0.12)' : 'none',
+            }}
+          >
+            {lbl}
+          </button>
+        ))}
+      </div>
+      <button type="button" className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 9 }} onClick={() => step(-1)}>
+        ‹
+      </button>
+      <button type="button" className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 9, fontSize: 12 }} onClick={() => setAnchor(new Date())}>
+        Bugün
+      </button>
+      <button type="button" className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 9 }} onClick={() => step(1)}>
+        ›
+      </button>
+      <span style={{ fontSize: 12.5, fontWeight: 600, marginLeft: 4 }}>
+        {view === 'gun' ? fullDate(anchor) : `${dayLabel(range.start)} – ${dayLabel(range.end)}`}
+      </span>
+      <button
+        type="button"
+        className="wl-btn wl-btn-sm"
+        style={{ height: 34, borderRadius: 9, fontSize: 12.5, fontWeight: 600, marginLeft: 4 }}
+        disabled={slots.length === 0}
+        onClick={() => setCreating({ date: isoDate(anchor), time: slots[0] ?? '', staffId: null })}
+      >
+        {Icon.plus}Yeni randevu
+      </button>
+    </>,
+    [view, anchor, slots.length, range.start, range.end],
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* gezinme */}
-      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', background: 'var(--cream)', borderRadius: 8, padding: 3 }}>
-          {([['gun', 'Gün'], ['hafta', 'Hafta']] as [View, string][]).map(([k, lbl]) => (
-            <button
-              key={k}
-              onClick={() => setView(k)}
-              className="wl-btn wl-btn-sm"
-              style={{
-                height: 28, borderRadius: 6, fontSize: 12,
-                background: view === k ? 'var(--paper)' : 'transparent',
-                color: view === k ? 'var(--ink)' : 'var(--ink-60)',
-              }}
-            >
-              {lbl}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            className="wl-btn wl-btn-ghost wl-btn-sm"
-            style={{ borderRadius: 8 }}
-            onClick={() => step(-1)}
-          >
-            ‹
-          </button>
-          <button
-            className="wl-btn wl-btn-ghost wl-btn-sm"
-            style={{ borderRadius: 8, fontSize: 12 }}
-            onClick={() => setAnchor(new Date())}
-          >
-            Bugün
-          </button>
-          <button
-            className="wl-btn wl-btn-ghost wl-btn-sm"
-            style={{ borderRadius: 8 }}
-            onClick={() => step(1)}
-          >
-            ›
-          </button>
-        </div>
-
-        <div style={{ fontSize: 13, fontWeight: 600, marginLeft: 8 }}>
-          {view === 'gun' ? fullDate(anchor) : `${dayLabel(range.start)} – ${dayLabel(range.end)}`}
-        </div>
-
-        <button
-          type="button"
-          className="wl-btn wl-btn-sm"
-          style={{ marginLeft: 'auto', borderRadius: 8, fontSize: 12 }}
-          onClick={() =>
-            setCreating({ date: isoDate(anchor), time: slots[0] ?? '', staffId: null })
-          }
-          disabled={slots.length === 0}
-        >
-          Yeni randevu
-        </button>
-      </div>
-
       {notifyWarning && (
         <div
           style={{
@@ -303,60 +295,29 @@ export default function RandevuTakvimi() {
                 onSelect={setSelectedId}
                 onEmptyClick={openCreate}
                 offSlots={offSlots}
+                legend={legend}
               />
             </div>
           </>
         )}
       </div>
 
-      {/* detay */}
       {selected && (
-        <div style={card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>
-              {selected.customer_name || maskPhone(selected.phone)}
-            </div>
-            <Chip tone={STATUS[selected.status]?.tone ?? 'warn'} small>
-              {STATUS[selected.status]?.label ?? selected.status}
-            </Chip>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-              {selected.status === 'pending' && (
-                <>
-                  <button
-                    className="wl-btn wl-btn-sm"
-                    style={{ borderRadius: 8, fontSize: 12 }}
-                    onClick={() => act(selected.id, 'confirm')}
-                  >
-                    Onayla
-                  </button>
-                  <button
-                    className="wl-btn wl-btn-ghost wl-btn-sm"
-                    style={{ borderRadius: 8, fontSize: 12, color: 'var(--bad)' }}
-                    onClick={() => act(selected.id, 'cancel')}
-                  >
-                    İptal et
-                  </button>
-                </>
-              )}
-              <button
-                className="wl-btn wl-btn-ghost wl-btn-sm"
-                style={{ borderRadius: 8, fontSize: 12 }}
-                onClick={() => setSelectedId(null)}
-              >
-                Kapat
-              </button>
-            </div>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 8, lineHeight: 1.6 }}>
-            {selected.appt_date} · {selected.appt_time} · {selected.service_name}
-            <br />
-            Personel: {selected.staff_name || 'Atanmamış'}
-          </div>
-        </div>
+        <AppointmentDetail
+          appointment={selected}
+          staff={staff}
+          onClose={() => setSelectedId(null)}
+          onChanged={(updated, message) => {
+            setItems((cur) => (cur ? cur.map((a) => (a.id === updated.id ? updated : a)) : cur));
+            toast(message);
+          }}
+          onMessage={(phone, name) => {
+            setSelectedId(null);
+            navigate(`/mesajlar?phone=${encodeURIComponent(phone)}`);
+            toast(`${name} ile konuşma açıldı.`);
+          }}
+        />
       )}
-
-      {/* gerçek randevu listesi (onay/iptal/atama burada) */}
-      <AppointmentList />
 
       {creating && (
         <AppointmentModal
