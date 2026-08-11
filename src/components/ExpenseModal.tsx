@@ -160,6 +160,8 @@ export default function ExpenseModal({
           <button
             type="button"
             className="wl-btn wl-btn-sm"
+            // Tasarımda gider formunun birincil düğmesi lacivert.
+            style={{ background: 'var(--navy)', color: 'var(--navy-ink)' }}
             onClick={submit}
             disabled={saving || active.length === 0}
           >
