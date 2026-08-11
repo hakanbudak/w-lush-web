@@ -1,3 +1,5 @@
+import { staffColor, type StaffColor } from './staffColors';
+
 /**
  * Slot ızgarası: satırlar kliniğin slot saatleri, sütunlar çağıranın verdiği
  * eksen (gün görünümünde personel, hafta görünümünde gün).
@@ -6,13 +8,6 @@
  * aynı bileşeni kullanabiliyor.
  */
 
-const COLORS = [
-  { bg: 'var(--forest-3)', bar: 'var(--forest)', text: 'var(--forest-2)' },
-  { bg: 'var(--champagne-3)', bar: 'var(--champagne)', text: 'var(--champagne-2)' },
-  { bg: 'var(--lavender-soft)', bar: 'var(--lavender)', text: 'var(--lavender-2)' },
-  { bg: 'var(--sage-soft)', bar: 'var(--sage)', text: 'var(--sage-2)' },
-  { bg: 'var(--cream-2)', bar: 'var(--ink-40)', text: 'var(--ink-60)' },
-];
 
 /** Bir hücrede en fazla bu kadar blok çizilir; kalanı "+N" olur. */
 const MAX_PER_CELL = 2;
@@ -30,7 +25,8 @@ export interface SlotItem {
   title: string; // danışan
   subtitle: string; // hizmet
   status: string; // pending | confirmed | cancelled
-  colorIndex: number;
+  /** Paletteki sıra; atanmamış randevularda null. */
+  colorIndex: number | null;
 }
 
 export default function SlotGrid({
@@ -41,6 +37,7 @@ export default function SlotGrid({
   onSelect,
   onEmptyClick,
   offSlots,
+  legend = [],
 }: {
   slots: string[];
   columns: SlotColumn[];
@@ -49,6 +46,8 @@ export default function SlotGrid({
   onSelect: (id: number) => void;
   /** Boş (veya yalnızca iptal içeren) hücreye tıklanınca. Verilmezse hücre pasiftir. */
   onEmptyClick?: (slot: string, columnKey: string) => void;
+  /** Renk lejantı. Boş dizi verilirse çizilmez. */
+  legend?: { label: string; color: StaffColor }[];
   /**
    * `slots` içindeki hangi satırlar kliniğin çalışma saati **değil**. Bunlar
    * yalnızca orada bir randevu olduğu için çizilir; boş bırakılsalardı o
@@ -105,9 +104,9 @@ export default function SlotGrid({
               {columns.map((c) => {
                 const here = cell(slot, c.key);
                 return (
-                  <td key={c.key} style={{ verticalAlign: 'top', padding: 4 }}>
+                  <td key={c.key} className="wl-slot-cell" style={{ verticalAlign: 'top', padding: 4 }}>
                     {here.slice(0, MAX_PER_CELL).map((item) => {
-                      const color = COLORS[item.colorIndex % COLORS.length];
+                      const color = staffColor(item.colorIndex);
                       const cancelled = item.status === 'cancelled';
                       return (
                         <button
@@ -203,6 +202,30 @@ export default function SlotGrid({
           })}
         </tbody>
       </table>
+
+      {legend.length > 0 && (
+        <div
+          style={{
+            display: 'flex', flexWrap: 'wrap', gap: 14, padding: '10px 12px 4px',
+            borderTop: '1px solid var(--line)', marginTop: 8,
+          }}
+        >
+          {legend.map((l) => (
+            <span
+              key={l.label}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 11, color: 'var(--ink-60)',
+              }}
+            >
+              <span
+                style={{ width: 10, height: 10, borderRadius: 3, background: l.color.bar }}
+              />
+              {l.label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

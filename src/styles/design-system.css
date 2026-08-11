@@ -312,3 +312,6 @@ body {
   from { transform: scaleY(0); }
   to   { transform: scaleY(1); }
 }
+
+/* Takvim ızgarasında boş hücre — tıklanınca randevu oluşturur. */
+.wl-slot-cell:hover { background: var(--cream-2); }
