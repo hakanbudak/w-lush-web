@@ -8,10 +8,11 @@ import {
   type PaymentSummary,
 } from '../api/payments';
 import BreakdownBars from '../components/finance/BreakdownBars';
-import MonthlyBars from '../components/finance/MonthlyBars';
+import KpiTrio from '../components/finance/KpiTrio';
 import PeriodPicker from '../components/finance/PeriodPicker';
+import { useSetTopBarActions } from '../components/shell/TopBarActions';
+import { useToast } from '../components/shell/Toast';
 import PaymentModal from '../components/PaymentModal';
-import { KpiCard } from '../components/ui';
 import { rangeFor, type Period } from '../utils/period';
 
 const fmt = (n: number): string => '₺ ' + n.toLocaleString('tr-TR');
@@ -26,6 +27,9 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 /** YYYY-MM-DD → "12 May" */
 const dayLabel = (isoDate: string): string =>
   new Date(`${isoDate}T00:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+
+/** Yöntem listesindeki renk noktaları — tasarımdaki sırayla. */
+const METHOD_COLORS = ['var(--forest)', 'var(--navy)', 'var(--blue)', 'var(--neutral)'];
 
 export default function GelirRaporu() {
   const [period, setPeriod] = useState<Period>('ay');
@@ -49,23 +53,28 @@ export default function GelirRaporu() {
 
   useEffect(load, [load]);
 
+  const toast = useToast();
+  const range = rangeFor(period);
+
+  useSetTopBarActions(
+    <>
+      <PeriodPicker value={period} onChange={setPeriod} />
+      <button
+        type="button"
+        className="wl-btn wl-btn-sm"
+        style={{ height: 34, borderRadius: 9, fontSize: 12.5, fontWeight: 600 }}
+        onClick={() => setAdding(true)}
+      >
+        + Gelir ekle
+      </button>
+    </>,
+    [period],
+  );
+
   const avg = summary && summary.count > 0 ? Math.round(summary.total / summary.count) : 0;
 
   return (
     <>
-      {/* dönem seçici */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <PeriodPicker value={period} onChange={setPeriod} />
-        <button
-          type="button"
-          className="wl-btn wl-btn-sm"
-          style={{ marginLeft: 'auto', borderRadius: 8, fontSize: 12 }}
-          onClick={() => setAdding(true)}
-        >
-          Gelir ekle
-        </button>
-      </div>
-
       {error && (
         <div style={{ marginTop: 16, fontSize: 13, color: 'var(--ink-60)' }}>
           {error}{' '}
@@ -88,18 +97,18 @@ export default function GelirRaporu() {
 
       {!error && summary && (
         <>
-          {/* KPI satırı */}
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Toplam gelir" value={fmt(summary.total)} accent="var(--forest)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Ödeme sayısı" value={String(summary.count)} accent="var(--champagne)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Ortalama ödeme" value={fmt(avg)} accent="var(--sage)" />
-            </div>
-          </div>
+          <KpiTrio
+            accent="var(--forest)"
+            items={[
+              {
+                label: 'Toplam gelir',
+                value: fmt(summary.total),
+                sub: `${dayLabel(range.start)} – ${dayLabel(range.end)}`,
+              },
+              { label: 'Ödeme sayısı', value: String(summary.count) },
+              { label: 'Ortalama ödeme', value: fmt(avg) },
+            ]}
+          />
 
           {/* hizmet kırılımı + yöntem dağılımı */}
           <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'flex-start' }}>
@@ -131,30 +140,28 @@ export default function GelirRaporu() {
               {summary.by_method.length === 0 && (
                 <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>Kayıt yok.</div>
               )}
-              {summary.by_method.map((m) => (
+              {summary.by_method.map((m, i) => (
                 <div
                   key={m.method}
                   style={{
-                    display: 'flex', justifyContent: 'space-between',
+                    display: 'flex', alignItems: 'center', gap: 8,
                     fontSize: 12, marginBottom: 10,
                   }}
                 >
-                  <span>{METHOD_LABEL[m.method] ?? m.method}</span>
+                  <span
+                    style={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                      background: METHOD_COLORS[i % METHOD_COLORS.length],
+                    }}
+                  />
+                  <span style={{ flex: 1 }}>{METHOD_LABEL[m.method] ?? m.method}</span>
                   <span style={{ color: 'var(--ink-60)' }}>{fmt(m.amount)}</span>
+                  <span style={{ width: 42, textAlign: 'right', color: 'var(--ink-45)' }}>
+                    %{summary.total > 0 ? Math.round((m.amount / summary.total) * 100) : 0}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* aylık seyir */}
-          <div
-            style={{
-              background: 'var(--paper)', border: '1px solid var(--line)',
-              borderRadius: 12, padding: 20, marginTop: 12,
-            }}
-          >
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Aylık seyir</div>
-            <MonthlyBars items={summary.by_month} />
           </div>
 
           {/* son ödemeler */}
@@ -202,12 +209,14 @@ export default function GelirRaporu() {
                 <span style={{ width: 90, textAlign: 'right', fontWeight: 600 }}>{fmt(p.amount)}</span>
                 {confirmId === p.id ? (
                   <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-60)' }}>Emin misiniz?</span>
                     <button
                       type="button"
                       onClick={() => {
                         deletePayment(p.id)
                           .then(() => {
                             setConfirmId(null);
+                            toast('Ödeme kaydı silindi.');
                             load();
                           })
                           .catch(() => setError('Ödeme silinemedi.'));
@@ -248,7 +257,15 @@ export default function GelirRaporu() {
         </>
       )}
 
-      {adding && <PaymentModal onClose={() => setAdding(false)} onSaved={load} />}
+      {adding && (
+        <PaymentModal
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            toast('Gelir kaydedildi.');
+            load();
+          }}
+        />
+      )}
     </>
   );
 }
