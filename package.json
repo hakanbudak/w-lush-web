@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "w-lush \u2014 T\u00fcrk\u00e7e, AI destekli, WhatsApp entegre estetik klinik y\u00f6netim sistemi",
+  "description": "w-lush — Türkçe, AI destekli, WhatsApp entegre estetik klinik yönetim sistemi",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -14,6 +14,8 @@
   "dependencies": {
     "@fontsource/geist-mono": "^5.1.0",
     "@fontsource/geist-sans": "^5.1.0",
+    "@fontsource/hanken-grotesk": "^5.3.0",
+    "@fontsource/lora": "^5.3.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "^6.26.2"

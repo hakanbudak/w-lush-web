@@ -1,181 +1,135 @@
-import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { NAV } from '../config/nav';
+import { useShellBadges } from '../hooks/useShellBadges';
+import { useWhatsAppStatus } from '../hooks/useWhatsAppStatus';
 import { Icon } from './icons';
-import { getConnection, type WaStatus } from '../api/whatsapp';
-import { listRequests } from '../api/clinic';
 
-const WA_LABEL: Record<WaStatus, { dot: string; text: string }> = {
-  connected: { dot: 'var(--wa-green)', text: 'Bağlı' },
-  requested: { dot: 'var(--champagne-2)', text: 'Bekliyor' },
-  none: { dot: 'var(--ink-30, #c9c9c9)', text: 'Bağlı değil' },
-};
+const initials = (name: string): string =>
+  name.split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase() || '••';
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-/** 232px sol sidebar — referans dosyadan birebir, nav öğeleri router'a bağlı. */
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [waStatus, setWaStatus] = useState<WaStatus>('none');
-  const [crmCount, setCrmCount] = useState<number | null>(null);
-
-  // WhatsApp durumu + CRM talep sayısı — canlı (açılışta bir kez).
-  useEffect(() => {
-    getConnection().then((c) => setWaStatus(c.status)).catch(() => {});
-    listRequests().then((r) => setCrmCount(r.length)).catch(() => {});
-  }, []);
-
-  // Dışarı tıklayınca popover kapansın
-  useEffect(() => {
-    if (!menuOpen) return;
-    function onDocClick(e: MouseEvent) {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [menuOpen]);
-
-  const displayName = user?.name || user?.email || '—';
-  const clinicName = user?.clinic.name || 'Klinik';
+  const badges = useShellBadges();
+  const wa = useWhatsAppStatus();
 
   return (
     <aside
       style={{
         width: 232,
         height: '100vh',
-        background: 'var(--paper)',
-        borderRight: '1px solid var(--line)',
+        background: 'var(--navy)',
+        color: 'var(--navy-ink)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
         overflow: 'hidden',
       }}
     >
-      {/* brand */}
-      <div style={{ padding: '20px 20px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div
+      <NavLink
+        to="/"
+        style={{
+          padding: '18px 20px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <span
           style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
+            width: 32,
+            height: 32,
+            borderRadius: 9,
             background: 'var(--forest)',
+            color: 'var(--navy-ink)',
             display: 'grid',
             placeItems: 'center',
-            color: 'var(--cream)',
-            fontWeight: 600,
-            fontSize: 14,
-            letterSpacing: '-0.02em',
+            fontWeight: 700,
+            fontSize: 15,
           }}
         >
           w
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em' }}>w-lush</div>
-          <div
+        </span>
+        <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em' }}>
+            w-lush
+          </span>
+          <span
             style={{
-              fontSize: 11, color: 'var(--ink-40)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              fontSize: 11,
+              color: 'rgba(244,242,236,0.5)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
-            title={clinicName}
           >
-            {clinicName}
-          </div>
-        </div>
-      </div>
+            {user?.clinic.name ?? ''}
+          </span>
+        </span>
+      </NavLink>
 
-      {/* nav items */}
-      <nav style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <nav style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV.map((n) => {
-          // CRM rozeti canlı talep sayısı; diğerleri config'teki sabit değer.
-          const count = n.key === 'crm' ? crmCount : n.count ?? null;
+          const badge =
+            n.key === 'crm' ? badges.crm : n.key === 'mesajlar' ? badges.mesajlar : 0;
           return (
-          <NavLink
-            key={n.key}
-            to={n.path}
-            end={n.path === '/'}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '8px 10px',
-              borderRadius: 8,
-              fontSize: 13,
-              textDecoration: 'none',
-              color: isActive ? 'var(--ink)' : 'var(--ink-60)',
-              background: isActive ? 'var(--cream-2)' : 'transparent',
-              fontWeight: isActive ? 500 : 400,
-            })}
-          >
-            {({ isActive }) => (
-              <>
-                <span style={{ color: isActive ? 'var(--forest)' : 'var(--ink-40)', display: 'flex' }}>
-                  {Icon[n.icon]}
-                </span>
-                <span style={{ flex: 1 }}>{n.label}</span>
-                {count != null && count > 0 && (
+            <NavLink
+              key={n.key}
+              to={n.path}
+              end={n.path === '/'}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: 8,
+                fontSize: 13,
+                textDecoration: 'none',
+                color: isActive ? '#FFFFFF' : 'rgba(244,242,236,0.62)',
+                background: isActive ? 'rgba(255,255,255,0.09)' : 'transparent',
+                fontWeight: isActive ? 600 : 400,
+              })}
+            >
+              {({ isActive }) => (
+                <>
                   <span
                     style={{
-                      fontSize: 10,
-                      padding: '1px 6px',
-                      borderRadius: 999,
-                      background: 'var(--cream-3)',
-                      color: 'var(--ink-60)',
-                      fontFamily: 'Geist Mono, monospace',
+                      display: 'flex',
+                      color: isActive ? 'var(--accent-soft)' : 'rgba(244,242,236,0.4)',
                     }}
                   >
-                    {count}
+                    {Icon[n.icon]}
                   </span>
-                )}
-              </>
-            )}
-          </NavLink>
+                  <span style={{ flex: 1 }}>{n.label}</span>
+                  {badge > 0 && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '1px 7px',
+                        borderRadius: 999,
+                        background: 'rgba(46,125,91,0.35)',
+                        color: '#9ED0B5',
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
           );
         })}
-
-        {/* Yönetici linki — yalnızca platform admin görür */}
-        {user?.is_admin && (
-          <NavLink
-            to="/yonetici"
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '8px 10px',
-              borderRadius: 8,
-              fontSize: 13,
-              textDecoration: 'none',
-              color: isActive ? 'var(--ink)' : 'var(--ink-60)',
-              background: isActive ? 'var(--cream-2)' : 'transparent',
-              fontWeight: isActive ? 500 : 400,
-            })}
-          >
-            {({ isActive }) => (
-              <>
-                <span style={{ color: isActive ? 'var(--forest)' : 'var(--ink-40)', display: 'flex' }}>
-                  {Icon.whatsapp}
-                </span>
-                <span style={{ flex: 1 }}>Yönetici</span>
-              </>
-            )}
-          </NavLink>
-        )}
       </nav>
 
       <div style={{ flex: 1 }} />
 
-      {/* whatsapp status */}
       <div
         style={{
-          padding: '12px 16px',
-          borderTop: '1px solid var(--line)',
+          padding: '12px 18px',
+          borderTop: '1px solid rgba(244,242,236,0.09)',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -183,112 +137,82 @@ export default function Sidebar() {
       >
         <span
           style={{
-            color: waStatus === 'connected' ? 'var(--wa-green)' : 'var(--ink-40)',
-            display: 'flex',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            flexShrink: 0,
+            background: wa.connected ? '#4ADE80' : 'rgba(244,242,236,0.35)',
           }}
-        >
-          {Icon.whatsapp}
-        </span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 500 }}>WhatsApp</div>
-          <div
-            style={{
-              fontSize: 10,
-              color: 'var(--ink-40)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <span className="wl-dot" style={{ background: WA_LABEL[waStatus].dot }} />
-            {WA_LABEL[waStatus].text}
-          </div>
-        </div>
+        />
+        <span style={{ flex: 1, fontSize: 12, fontWeight: 500 }}>WhatsApp</span>
+        <span style={{ fontSize: 11, color: 'rgba(244,242,236,0.5)' }}>{wa.label}</span>
       </div>
 
-      {/* user */}
       <div
-        ref={menuRef}
         style={{
-          padding: '12px 16px',
-          borderTop: '1px solid var(--line)',
+          padding: '12px 18px',
+          borderTop: '1px solid rgba(244,242,236,0.09)',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          position: 'relative',
         }}
       >
-        <div
+        <span
           style={{
             width: 28,
             height: 28,
-            borderRadius: 999,
+            borderRadius: '50%',
             background: 'var(--forest)',
-            color: 'var(--cream)',
+            color: 'var(--navy-ink)',
             display: 'grid',
             placeItems: 'center',
             fontSize: 11,
-            fontWeight: 500,
+            fontWeight: 600,
+            flexShrink: 0,
           }}
         >
-          {initials(displayName)}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            title={displayName}
-          >
-            {displayName}
-          </div>
-          <div
-            style={{ fontSize: 10, color: 'var(--ink-40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            title={user?.email}
-          >
-            {user?.email}
-          </div>
-        </div>
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          title="Hesap menüsü"
-          style={{
-            background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'var(--ink-40)', display: 'flex', padding: 4, borderRadius: 6,
-          }}
-        >
-          {Icon.more}
-        </button>
-
-        {menuOpen && (
-          <div
+          {initials(user?.name || user?.email || '')}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <span
             style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 4px)',
-              right: 12,
-              minWidth: 160,
-              background: 'var(--paper)',
-              border: '1px solid var(--line)',
-              borderRadius: 10,
-              boxShadow: '0 8px 24px -8px rgba(42,53,48,0.18)',
-              padding: 4,
-              zIndex: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            <button
-              onClick={() => { setMenuOpen(false); logout(); }}
-              style={{
-                width: '100%', textAlign: 'left', background: 'transparent',
-                border: 'none', cursor: 'pointer', padding: '8px 12px',
-                borderRadius: 6, fontSize: 13, color: 'var(--bad)',
-                fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--cream-2)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              Çıkış yap
-            </button>
-          </div>
-        )}
+            {user?.name || '—'}
+          </span>
+          <span
+            style={{
+              fontSize: 10,
+              color: 'rgba(244,242,236,0.45)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {user?.email ?? ''}
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={logout}
+          title="Çıkış yap"
+          style={{
+            display: 'flex',
+            color: 'rgba(244,242,236,0.45)',
+            padding: 4,
+            borderRadius: 6,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+          }}
+        >
+          {Icon.exit}
+        </button>
       </div>
     </aside>
   );

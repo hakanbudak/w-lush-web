@@ -1,53 +1,85 @@
-/* w-lush — light & airy wellness clinic
-   Açık yeşil-mavi pastel + bol beyaz, fresh & professional.
-   Tasarım sistemi referans "Ana Ekran" dosyasından birebir taşındı. */
+/* w-lush — klinik yönetim paneli tasarım sistemi.
+   Token'lar design_handoff_klinik_redesign/README.md'den birebir.
+   Değişken adları rol adlı olduğu için değerleri değiştirmek bütün
+   ekranları tek hamlede yeni palete taşır. */
 
 :root {
-  /* Backgrounds — much lighter, airier */
-  --cream: #F4F8F4;        /* hafif yeşil tonlu off-white sayfa fonu */
-  --cream-2: #EAF1EA;      /* yumuşak sage tint */
-  --cream-3: #DCE7DD;      /* hover/seçili surface */
-  --paper: #FFFFFF;        /* tüm kartlar saf beyaz */
+  /* --- Zeminler --- */
+  --cream: #F4F2EC;        /* bone — sayfa zemini */
+  --cream-2: #FAF9F5;      /* ikincil zemin / satır hover */
+  --cream-3: #EFEDE6;      /* seçili yüzey */
+  --paper: #FFFFFF;        /* kartlar */
 
-  /* Primary — soft sage emerald */
-  --forest: #5B9F7E;       /* primary marka rengi — açık zümrüt */
-  --forest-2: #3E7A5E;     /* hover/active deeper */
-  --forest-3: #B6D9C3;     /* light surface tint */
+  /* --- Lacivert (kenar menü, birincil) --- */
+  --navy: #17233D;
+  --navy-hover: #22335A;
+  --navy-ink: #F4F2EC;     /* lacivert üzerindeki metin */
 
-  /* Accent — sky blue */
-  --champagne: #6AA8D4;
-  --champagne-2: #4A85B5;
-  --champagne-3: #DCEDF8;
+  /* --- Klinik yeşili (accent / CTA) --- */
+  --forest: #2E7D5B;
+  --forest-hover: #256B4D;
+  --forest-2: #1F5C42;     /* koyu metin */
+  --forest-3: #E7F1EB;     /* açık zemin */
+  --accent-soft: #8FC0A6;  /* lacivert üstünde açık ton */
 
-  /* Supplemental hues */
-  --sage: #7BB394;
-  --sage-2: #4F8B6C;
-  --sage-soft: #D8EBDF;
-
-  --lavender: #9F94C7;     /* AI tint */
-  --lavender-2: #6E60A6;
-  --lavender-soft: #E8E2F4;
-
-  --blush: #E8B0AB;        /* warnings */
-  --blush-soft: #F5DDD9;
-
-  --sand: #E5D9C0;
-  --sand-soft: #F2EBDB;
-
-  /* Ink — soft warm charcoal, not pure black */
-  --ink: #2A3530;
-  --ink-60: #2A353099;
-  --ink-40: #2A353066;
-  --ink-20: #2A353033;
-  --ink-08: #2A353014;
-  --line: #2A35300F;
-  --line-strong: #2A35301F;
-
-  --wa-green: #25D366;
-  --wa-bg: #ECE5DD;
-  --warn: #C97F58;
-  --good: #4F8B6C;
+  /* --- Yardımcı renkler --- */
+  --blue: #4A85B5;
+  --blue-soft: #E3EEF7;
+  --ai: #5B4FA3;
+  --ai-soft: #EDEBF7;
+  --ai-band: #F3F0FA;
+  --ai-dark: #463C85;
+  --warn: #B4552F;
+  --warn-soft: #FBEAE3;
   --bad: #C66B65;
+  --bad-soft: #FBEAE8;
+  --good: #2E7D5B;
+  --neutral: #8B8778;
+  --neutral-soft: #EFEDE6;
+
+  /* --- Metin --- */
+  --ink: #1C2434;
+  --ink-60: rgba(28, 36, 52, 0.6);
+  --ink-45: rgba(28, 36, 52, 0.45);
+  --ink-40: rgba(28, 36, 52, 0.4);
+  --ink-20: rgba(28, 36, 52, 0.2);
+  --ink-08: rgba(28, 36, 52, 0.08);
+
+  /* --- Çizgiler --- */
+  --line: rgba(28, 36, 52, 0.08);
+  --line-strong: rgba(28, 36, 52, 0.14);
+
+  /* --- WhatsApp --- */
+  --wa-green: #25D366;
+  --wa-chip: #DCF8C6;
+  --wa-chip-ink: #075E54;
+  --wa-bg: #FAF9F5;
+
+  /* --- Ölçüler --- */
+  --r-card: 12px;
+  --r-modal: 16px;
+  --r-control: 9px;
+  --scrim: rgba(23, 35, 61, 0.45);
+  --shadow-modal: 0 32px 64px -16px rgba(23, 35, 61, 0.5);
+}
+
+/* Eski palet adları, yeni palete eşlendi. Ekranlar sırayla yeni tasarıma
+   geçtikçe bu blok küçülür ve sonunda silinir. Şimdilik silmek, henüz
+   dokunulmamış ekranları renksiz bırakırdı. */
+:root {
+  --champagne: var(--blue);
+  --champagne-2: var(--blue);
+  --champagne-3: var(--blue-soft);
+  --sage: var(--forest);
+  --sage-2: var(--forest-2);
+  --sage-soft: var(--forest-3);
+  --lavender: var(--ai);
+  --lavender-2: var(--ai);
+  --lavender-soft: var(--ai-soft);
+  --blush: var(--bad);
+  --blush-soft: var(--bad-soft);
+  --sand: var(--neutral);
+  --sand-soft: var(--neutral-soft);
 }
 
 * { box-sizing: border-box; }
@@ -59,7 +91,7 @@ html, body, #root {
 }
 html, body {
   background: var(--cream);
-  font-family: "Geist Sans", "Geist", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 body {
   height: 100vh;
@@ -67,13 +99,31 @@ body {
 }
 
 .wl {
-  font-family: "Geist Sans", "Geist", "DM Sans", -apple-system, sans-serif;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
-  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "ss01", "cv11";
+}
+
+/* Sayılar her yerde hizalı — tutarlar ve saatler sütun sütun okunsun. */
+.wl, .wl input, .wl select, .wl button, .wl table {
+  font-feature-settings: "tnum";
+}
+
+/* Display: sayfa ve modal başlıkları. */
+.wl-display {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.wl-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-45);
 }
 
 .wl-mono {
@@ -195,11 +245,11 @@ body {
 }
 .wl-table th {
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-40);
+  color: var(--ink-45);
   padding: 10px 16px;
   border-bottom: 1px solid var(--line);
 }
@@ -246,3 +296,14 @@ body {
 /* scrollbars within artboards stay quiet */
 .wl ::-webkit-scrollbar { width: 6px; height: 6px; }
 .wl ::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 999px; }
+
+/* ─── giriş animasyonları ──────────────────────────────────────────────── */
+@keyframes wl-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes wl-modal {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
