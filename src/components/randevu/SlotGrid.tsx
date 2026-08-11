@@ -40,6 +40,7 @@ export default function SlotGrid({
   selectedId,
   onSelect,
   onEmptyClick,
+  offSlots,
 }: {
   slots: string[];
   columns: SlotColumn[];
@@ -48,6 +49,12 @@ export default function SlotGrid({
   onSelect: (id: number) => void;
   /** Boş (veya yalnızca iptal içeren) hücreye tıklanınca. Verilmezse hücre pasiftir. */
   onEmptyClick?: (slot: string, columnKey: string) => void;
+  /**
+   * `slots` içindeki hangi satırlar kliniğin çalışma saati **değil**. Bunlar
+   * yalnızca orada bir randevu olduğu için çizilir; boş bırakılsalardı o
+   * randevu ekranda hiç görünmezdi.
+   */
+  offSlots?: ReadonlySet<string>;
 }) {
   const cell = (slot: string, columnKey: string) =>
     items.filter((i) => i.slot === slot && i.columnKey === columnKey);
@@ -74,13 +81,26 @@ export default function SlotGrid({
           </tr>
         </thead>
         <tbody>
-          {slots.map((slot) => (
+          {slots.map((slot) => {
+            const off = offSlots?.has(slot) ?? false;
+            return (
             <tr key={slot}>
               <td
                 className="wl-mono"
-                style={{ fontSize: 11, color: 'var(--ink-40)', verticalAlign: 'top' }}
+                style={{
+                  fontSize: 11,
+                  color: off ? 'var(--ink-40)' : 'var(--ink-40)',
+                  opacity: off ? 0.7 : 1,
+                  verticalAlign: 'top',
+                }}
+                title={off ? 'Çalışma saatleri dışında' : undefined}
               >
                 {slot}
+                {off && (
+                  <span style={{ display: 'block', fontSize: 9, fontStyle: 'italic' }}>
+                    saat dışı
+                  </span>
+                )}
               </td>
               {columns.map((c) => {
                 const here = cell(slot, c.key);
@@ -150,8 +170,11 @@ export default function SlotGrid({
                     )}
                     {/* every() boş dizide true döner: hem tamamen boş hücre hem de
                         yalnızca iptal içeren hücre düğmeyi gösterir — slot gerçekten
-                        boştur, iptal kaydı yalnızca geçmişi anlatır. */}
-                    {onEmptyClick && here.every((i) => i.status === 'cancelled') && (
+                        boştur, iptal kaydı yalnızca geçmişi anlatır.
+                        Saat dışı satırlarda düğme yok: backend o saate randevu
+                        yazmayı 422 ile reddediyor, düğme kullanıcıyı hataya
+                        sürüklerdi. */}
+                    {onEmptyClick && !off && here.every((i) => i.status === 'cancelled') && (
                       <button
                         type="button"
                         onClick={() => onEmptyClick(slot, c.key)}
@@ -176,7 +199,8 @@ export default function SlotGrid({
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

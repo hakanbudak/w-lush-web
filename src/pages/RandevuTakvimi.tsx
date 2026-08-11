@@ -12,7 +12,9 @@ import AppointmentList from '../components/randevu/AppointmentList';
 import AppointmentModal from '../components/randevu/AppointmentModal';
 import SlotGrid, { type SlotColumn, type SlotItem } from '../components/randevu/SlotGrid';
 import { Chip } from '../components/ui';
-import { addDays, dayLabel, fullDate, isoDate, isoDay, startOfWeek } from '../utils/calendar';
+import {
+  addDays, dayLabel, fullDate, gridRows, isoDate, isoDay, startOfWeek,
+} from '../utils/calendar';
 
 type View = 'gun' | 'hafta';
 
@@ -115,6 +117,13 @@ export default function RandevuTakvimi() {
         colorIndex: colorOf(a.staff_id),
       })),
     [items, view, colorOf],
+  );
+
+  // Görünen aralıkta slot listesi dışında bir saat varsa ona da satır açılır;
+  // yoksa o randevu ızgarada hiç görünmezdi.
+  const { rows: gridRowTimes, off: offSlots } = useMemo(
+    () => gridRows(slots, (items ?? []).map((a) => a.appt_time)),
+    [slots, items],
   );
 
   const selected = (items ?? []).find((a) => a.id === selectedId) ?? null;
@@ -287,12 +296,13 @@ export default function RandevuTakvimi() {
             )}
             <div style={{ padding: 12 }}>
               <SlotGrid
-                slots={slots}
+                slots={gridRowTimes}
                 columns={columns}
                 items={gridItems}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 onEmptyClick={openCreate}
+                offSlots={offSlots}
               />
             </div>
           </>
