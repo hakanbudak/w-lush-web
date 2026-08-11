@@ -1,0 +1,13 @@
+#!/bin/sh
+# Reject commit messages carrying Co-authored-by / Claude / Anthropic attribution.
+# Enable once per clone with:  git config core.hooksPath .githooks
+msg_file="$1"
+
+if grep -iE 'co-authored-by|noreply@anthropic\.com|generated with .*claude|claude\.com/claude-code' "$msg_file" >/dev/null; then
+  echo "----------------------------------------------------------------" >&2
+  echo "✖ Commit reddedildi: mesajda Co-authored-by / Claude atfı var." >&2
+  echo "  İlgili satırları kaldırıp tekrar commit'le." >&2
+  echo "----------------------------------------------------------------" >&2
+  exit 1
+fi
+exit 0

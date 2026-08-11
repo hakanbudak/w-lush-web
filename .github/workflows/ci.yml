@@ -7,6 +7,29 @@ on:
     branches: [main]
 
 jobs:
+  # Reject any commit that carries Co-authored-by / Claude attribution,
+  # on PRs and on direct pushes to main.
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject forbidden commit trailers
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            msgs=$(git log --format='%B' "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")
+          elif echo "${{ github.event.before }}" | grep -qE '^0+$'; then
+            msgs=$(git log -1 --format='%B' "${{ github.sha }}")
+          else
+            msgs=$(git log --format='%B' "${{ github.event.before }}..${{ github.sha }}")
+          fi
+          if echo "$msgs" | grep -iE 'co-authored-by|noreply@anthropic\.com|generated with .*claude|claude\.com/claude-code'; then
+            echo "::error::Forbidden trailer found (Co-authored-by / Claude attribution). Remove it and re-push."
+            exit 1
+          fi
+          echo "Commit messages are clean."
+
   check:
     runs-on: ubuntu-latest
     steps:
