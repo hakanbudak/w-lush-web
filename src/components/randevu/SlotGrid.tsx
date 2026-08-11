@@ -39,12 +39,15 @@ export default function SlotGrid({
   items,
   selectedId,
   onSelect,
+  onEmptyClick,
 }: {
   slots: string[];
   columns: SlotColumn[];
   items: SlotItem[];
   selectedId: number | null;
   onSelect: (id: number) => void;
+  /** Boş (veya yalnızca iptal içeren) hücreye tıklanınca. Verilmezse hücre pasiftir. */
+  onEmptyClick?: (slot: string, columnKey: string) => void;
 }) {
   const cell = (slot: string, columnKey: string) =>
     items.filter((i) => i.slot === slot && i.columnKey === columnKey);
@@ -144,6 +147,30 @@ export default function SlotGrid({
                       <div style={{ fontSize: 10, color: 'var(--ink-40)', paddingLeft: 8 }}>
                         +{here.length - MAX_PER_CELL} randevu
                       </div>
+                    )}
+                    {/* every() boş dizide true döner: hem tamamen boş hücre hem de
+                        yalnızca iptal içeren hücre düğmeyi gösterir — slot gerçekten
+                        boştur, iptal kaydı yalnızca geçmişi anlatır. */}
+                    {onEmptyClick && here.every((i) => i.status === 'cancelled') && (
+                      <button
+                        type="button"
+                        onClick={() => onEmptyClick(slot, c.key)}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          font: 'inherit',
+                          fontSize: 10,
+                          cursor: 'pointer',
+                          padding: '6px 8px',
+                          borderRadius: 8,
+                          border: '1px dashed var(--line)',
+                          background: 'transparent',
+                          color: 'var(--ink-40)',
+                        }}
+                      >
+                        + Randevu ekle
+                      </button>
                     )}
                   </td>
                 );
