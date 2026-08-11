@@ -15,32 +15,31 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Reject forbidden commit trailers
+      - name: Reject forbidden commit messages
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            msgs=$(git log --format='%B' "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")
-          elif echo "${{ github.event.before }}" | grep -qE '^0+$'; then
-            msgs=$(git log -1 --format='%B' "${{ github.sha }}")
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif git rev-parse -q --verify "${{ github.event.before }}^{commit}" >/dev/null 2>&1; then
+            range="${{ github.event.before }}..${{ github.sha }}"
           else
-            msgs=$(git log --format='%B' "${{ github.event.before }}..${{ github.sha }}")
+            # First push on a branch, or the history was rewritten: the previous
+            # tip no longer exists, so a range would be an invalid revision.
+            range="-1 ${{ github.sha }}"
           fi
-          if echo "$msgs" | grep -iE 'co-authored-by|noreply@anthropic\.com|generated with .*claude|claude\.com/claude-code'; then
+
+          if git log --format='%B' $range | grep -iE 'co-authored-by|noreply@anthropic\.com|generated with .*claude|claude\.com/claude-code'; then
             echo "::error::Forbidden trailer found (Co-authored-by / Claude attribution). Remove it and re-push."
             exit 1
           fi
-          subjects=$(echo "$msgs" | grep -v '^$' || true)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            subjects=$(git log --format='%s' "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")
-          else
-            subjects=$(git log -1 --format='%s' "${{ github.sha }}")
-          fi
+
+          subjects=$(git log --format='%s' $range)
           if [ -n "$(printf '%s' "$subjects" | LC_ALL=C tr -d '\000-\177')" ]; then
             echo "::error::A commit subject is not plain ASCII. Commit messages are written in English."
             printf '%s\n' "$subjects"
             exit 1
           fi
-          echo "Commit messages are clean."
 
+          echo "Commit messages are clean."
   check:
     runs-on: ubuntu-latest
     steps:
