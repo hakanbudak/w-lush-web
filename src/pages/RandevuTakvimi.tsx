@@ -5,9 +5,11 @@ import {
   getSettings,
   listAppointments,
   type Appointment,
+  type AppointmentCreated,
 } from '../api/clinic';
 import { listStaff, type StaffMember } from '../api/staff';
 import AppointmentList from '../components/randevu/AppointmentList';
+import AppointmentModal from '../components/randevu/AppointmentModal';
 import SlotGrid, { type SlotColumn, type SlotItem } from '../components/randevu/SlotGrid';
 import { Chip } from '../components/ui';
 import { addDays, dayLabel, fullDate, isoDate, isoDay, startOfWeek } from '../utils/calendar';
@@ -40,6 +42,11 @@ export default function RandevuTakvimi() {
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // null = kapalı. Açıkken formun ön dolumunu taşır.
+  const [creating, setCreating] = useState<
+    { date: string; time: string; staffId: number | null } | null
+  >(null);
+  const [notifyWarning, setNotifyWarning] = useState<string | null>(null);
 
   // Görünen aralık: gün görünümünde tek gün, hafta görünümünde Pzt–Paz.
   const range = useMemo(() => {
@@ -112,6 +119,30 @@ export default function RandevuTakvimi() {
 
   const selected = (items ?? []).find((a) => a.id === selectedId) ?? null;
 
+  // Gün görünümünde sütun personeldir, haftada gündür — ön dolum buna göre.
+  const openCreate = (slot: string, columnKey: string) =>
+    setCreating(
+      view === 'gun'
+        ? {
+            date: isoDate(anchor),
+            time: slot,
+            staffId: columnKey === UNASSIGNED ? null : Number(columnKey),
+          }
+        : { date: columnKey, time: slot, staffId: null },
+    );
+
+  const afterCreate = (created: AppointmentCreated) => {
+    setNotifyWarning(
+      created.notified
+        ? null
+        : `Randevu oluşturuldu, ancak müşteriye mesaj iletilemedi${
+            created.notify_error ? `: ${created.notify_error}` : '.'
+          }`,
+    );
+    setSelectedId(created.appointment.id);
+    load();
+  };
+
   const step = (dir: -1 | 1) => setAnchor((d) => addDays(d, view === 'gun' ? dir : dir * 7));
 
   const act = async (id: number, kind: 'confirm' | 'cancel') => {
@@ -172,7 +203,43 @@ export default function RandevuTakvimi() {
         <div style={{ fontSize: 13, fontWeight: 600, marginLeft: 8 }}>
           {view === 'gun' ? fullDate(anchor) : `${dayLabel(range.start)} – ${dayLabel(range.end)}`}
         </div>
+
+        <button
+          type="button"
+          className="wl-btn wl-btn-sm"
+          style={{ marginLeft: 'auto', borderRadius: 8, fontSize: 12 }}
+          onClick={() =>
+            setCreating({ date: isoDate(anchor), time: slots[0] ?? '', staffId: null })
+          }
+          disabled={slots.length === 0}
+        >
+          Yeni randevu
+        </button>
       </div>
+
+      {notifyWarning && (
+        <div
+          style={{
+            ...card,
+            padding: '12px 20px',
+            fontSize: 12,
+            color: 'var(--ink-60)',
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ flex: 1 }}>{notifyWarning}</span>
+          <button
+            type="button"
+            className="wl-btn wl-btn-ghost wl-btn-sm"
+            style={{ borderRadius: 8, fontSize: 12 }}
+            onClick={() => setNotifyWarning(null)}
+          >
+            Tamam
+          </button>
+        </div>
+      )}
 
       {/* ızgara */}
       <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
@@ -225,6 +292,7 @@ export default function RandevuTakvimi() {
                 items={gridItems}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                onEmptyClick={openCreate}
               />
             </div>
           </>
@@ -279,6 +347,16 @@ export default function RandevuTakvimi() {
 
       {/* gerçek randevu listesi (onay/iptal/atama burada) */}
       <AppointmentList />
+
+      {creating && (
+        <AppointmentModal
+          slots={slots}
+          staff={staff}
+          initial={creating}
+          onClose={() => setCreating(null)}
+          onCreated={afterCreate}
+        />
+      )}
     </div>
   );
 }

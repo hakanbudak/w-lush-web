@@ -104,6 +104,29 @@ export const confirmAppointment = (id: number) =>
 export const cancelAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/cancel`, { method: 'POST' });
 
+export interface NewAppointment {
+  phone: string;
+  customer_name: string;
+  service_name: string;
+  appt_date: string; // YYYY-MM-DD
+  appt_time: string; // HH:MM — kliniğin slot_times listesinden olmalı
+  staff_id: number | null;
+  notify: boolean;
+}
+
+// Randevu ile bildirim sonucu ayrı: gönderim başarısız olsa da randevu gerçek.
+export interface AppointmentCreated {
+  appointment: Appointment;
+  notified: boolean;
+  notify_error: string | null;
+}
+
+export const createAppointment = (input: NewAppointment) =>
+  request<AppointmentCreated>('/api/appointments', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+
 // Atama ucu randevuyu değiştirdiği için /api/appointments altında yaşıyor.
 export const assignAppointmentStaff = (id: number, staffId: number | null) =>
   request<Appointment>(`/api/appointments/${id}/staff`, {
