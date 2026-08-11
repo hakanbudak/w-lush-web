@@ -1,8 +1,9 @@
 import type { Period } from '../../utils/period';
 
 const OPTIONS: [Period, string][] = [
-  ['ay', 'Bu ay'],
-  ['ceyrek', 'Çeyrek'],
+  ['gun', 'Bugün'],
+  ['hafta', 'Hafta'],
+  ['ay', 'Ay'],
   ['yil', 'Yıl'],
 ];
 
@@ -17,8 +18,7 @@ export default function PeriodPicker({
   return (
     <div
       style={{
-        display: 'flex', background: 'var(--paper)', border: '1px solid var(--line)',
-        borderRadius: 8, padding: 3,
+        display: 'flex', background: 'var(--cream)', borderRadius: 9, padding: 3,
       }}
     >
       {OPTIONS.map(([k, lbl]) => (
@@ -27,9 +27,10 @@ export default function PeriodPicker({
           onClick={() => onChange(k)}
           className="wl-btn wl-btn-sm"
           style={{
-            height: 28, borderRadius: 6, fontSize: 12,
-            background: value === k ? 'var(--cream-2)' : 'transparent',
+            height: 28, borderRadius: 7, fontSize: 12,
+            background: value === k ? 'var(--paper)' : 'transparent',
             color: value === k ? 'var(--ink)' : 'var(--ink-60)',
+            boxShadow: value === k ? '0 1px 2px rgba(23,35,61,0.12)' : 'none',
           }}
         >
           {lbl}

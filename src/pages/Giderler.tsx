@@ -11,10 +11,13 @@ import {
 } from '../api/expenses';
 import ExpenseModal from '../components/ExpenseModal';
 import BreakdownBars from '../components/finance/BreakdownBars';
-import MonthlyBars from '../components/finance/MonthlyBars';
+import KpiTrio from '../components/finance/KpiTrio';
 import PeriodPicker from '../components/finance/PeriodPicker';
-import { KpiCard } from '../components/ui';
+import { useSetTopBarActions } from '../components/shell/TopBarActions';
+import { useToast } from '../components/shell/Toast';
+import { getSummary } from '../api/payments';
 import { rangeFor, type Period } from '../utils/period';
+import { Link } from 'react-router-dom';
 
 const fmt = (n: number): string => '₺ ' + n.toLocaleString('tr-TR');
 
@@ -29,6 +32,17 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 const dayLabel = (isoDate: string): string =>
   new Date(`${isoDate}T00:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8 }}
+    >
+      <span style={{ color: 'var(--ink-60)' }}>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
 export default function Giderler() {
   const [period, setPeriod] = useState<Period>('ay');
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
@@ -38,6 +52,8 @@ export default function Giderler() {
   const [adding, setAdding] = useState(false);
   // Satır içi silme onayı: hangi kaydın "Emin misin?" durumunda olduğu.
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  // Denge kartı aynı dönemin gelirini de ister; düşerse kart tek başına susar.
+  const [income, setIncome] = useState<number | null>(null);
 
   const load = useCallback(() => {
     const { start, end } = rangeFor(period);
@@ -49,26 +65,39 @@ export default function Giderler() {
         setCategories(c);
       })
       .catch(() => setError('Gider verileri yüklenemedi.'));
+    // Ayrı istek: geliri alamamak gider ekranını çalışmaz hâle getirmemeli.
+    getSummary(start, end)
+      .then((s) => setIncome(s.total))
+      .catch(() => setIncome(null));
   }, [period]);
 
   useEffect(load, [load]);
+
+  const toast = useToast();
+  const range = rangeFor(period);
+
+  useSetTopBarActions(
+    <>
+      <PeriodPicker value={period} onChange={setPeriod} />
+      <button
+        type="button"
+        className="wl-btn wl-btn-sm"
+        style={{
+          height: 34, borderRadius: 9, fontSize: 12.5, fontWeight: 600,
+          background: 'var(--navy)', color: 'var(--navy-ink)',
+        }}
+        onClick={() => setAdding(true)}
+      >
+        + Gider ekle
+      </button>
+    </>,
+    [period],
+  );
 
   const avg = summary && summary.count > 0 ? Math.round(summary.total / summary.count) : 0;
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <PeriodPicker value={period} onChange={setPeriod} />
-        <button
-          type="button"
-          className="wl-btn wl-btn-sm"
-          style={{ marginLeft: 'auto', borderRadius: 8, fontSize: 12 }}
-          onClick={() => setAdding(true)}
-        >
-          Gider ekle
-        </button>
-      </div>
-
       {error && (
         <div style={{ marginTop: 16, fontSize: 13, color: 'var(--ink-60)' }}>
           {error}{' '}
@@ -91,17 +120,18 @@ export default function Giderler() {
 
       {!error && summary && (
         <>
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Toplam gider" value={fmt(summary.total)} accent="var(--bad)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Kayıt sayısı" value={String(summary.count)} accent="var(--champagne)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Ortalama gider" value={fmt(avg)} accent="var(--sage)" />
-            </div>
-          </div>
+          <KpiTrio
+            accent="var(--bad)"
+            items={[
+              {
+                label: 'Toplam gider',
+                value: fmt(summary.total),
+                sub: `${dayLabel(range.start)} – ${dayLabel(range.end)}`,
+              },
+              { label: 'Kayıt sayısı', value: String(summary.count) },
+              { label: 'Ortalama gider', value: fmt(avg) },
+            ]}
+          />
 
           <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'flex-start' }}>
             <div
@@ -125,36 +155,48 @@ export default function Giderler() {
             <div
               style={{
                 flex: 1, background: 'var(--paper)', border: '1px solid var(--line)',
-                borderRadius: 12, padding: 20,
+                borderRadius: 'var(--r-card)', padding: 20,
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Ödeme yöntemi</div>
-              {summary.by_method.length === 0 && (
-                <div style={{ fontSize: 12, color: 'var(--ink-40)' }}>Kayıt yok.</div>
-              )}
-              {summary.by_method.map((m) => (
-                <div
-                  key={m.method}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    fontSize: 12, marginBottom: 10,
-                  }}
-                >
-                  <span>{METHOD_LABEL[m.method] ?? m.method}</span>
-                  <span style={{ color: 'var(--ink-60)' }}>{fmt(m.amount)}</span>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+                Gelir–gider dengesi
+              </div>
+              {income === null ? (
+                <div style={{ fontSize: 12, color: 'var(--ink-45)', lineHeight: 1.5 }}>
+                  Gelir verisi alınamadı, denge hesaplanamıyor.
                 </div>
-              ))}
-            </div>
+              ) : (
+                <>
+                  <Row label="Gelir" value={fmt(income)} />
+                  <Row label="Gider" value={fmt(summary.total)} />
+                  <div
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', marginTop: 12,
+                      paddingTop: 12, borderTop: '1px solid var(--line)', fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span>Net</span>
+                    <span
+                      style={{
+                        color: income - summary.total >= 0 ? 'var(--forest-2)' : 'var(--bad)',
+                      }}
+                    >
+                      {fmt(income - summary.total)}
+                    </span>
+                  </div>
+                  <Link
+                    to="/rapor"
+                    style={{
+                      display: 'inline-block', marginTop: 14, fontSize: 12,
+                      color: 'var(--forest)', textDecoration: 'none',
+                    }}
+                  >
+                    AI yorumlu rapor üret →
+                  </Link>
+                </>
+              )}
           </div>
-
-          <div
-            style={{
-              background: 'var(--paper)', border: '1px solid var(--line)',
-              borderRadius: 12, padding: 20, marginTop: 12,
-            }}
-          >
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Aylık seyir</div>
-            <MonthlyBars items={summary.by_month} />
           </div>
 
           <div
@@ -201,12 +243,14 @@ export default function Giderler() {
                 <span style={{ width: 90, textAlign: 'right', fontWeight: 600 }}>{fmt(e.amount)}</span>
                 {confirmId === e.id ? (
                   <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-60)' }}>Emin misiniz?</span>
                     <button
                       type="button"
                       onClick={() => {
                         deleteExpense(e.id)
                           .then(() => {
                             setConfirmId(null);
+                            toast('Gider kaydı silindi.');
                             load();
                           })
                           .catch(() => setError('Gider silinemedi.'));
@@ -248,7 +292,14 @@ export default function Giderler() {
       )}
 
       {adding && (
-        <ExpenseModal categories={categories} onClose={() => setAdding(false)} onSaved={load} />
+        <ExpenseModal
+          categories={categories}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            toast('Gider kaydedildi.');
+            load();
+          }}
+        />
       )}
     </>
   );
