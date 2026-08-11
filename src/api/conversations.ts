@@ -5,6 +5,9 @@ import { request } from './client';
 /** Mesaj yönü: "in" (müşteri) | "out" (operatör). */
 export type MessageDirection = 'in' | 'out';
 
+/** Giden mesajı kim yazdı. Eski satırlarda null — kaydedilmemişti. */
+export type MessageSource = 'bot' | 'operator';
+
 /** Gelen kutusundaki bir satır. `waiting`/`handoff` backend'de türetilir. */
 export interface Conversation {
   phone: string;
@@ -22,6 +25,7 @@ export interface ChatMessage {
   phone: string;
   direction: MessageDirection;
   body: string;
+  source: MessageSource | null;
   created_at: string; // ISO
 }
 
@@ -33,6 +37,10 @@ export const listConversations = () =>
   request<Conversation[]>('/api/conversations').then((rows) =>
     rows.map((r) => ({ ...r, last_at: toUtcIso(r.last_at) })),
   );
+
+/** Botu susturup konuşmayı operatöre alır. */
+export const takeOver = (phone: string) =>
+  request<{ status: string }>(path(phone, '/take'), { method: 'POST' });
 
 export const getThread = (phone: string) =>
   request<ChatMessage[]>(path(phone)).then((rows) =>
