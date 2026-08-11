@@ -217,9 +217,18 @@ export default function DanisanProfili() {
             {/* sayılar */}
             <div style={{ display: 'flex', gap: 12 }}>
               {[
-                { l: 'Toplam randevu', v: String(detail.stats.appointments_total) },
-                { l: 'Geçmiş seans', v: String(detail.stats.past_sessions) },
-                { l: 'İptal', v: String(detail.stats.cancelled) },
+                {
+                  l: 'Toplam seans',
+                  v: String(detail.stats.past_sessions),
+                  sub: `${detail.stats.appointments_total} randevu · ${detail.stats.cancelled} iptal`,
+                },
+                {
+                  l: 'Toplam harcama',
+                  v: `₺ ${detail.stats.total_spend.toLocaleString('tr-TR')}`,
+                  // Telefonsuz kaydedilen ödemeler kimseye ait olmadığı için
+                  // buraya girmiyor; operatör eksik görürse nedenini bilsin.
+                  sub: 'telefonu kayıtlı ödemeler',
+                },
                 {
                   l: 'Son ziyaret',
                   v: detail.stats.last_visit ? dayLabel(detail.stats.last_visit) : '—',
@@ -229,11 +238,16 @@ export default function DanisanProfili() {
                   key={s.l}
                   style={{
                     flex: 1, background: 'var(--paper)', border: '1px solid var(--line)',
-                    borderRadius: 12, padding: 16,
+                    borderRadius: 'var(--r-card)', padding: '16px 18px',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{s.v}</div>
+                  <div className="wl-label">{s.l}</div>
+                  <div style={{ fontSize: 20, fontWeight: 600, marginTop: 6 }}>{s.v}</div>
+                  {s.sub && (
+                    <div style={{ fontSize: 10, color: 'var(--ink-45)', marginTop: 4 }}>
+                      {s.sub}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -258,7 +272,9 @@ export default function DanisanProfili() {
                       padding: '12px 18px', border: 'none', cursor: 'pointer', font: 'inherit',
                       fontSize: 12, fontWeight: tab === key ? 600 : 400,
                       color: tab === key ? 'var(--ink)' : 'var(--ink-40)',
-                      background: tab === key ? 'var(--cream)' : 'transparent',
+                      background: 'transparent',
+                      borderBottom:
+                        tab === key ? '2px solid var(--forest)' : '2px solid transparent',
                     }}
                   >
                     {label}
@@ -288,6 +304,14 @@ export default function DanisanProfili() {
                         </span>
                         <span style={{ width: 50, color: 'var(--ink-40)' }}>{a.appt_time}</span>
                         <span style={{ flex: 1, minWidth: 0 }}>{a.service_name || '—'}</span>
+                        <span
+                          style={{
+                            width: 80, textAlign: 'right', fontWeight: 600,
+                            color: a.amount === null ? 'var(--ink-40)' : 'var(--ink)',
+                          }}
+                        >
+                          {a.amount === null ? '—' : `₺ ${a.amount.toLocaleString('tr-TR')}`}
+                        </span>
                         <Chip tone={st.tone} small>{st.label}</Chip>
                       </div>
                     );
