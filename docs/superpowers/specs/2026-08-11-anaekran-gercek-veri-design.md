@@ -32,21 +32,21 @@ Bu iş `RichDashboard`'ı gerçek veriye bağlar.
 
 ## Bölüm 0 — Tek backend değişikliği
 
-`customers` tablosunda `created_at` var ama `CustomerOut` şeması onu dışa
-vermiyor. "Bu ay yeni danışan" kartı bu alan olmadan hesaplanamaz.
+"Bu ay yeni danışan" kartı, kişinin ne zaman ilk göründüğünü bilmeyi
+gerektirir. `CustomerOut` böyle bir alan taşımıyor.
 
-`app/customers/schemas.py` içindeki `CustomerOut`'a eklenir:
+**`customers.created_at` işe yaramaz.** `overview()` listesi o tablodan
+üretilmiyor: mesajı veya randevusu olan her telefondan üretiliyor ve
+`customers` yalnızca isim aramak için kullanılıyor. Fonksiyonun docstring'i
+bunu söylüyor — bir randevu, hiç `customers` satırına yazılmamış bir telefon
+için var olabilir. O sütun satırların çoğunda boş kalırdı.
 
-```python
-    created_at: datetime
-```
+Bunun yerine `CustomerOut`'a `first_seen: datetime` eklenir: **ilk mesaj ile
+ilk randevudan hangisi önceyse.** Mesaj tarafı `_message_facts`'teki mevcut
+group-by sorgusuna bir `min()` olarak biner, yani ek sorgu yok; randevu
+tarafı zaten Python'da katlanan döngüde hesaplanır.
 
-Migration yok (sütun zaten var), yeni uç yok, mevcut alanlar değişmiyor —
-yalnızca yanıt bir alan zenginleşiyor. CRM ekranı bundan etkilenmez.
-
-Alternatifi, kartı "CRM'de 'yeni' aşamasındaki aday sayısı" ile değiştirmekti;
-bu bugünkü uçlarla hesaplanabiliyordu ama sorulan şeyi cevaplamıyor: aşama
-bir durum, kart ise bir dönem sayısı istiyor.
+Migration yok, yeni uç yok, mevcut alanlar değişmiyor. CRM ekranı etkilenmez.
 
 ---
 
@@ -60,7 +60,7 @@ Dört kart. Etiketler dönemi açıkça söyler, çünkü aynı satırda iki zam
 | Bugün gelir | `getSummary(bugün, bugün).total` | dünkü tutarla fark |
 | Bugün doluluk | bugünkü aktif randevu ÷ (slot sayısı × aktif personel) | "7/16" ham sayı |
 | Bu ay gelir | `getSummary(ay başı, bugün).total` | geçen ayın aynı gününe kadarki tutarla fark |
-| Bu ay yeni danışan | `listCustomers` içinde `created_at` bu aya düşenler (bkz. Bölüm 0) | rozet yok |
+| Bu ay yeni danışan | `listCustomers` içinde `first_seen` bu aya düşenler (bkz. Bölüm 0) | rozet yok |
 
 Doluluk paydası: `settings.slot_times.length × aktif personel sayısı`. Aktif
 personel yoksa çarpan 1'dir — personel öncesi davranış korunur. Payda 0
@@ -203,7 +203,7 @@ olmadan doğrulanabilmelerinin tek yolu bu.
 Repoda test koşucusu yok.
 
 - Backend: `ruff check app` temiz, `import ok`, `GET /api/customers` yanıtında
-  `created_at` gelir ve mevcut alanlar korunur.
+  `first_seen` gelir ve mevcut alanlar korunur.
 - `typecheck` ve `build` 0 ile çıkar.
 - `utils/dashboard.ts` fonksiyonları node ile doğrulanır: doluluk paydası
   (personel var/yok), eğilim eşikleri (3 ödeme + ₺1.000 kuralı, eşiği geçen

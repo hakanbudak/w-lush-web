@@ -4,7 +4,7 @@
 
 **Goal:** `RichDashboard`'daki her rakamı gerçek veriden hesaplamak, hesaplanamayanları uydurmak yerine kaldırmak.
 
-**Architecture:** Tüm hesaplar `utils/dashboard.ts` içinde saf fonksiyonlar olarak durur — tarayıcı olmadan doğrulanabilmelerinin tek yolu bu. 501 satırlık `AnaEkran.tsx`, Sistem ve Takvim ekranlarında yaptığımız gibi `components/anaekran/` altına bölünür. Backend'de tek alan açılır (`CustomerOut.created_at`), yeni uç yoktur.
+**Architecture:** Tüm hesaplar `utils/dashboard.ts` içinde saf fonksiyonlar olarak durur — tarayıcı olmadan doğrulanabilmelerinin tek yolu bu. 501 satırlık `AnaEkran.tsx`, Sistem ve Takvim ekranlarında yaptığımız gibi `components/anaekran/` altına bölünür. Backend'de tek alan açılır (`CustomerOut.first_seen`), yeni uç yoktur.
 
 **Tech Stack:** React 18 + TypeScript, Vite; backend tarafında FastAPI + Pydantic (tek şema alanı).
 
@@ -25,7 +25,8 @@
 
 | Dosya | Sorumluluk |
 |---|---|
-| `app/customers/schemas.py` | `CustomerOut`'a `created_at` |
+| `app/customers/schemas.py` | `CustomerOut`'a `first_seen` |
+| `app/customers/service.py` | `first_seen` hesabı (ilk mesaj / ilk randevu) |
 
 **Frontend (dal: `feature/anaekran-gercek-veri`)**
 
@@ -40,137 +41,27 @@
 | `src/components/anaekran/DailyRevenueChart.tsx` (yeni) | Günlük gelir grafiği |
 | `src/components/anaekran/RichDashboard.tsx` (yeni) | Veri çekme + panelleri dizme |
 | `src/pages/AnaEkran.tsx` | Yalnızca sarmalayıcı kalır |
-| `src/api/customers.ts` | `CustomerSummary`'ye `created_at` |
+| `src/api/customers.ts` | `CustomerSummary`'ye `first_seen` |
 
 ---
 
-### Task 1: Backend — `CustomerOut.created_at`
+### Task 1: Backend — `CustomerOut.first_seen` ✅ TAMAMLANDI
 
-**Files:**
-- Modify: `app/customers/schemas.py:16-25`
+selamet/w-lush#18 olarak merge edildi.
 
-**Interfaces:**
-- Consumes: yok.
-- Produces: `GET /api/customers` yanıtındaki her satırda `created_at: datetime`.
+**Planlanan ile yapılan farkı:** plan `customers.created_at` sütununu dışa
+vermeyi söylüyordu. Kod okununca çalışmayacağı görüldü — `overview()` listesi
+`customers` tablosundan değil, mesajı veya randevusu olan **her telefondan**
+üretiliyor; o sütun satırların çoğunda boş kalırdı.
 
-- [ ] **Step 1: Dalı aç**
+Bunun yerine `CustomerOut`'a `first_seen: datetime` eklendi: ilk mesaj ile ilk
+randevudan hangisi önceyse. Mesaj tarafı `_message_facts`'teki mevcut group-by
+sorgusuna `func.min(Message.created_at)` olarak bindi (ek sorgu yok); randevu
+tarafı `_appointment_facts`'in Python döngüsünde katlandı.
 
-```bash
-cd ~/Desktop/kisisel/w-lush
-git checkout main && git pull
-git checkout -b feature/customer-created-at
-```
-
-- [ ] **Step 2: Alanı ekle**
-
-`app/customers/schemas.py` içindeki `CustomerOut` sınıfına, `name` satırının hemen altına:
-
-```python
-    created_at: datetime
-```
-
-Sınıfın tamamı şöyle olmalı:
-
-```python
-class CustomerOut(BaseModel):
-    """One card on the CRM board. `stage` and `warmth` are derived."""
-
-    phone: str
-    name: str
-    # The dashboard counts customers first seen this month; the column has
-    # always existed, it was simply never exposed.
-    created_at: datetime
-    stage: str
-    warmth: str | None
-    last_message: str
-    last_message_at: datetime | None
-    next_appointment: NextAppointmentOut | None
-```
-
-`datetime` zaten dosyanın başında import edilmiş (`last_message_at` kullanıyor); yeni import gerekmez.
-
-- [ ] **Step 3: Servisin bu alanı gerçekten döndürdüğünü doğrula**
-
-`CustomerOut` `from_attributes` kullanmıyorsa servis sözlük/nesne üretiyordur ve alan eksik kalabilir. Kontrol et:
-
-```bash
-cd ~/Desktop/kisisel/w-lush && grep -n "CustomerOut\|def listing" -A6 app/customers/service.py | head -30
-```
-
-Servis `Customer` ORM nesnesi döndürüyorsa ek iş yok. Elle sözlük kuruyorsa `created_at` anahtarını oraya da ekle — hangi durumda olduğunu gördükten sonra karar ver, tahmin etme.
-
-- [ ] **Step 4: Kapılar**
-
-```bash
-cd ~/Desktop/kisisel/w-lush
-.venv/bin/ruff check app && .venv/bin/python -c "import app.main; print('import ok')"
-```
-
-Beklenen: `All checks passed!` ve `import ok`.
-
-- [ ] **Step 5: Yanıtı doğrula**
-
-```bash
-pkill -f "uvicorn app.main"; sleep 2
-(cd ~/Desktop/kisisel/w-lush && .venv/bin/uvicorn app.main:app --port 8000 > /tmp/wlush-api.log 2>&1 &); sleep 5
-cd ~/Desktop/kisisel/w-lush && .venv/bin/python - <<'PY'
-import json, urllib.request
-B = "http://localhost:8000"
-def call(path, body=None, method="GET", token=None):
-    data = json.dumps(body).encode() if body is not None else None
-    r = urllib.request.Request(B + path, data=data, method=method)
-    r.add_header("Content-Type", "application/json")
-    if token: r.add_header("Authorization", "Bearer " + token)
-    with urllib.request.urlopen(r) as resp:
-        return json.loads(resp.read().decode())
-
-tok = call("/api/auth/login", {"email":"smoke2@example.com","password":"Test12345!"}, "POST")
-tok = tok["token"]["access_token"]
-rows = call("/api/customers", token=tok)
-assert rows, "test için en az bir danışan gerekli"
-first = rows[0]
-print("alanlar:", sorted(first.keys()))
-assert "created_at" in first and first["created_at"], "created_at gelmedi"
-for f in ("phone", "name", "stage", "warmth", "last_message", "next_appointment"):
-    assert f in first, f"mevcut alan kayboldu: {f}"
-print("örnek:", first["phone"], first["created_at"])
-print("CREATED_AT OK")
-PY
-```
-
-Beklenen: son satır `CREATED_AT OK`. Mevcut alanların korunduğu kontrolü önemli — şema düzenlerken yanlışlıkla satır silmek kolaydır.
-
-- [ ] **Step 6: Commit ve PR**
-
-```bash
-cd ~/Desktop/kisisel/w-lush
-git add app/customers/schemas.py
-git commit -m "$(cat <<'EOF'
-Expose created_at on the customer list
-
-The dashboard counts customers first seen this month. The column has always
-existed on the table; it was simply never in the response.
-EOF
-)"
-git push -u origin feature/customer-created-at
-gh pr create --base main --head feature/customer-created-at \
-  --title "Danışan listesine created_at ekle" \
-  --body "$(cat <<'EOF'
-Ana ekrandaki "Bu ay yeni danışan" kartı için gerekli. Sütun `customers`
-tablosunda zaten var, yalnızca `CustomerOut` şemasında dışa verilmiyordu.
-
-Migration yok, yeni uç yok, mevcut alanlar değişmedi.
-
-## Doğrulama
-- `ruff check app` temiz, `import ok`.
-- `GET /api/customers` yanıtında `created_at` geliyor ve mevcut alanların
-  hepsi (`phone`, `name`, `stage`, `warmth`, `last_message`,
-  `next_appointment`) korunuyor.
-EOF
-)"
-gh pr merge --squash --delete-branch
-git checkout main && git pull
-```
+**Doğrulandı:** `ruff` temiz, `import ok`, `GET /api/customers` 12 satırın
+hepsinde `first_seen` dolu, mevcut alanların tamamı korunuyor, ve mesajı olan
+her satırda `first_seen <= last_message_at`.
 
 ---
 
@@ -188,7 +79,7 @@ git checkout main && git pull
   - `type ServiceMove = { service_name: string; from: number; to: number; percent: number }`
   - `dailyTotals(payments, start, end): { day: string; amount: number }[]`
   - `monthRange(today?): { start: string; end: string }`, `dayRange(offset, today?)`, `last30(today?)`, `prev30(today?)`, `prevMonthToDate(today?)` — hepsi `{ start: string; end: string }` döner
-  - `src/api/customers.ts`: `CustomerSummary.created_at: string`
+  - `src/api/customers.ts`: `CustomerSummary.first_seen: string`
 
 - [ ] **Step 1: Dalı aç**
 
@@ -203,7 +94,7 @@ git checkout -b feature/anaekran-gercek-veri
 `src/api/customers.ts` içindeki `CustomerSummary` arayüzüne, `name` satırının altına:
 
 ```ts
-  created_at: string; // ISO — ilk kayıt anı
+  first_seen: string; // ISO — ilk mesaj ya da ilk randevu
 ```
 
 `listCustomers` gövdesinde `last_message_at` gibi `toUtcIso`'dan geçirilmesi **gerekir**, çünkü backend naive datetime döndürüyor:
@@ -213,7 +104,7 @@ export const listCustomers = () =>
   request<CustomerSummary[]>('/api/customers').then((rows) =>
     rows.map((r) => ({
       ...r,
-      created_at: toUtcIso(r.created_at),
+      first_seen: toUtcIso(r.first_seen),
       last_message_at: r.last_message_at ? toUtcIso(r.last_message_at) : null,
     })),
   );
@@ -1310,7 +1201,7 @@ export default function RichDashboard() {
             prevMonthToDateRevenue: prevMonthS.total,
             occupancy: occupancy(activeAppts, slots.length, activeStaff),
             newCustomersThisMonth: customers.filter(
-              (c) => c.created_at.slice(0, 7) === monthPrefix,
+              (c) => c.first_seen.slice(0, 7) === monthPrefix,
             ).length,
           },
           moves: compareServices(cur30S.by_service, prv30S.by_service),
@@ -1491,9 +1382,9 @@ print("bugün aktif randevu :", len(active))
 print("kapasite            :", f"{len(slots)} slot × {max(1, len(staff))} personel = {capacity}")
 print("doluluk             :", f"%{round(len(active) / capacity * 100)}" if capacity else "—")
 print("bu ay gelir         :", month["total"])
-print("bu ay yeni danışan  :", sum(1 for c in customers if c["created_at"][:7] == str(today)[:7]))
+print("bu ay yeni danışan  :", sum(1 for c in customers if c["first_seen"][:7] == str(today)[:7]))
 print("konuşma sayısı      :", len(call("/api/conversations", token=tok)))
-assert "created_at" in customers[0], "created_at gelmedi — backend PR'ı merge edildi mi?"
+assert "first_seen" in customers[0], "first_seen gelmedi — backend PR'ı merge edildi mi?"
 print("VERİ OK — bu rakamlar ekranda görünmeli")
 PY
 ```
@@ -1527,7 +1418,7 @@ gh pr create --base main --head feature/anaekran-gercek-veri \
 görüyordu. Panelin en görünür ekranı, sistemin en büyük yalanıydı.
 
 Backend tarafı: selamet/w-lush#<NUMARA> (merge edildi) — tek alan,
-`CustomerOut.created_at`.
+`CustomerOut.first_seen`.
 
 ## Ne gerçekleşti
 - **KPI'lar:** Bugün gelir, Bugün doluluk, Bu ay gelir, Bu ay yeni danışan.
