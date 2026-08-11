@@ -2,6 +2,12 @@ import type { ReactElement } from 'react';
 
 /** Lucide-style, stroke 1.7, round caps — referans dosyadan birebir. */
 export const Icon: Record<string, ReactElement> = {
+  chat: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a8.5 8.5 0 0 0-7.3 12.9L3.5 20.5l4.7-1.2A8.5 8.5 0 1 0 12 3z" /></svg>
+  ),
+  exit: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4.5h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-5" /><path d="M10 8l-4 4 4 4M6 12h10" /></svg>
+  ),
   home: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 9-8 9 8" /><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" /></svg>
   ),
