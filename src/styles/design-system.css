@@ -315,3 +315,9 @@ body {
 
 /* Takvim ızgarasında boş hücre — tıklanınca randevu oluşturur. */
 .wl-slot-cell:hover { background: var(--cream-2); }
+
+/* Rapor üretilirken ✦ ikonunun nabzı. */
+@keyframes wl-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}

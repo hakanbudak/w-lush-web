@@ -8,7 +8,7 @@ import {
   type ReportSummary,
 } from '../api/reports';
 import PeriodPicker from '../components/finance/PeriodPicker';
-import { KpiCard } from '../components/ui';
+import KpiTrio from '../components/finance/KpiTrio';
 import { rangeFor, type Period } from '../utils/period';
 import { relativeTime } from '../utils/time';
 
@@ -79,7 +79,17 @@ export default function Rapor() {
   return (
     <>
       {/* üretici */}
-      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <span
+          style={{
+            width: 38, height: 38, borderRadius: 10, background: 'var(--ai-soft)',
+            color: 'var(--ai)', display: 'grid', placeItems: 'center', flexShrink: 0,
+            fontSize: 16,
+            animation: busy ? 'wl-pulse 1.2s ease-in-out infinite' : 'none',
+          }}
+        >
+          ✦
+        </span>
         <div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>Gelir–gider raporu</div>
           <div style={{ fontSize: 11, color: 'var(--ink-40)', marginTop: 2 }}>
@@ -91,7 +101,11 @@ export default function Rapor() {
           <button
             type="button"
             className="wl-btn wl-btn-sm"
-            style={{ borderRadius: 8, fontSize: 12 }}
+            style={{
+              height: 34, borderRadius: 9, fontSize: 12.5, fontWeight: 600,
+              background: busy ? 'rgba(91,79,163,0.5)' : 'var(--ai)',
+              color: 'var(--paper)',
+            }}
             onClick={generate}
             disabled={busy || unavailable}
           >
@@ -123,35 +137,37 @@ export default function Rapor() {
       {/* üretilen rapor: önce sayılar, sonra yorum */}
       {current && (
         <>
-          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Gelir" value={fmt(current.facts.income.total)} accent="var(--forest)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard label="Gider" value={fmt(current.facts.expense.total)} accent="var(--bad)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <KpiCard
-                label={current.facts.profit >= 0 ? 'Kâr' : 'Zarar'}
-                value={fmt(Math.abs(current.facts.profit))}
-                accent={current.facts.profit >= 0 ? 'var(--sage)' : 'var(--bad)'}
-              />
-            </div>
-          </div>
+          <KpiTrio
+            accent="var(--ai)"
+            items={[
+              { label: 'Gelir', value: fmt(current.facts.income.total) },
+              { label: 'Gider', value: fmt(current.facts.expense.total) },
+              {
+                label: current.facts.profit >= 0 ? 'Kâr' : 'Zarar',
+                value: fmt(Math.abs(current.facts.profit)),
+              },
+            ]}
+          />
 
-          <div style={{ ...card, marginTop: 12 }}>
+          <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
             <div
               style={{
-                display: 'flex', alignItems: 'baseline',
-                justifyContent: 'space-between', marginBottom: 12,
+                background: 'var(--ai-band)', padding: '12px 20px',
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Yorum</div>
-              <div style={{ fontSize: 10, color: 'var(--ink-40)' }}>
+              <div className="wl-label" style={{ color: 'var(--ai-dark)' }}>
+                ✦ AI yorumu
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--ink-45)' }}>
                 {dayLabel(current.period_start)} – {dayLabel(current.period_end)} · {current.model}
               </div>
             </div>
-            <div style={{ fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{current.body}</div>
+            <div
+              style={{ fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: 20 }}
+            >
+              {current.body}
+            </div>
           </div>
         </>
       )}
@@ -187,6 +203,14 @@ export default function Rapor() {
               Gelir–gider · {dayLabel(r.period_start)} – {dayLabel(r.period_end)}
             </button>
             <span style={{ color: 'var(--ink-40)', fontSize: 10 }}>{relativeTime(r.created_at)}</span>
+            <span
+              style={{
+                width: 96, textAlign: 'right', fontWeight: 600,
+                color: r.profit >= 0 ? 'var(--forest-2)' : 'var(--bad)',
+              }}
+            >
+              {r.profit >= 0 ? '+' : '−'}{fmt(Math.abs(r.profit))}
+            </span>
             {confirmId === r.id ? (
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <button
