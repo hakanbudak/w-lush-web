@@ -111,11 +111,14 @@ export function AuthShell({
     >
       {wide && <AuthLeftPanel />}
 
-      <div style={{ display: 'grid', placeItems: 'center', padding: 24, background: 'var(--paper)' }}>
+      <div style={{ display: 'grid', placeItems: 'center', padding: 24, background: 'var(--cream)' }}>
         <div style={{ width: '100%', maxWidth: 380 }}>
           {!wide && <AuthBrand />}
           <div style={{ marginBottom: 22 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0, marginBottom: 6, letterSpacing: '-0.01em' }}>
+            <h1
+              className="wl-display"
+              style={{ fontSize: 25, fontWeight: 500, margin: 0, marginBottom: 6 }}
+            >
               {title}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-60)', margin: 0 }}>{subtitle}</p>
@@ -294,8 +297,8 @@ function AuthLeftPanel() {
   return (
     <div
       style={{
-        background: 'var(--forest-2)',
-        color: 'var(--cream)',
+        background: 'var(--navy)',
+        color: 'var(--navy-ink)',
         padding: '40px 56px 48px',
         display: 'flex',
         flexDirection: 'column',

@@ -33,7 +33,10 @@ export default function HizmetSection() {
   const addRow = () =>
     setRows((r) => [
       ...r,
-      { id: -Date.now(), name: '', price: 0, active: true, sort_order: r.length, _new: true },
+      {
+        id: -Date.now(), name: '', price: 0, duration_minutes: 60,
+        active: true, sort_order: r.length, _new: true,
+      },
     ]);
 
   async function save(i: number) {
@@ -47,6 +50,7 @@ export default function HizmetSection() {
     const body = {
       name: row.name.trim(),
       price: Number(row.price) || 0,
+      duration_minutes: Number(row.duration_minutes) || 60,
       active: row.active,
       sort_order: row.sort_order,
     };
@@ -107,6 +111,7 @@ export default function HizmetSection() {
             <thead>
               <tr>
                 <th>Hizmet</th>
+                <th style={{ width: 110, textAlign: 'right' }}>Süre (dk)</th>
                 <th style={{ width: 150, textAlign: 'right' }}>Fiyat (₺)</th>
                 <th style={{ width: 80 }}>Durum</th>
                 <th style={{ width: 150 }}></th>
@@ -128,6 +133,17 @@ export default function HizmetSection() {
                       value={s.name}
                       placeholder="Hizmet adı"
                       onChange={(e) => patch(i, { name: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="wl-input wl-mono"
+                      type="number"
+                      min={5}
+                      step={5}
+                      value={s.duration_minutes}
+                      style={{ textAlign: 'right' }}
+                      onChange={(e) => patch(i, { duration_minutes: Number(e.target.value) })}
                     />
                   </td>
                   <td>
