@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listCustomers, type CustomerSummary, type Stage, type Warmth } from '../api/customers';
-import { Avatar, Chip } from '../components/ui';
+import LeadModal from '../components/crm/LeadModal';
+import { useToast } from '../components/shell/Toast';
+import { Avatar } from '../components/ui';
 import { relativeTime } from '../utils/time';
 
 /** Kolonlar. Sıra panonun soldan sağa akışı. */
-const STAGES: { key: Stage; label: string; hint: string }[] = [
-  { key: 'new', label: 'Yeni', hint: 'Henüz dönülmedi' },
-  { key: 'contacted', label: 'İlk temas', hint: 'Mesajlaşıldı' },
-  { key: 'consult', label: 'Konsültasyon', hint: 'Randevu verildi' },
-  { key: 'customer', label: 'Müşteri', hint: 'Seansa geldi' },
+const STAGES: { key: Stage; label: string; hint: string; edge: string }[] = [
+  { key: 'new', label: 'Yeni', hint: 'Henüz dönülmedi', edge: 'var(--warn)' },
+  { key: 'contacted', label: 'İlk temas', hint: 'Mesajlaşıldı', edge: 'var(--blue)' },
+  { key: 'consult', label: 'Konsültasyon', hint: 'Randevu verildi', edge: 'var(--ai)' },
+  { key: 'customer', label: 'Danışan', hint: 'Seansa geldi', edge: 'var(--forest)' },
 ];
 
-const WARMTH: Record<Warmth, { label: string; tone: 'sage' | 'champagne' | 'blush' }> = {
-  hot: { label: 'Sıcak', tone: 'sage' },
-  warm: { label: 'Ilık', tone: 'champagne' },
-  cold: { label: 'Soğuk', tone: 'blush' },
+const WARMTH: Record<Warmth, { label: string; bg: string; color: string }> = {
+  hot: { label: 'Sıcak', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
+  // Amber tasarıma özel; palette karşılığı yok.
+  warm: { label: 'Ilık', bg: '#FBF3E0', color: '#8A6A1F' },
+  cold: { label: 'Soğuk', bg: 'var(--neutral-soft)', color: 'var(--neutral)' },
 };
 
 const displayName = (c: CustomerSummary): string => c.name || c.phone;
@@ -32,7 +35,9 @@ const apptLabel = (a: NonNullable<CustomerSummary['next_appointment']>): string 
 export default function CRM() {
   const [items, setItems] = useState<CustomerSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState<CustomerSummary | null>(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const load = useCallback(() => {
     setError(null);
@@ -81,7 +86,15 @@ export default function CRM() {
               overflow: 'hidden',
             }}
           >
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
+            <div
+              style={{
+                padding: '14px 16px',
+                borderBottom: '1px solid var(--line)',
+                borderTop: `2px solid ${stage.edge}`,
+                borderTopLeftRadius: 'var(--r-card)',
+                borderTopRightRadius: 'var(--r-card)',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>{stage.label}</span>
                 <span style={{ fontSize: 11, color: 'var(--ink-40)' }}>{cards.length}</span>
@@ -99,10 +112,10 @@ export default function CRM() {
                 <button
                   key={c.phone}
                   type="button"
-                  onClick={() => navigate(`/danisan/${encodeURIComponent(c.phone)}`)}
+                  onClick={() => setOpen(c)}
                   style={{
                     textAlign: 'left', width: '100%', cursor: 'pointer', font: 'inherit',
-                    background: 'var(--cream)', border: '1px solid var(--line)',
+                    background: 'var(--paper)', border: '1px solid var(--line)',
                     borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
                   }}
                 >
@@ -117,9 +130,16 @@ export default function CRM() {
                       {displayName(c)}
                     </span>
                     {c.warmth && (
-                      <Chip tone={WARMTH[c.warmth].tone} small style={{ marginLeft: 'auto' }}>
+                      <span
+                        style={{
+                          marginLeft: 'auto', fontSize: 10, fontWeight: 600,
+                          padding: '2px 8px', borderRadius: 999,
+                          background: WARMTH[c.warmth].bg,
+                          color: WARMTH[c.warmth].color,
+                        }}
+                      >
                         {WARMTH[c.warmth].label}
-                      </Chip>
+                      </span>
                     )}
                   </div>
 
@@ -153,6 +173,24 @@ export default function CRM() {
           </div>
         );
       })}
+
+      {open && (
+        <LeadModal
+          customer={open}
+          stages={STAGES}
+          onClose={() => setOpen(null)}
+          onChanged={(phone, stage) => {
+            setItems((cur) =>
+              cur ? cur.map((c) => (c.phone === phone ? { ...c, stage } : c)) : cur,
+            );
+            setOpen((cur) => (cur ? { ...cur, stage } : cur));
+            toast('Aşama güncellendi.');
+          }}
+          onOpenProfile={() => navigate(`/danisan/${encodeURIComponent(open.phone)}`)}
+          onMessage={() => navigate(`/mesajlar?phone=${encodeURIComponent(open.phone)}`)}
+          onBook={() => navigate('/randevu')}
+        />
+      )}
     </div>
   );
 }

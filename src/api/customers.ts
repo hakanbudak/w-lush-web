@@ -29,6 +29,8 @@ export interface CustomerSummary {
 
 export interface AppointmentBrief {
   id: number;
+  /** Yalnızca bu randevuya bağlı ödeme varsa dolu. */
+  amount: number | null;
   appt_date: string;
   appt_time: string;
   service_name: string;
@@ -36,6 +38,8 @@ export interface AppointmentBrief {
 }
 
 export interface CustomerStats {
+  /** Yalnızca telefonu kayıtlı ödemeler toplamı. */
+  total_spend: number;
   appointments_total: number;
   past_sessions: number;
   cancelled: number;
@@ -72,3 +76,13 @@ export const getCustomer = (phone: string) =>
     created_at: toUtcIso(d.created_at),
     messages: d.messages.map((m) => ({ ...m, created_at: toUtcIso(m.created_at) })),
   }));
+
+/**
+ * CRM kartını bir aşamaya sabitler. `null` sabitlemeyi kaldırır ve aşama
+ * yeniden davranıştan türetilir.
+ */
+export const setStage = (phone: string, stage: Stage | null) =>
+  request<void>(`/api/customers/${encodeURIComponent(phone)}/stage`, {
+    method: 'PUT',
+    body: JSON.stringify({ stage }),
+  });
