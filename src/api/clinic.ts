@@ -6,6 +6,8 @@ export interface Service {
   id: number;
   name: string;
   price: number; // TL, tam sayı
+  /** Hizmetin süresi. Izgara saat başı olduğu için planlamayı etkilemiyor. */
+  duration_minutes: number;
   active: boolean;
   sort_order: number;
 }
