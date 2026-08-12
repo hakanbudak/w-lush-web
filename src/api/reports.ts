@@ -26,6 +26,8 @@ export interface ReportSummary {
   period_end: string;
   model: string;
   created_at: string; // ISO
+  /** Net tutar — listede göstermek için, saklanan facts'ten türetiliyor. */
+  profit: number;
 }
 
 export interface ReportDetail extends ReportSummary {
