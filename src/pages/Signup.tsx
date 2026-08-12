@@ -23,7 +23,9 @@ export default function Signup() {
     setError(null);
     try {
       await signup({ clinic_name: clinicName, email, password, name });
-      navigate('/', { replace: true });
+      // Yeni klinik demo hizmetlerle açılıyor; sihirbaz onları kendi listesiyle
+      // değiştiriyor. Atlanabilir.
+      navigate('/kurulum', { replace: true });
     } catch (err) {
       setError((err as Error).message);
     } finally {

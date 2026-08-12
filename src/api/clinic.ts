@@ -145,3 +145,30 @@ export interface ClinicRequest {
   created_at: string;
 }
 export const listRequests = () => request<ClinicRequest[]>('/api/requests');
+
+/* ── Kurulum sihirbazı ── */
+export interface PresetService {
+  name: string;
+  duration_minutes: number;
+}
+
+export interface Preset {
+  key: string;
+  label: string;
+  services: PresetService[];
+}
+
+/** Klinik tipine göre başlangıç listeleri. Giriş gerektirmez. */
+export const listPresets = () => request<Preset[]>('/api/setup/presets');
+
+export interface SetupInput {
+  clinic_type: string;
+  services: string[];
+  open_days: number[];
+  slot_times: string[];
+  slot_interval_minutes: number;
+}
+
+/** Sihirbazı bitirir: demo veriyi kliniğin kendi seçimiyle değiştirir. */
+export const applySetup = (input: SetupInput) =>
+  request<void>('/api/setup', { method: 'POST', body: JSON.stringify(input) });

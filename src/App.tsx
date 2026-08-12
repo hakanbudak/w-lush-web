@@ -6,6 +6,7 @@ import CRM from './pages/CRM';
 import DanisanProfili from './pages/DanisanProfili';
 import GelirRaporu from './pages/GelirRaporu';
 import Giderler from './pages/Giderler';
+import Kurulum from './pages/Kurulum';
 import Login from './pages/Login';
 import Mesajlar from './pages/Mesajlar';
 import RandevuTakvimi from './pages/RandevuTakvimi';
@@ -22,6 +23,11 @@ export default function App() {
       <Route path="/signup" element={<Signup />} />
 
       {/* Protected (auth gerekli) */}
+      {/* Kurulum kabuğun dışında: sihirbaz kendi tam ekran yerleşimini kullanıyor. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/kurulum" element={<Kurulum />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<AnaEkran />} />
