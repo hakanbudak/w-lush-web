@@ -19,6 +19,7 @@ const KIND_LABELS: Record<NotificationKind, string> = {
   reschedule: 'Erteleme',
   cancellation: 'İptal',
   request: 'Talep',
+  lapsed: 'Kayıp danışan',
 };
 
 const kindLabel = (kind: string): string =>
@@ -125,7 +126,8 @@ export default function NotificationBell() {
         });
     }
     setOpen(false);
-    navigate('/randevu');
+    // Hedefi olan bildirim oraya gider; olmayan eskisi gibi takvime düşer.
+    navigate(note.ref ? `/danisan/${encodeURIComponent(note.ref)}` : '/randevu');
   }
 
   function readAll() {

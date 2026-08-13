@@ -26,8 +26,8 @@ const FLAGS: Flag[] = [
   {
     key: 'ai_lapsed_alert',
     title: 'Kayıp danışan uyarısı',
-    desc: 'Uzun süredir gelmeyen danışanlar için uyarı üretilsin.',
-    live: false,
+    desc: 'Uzun süredir gelmeyen danışanlar için bildirim üretilsin. Danışana mesaj gitmez.',
+    live: true,
   },
   {
     key: 'ai_upsell',
@@ -72,6 +72,9 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 
 export default function AiSection() {
   const [flags, setFlags] = useState<Record<string, boolean>>({});
+  // Kaç gün sonra "kayıp" sayılsın. Klinikler arasında çok değişiyor:
+  // diş kontrolü altı ay, lazer seansı bir ay.
+  const [lapsedDays, setLapsedDays] = useState(120);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +86,7 @@ export default function AiSection() {
         const f: Record<string, boolean> = {};
         for (const flag of FLAGS) f[flag.key] = Boolean(s[flag.key]);
         setFlags(f);
+        setLapsedDays(Number(s.lapsed_after_days) || 120);
         setLoaded(true);
       })
       .catch(() => setError('Ayarlar yüklenemedi.'));
@@ -91,7 +95,10 @@ export default function AiSection() {
   const save = () => {
     setSaving(true);
     setError(null);
-    updateSettings(flags)
+    // Alan boşaltılırsa 0 gelir; 0 gün herkesi kayıp yapardı, o yüzden taban 7.
+    const days = Math.max(7, lapsedDays || 120);
+    setLapsedDays(days);
+    updateSettings({ ...flags, lapsed_after_days: days })
       .then(() => toast('AI ayarları kaydedildi.'))
       .catch(() => setError('Kaydedilemedi.'))
       .finally(() => setSaving(false));
@@ -150,6 +157,35 @@ export default function AiSection() {
               )}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-60)', marginTop: 3 }}>{f.desc}</div>
+            {/* Eşik yalnızca anahtar açıkken sorulur: kapalıyken anlamı yok. */}
+            {f.key === 'ai_lapsed_alert' && flags[f.key] && (
+              <label
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ink-60)',
+                  display: 'block',
+                  marginTop: 8,
+                }}
+              >
+                Son ziyaretten kaç gün sonra
+                <input
+                  type="number"
+                  min={7}
+                  value={lapsedDays}
+                  onChange={(e) => setLapsedDays(Number(e.target.value))}
+                  style={{
+                    width: 90,
+                    marginLeft: 8,
+                    border: '1px solid var(--line-strong)',
+                    borderRadius: 8,
+                    padding: '6px 8px',
+                    font: 'inherit',
+                    fontSize: 13,
+                    background: 'var(--cream)',
+                  }}
+                />
+              </label>
+            )}
           </div>
           <Toggle
             on={flags[f.key] ?? false}
