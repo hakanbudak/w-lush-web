@@ -3,7 +3,12 @@ import { request } from './client';
 import { toUtcIso } from '../utils/time';
 
 /** Backend'in ürettiği türler (app/notifications/service.py). */
-export type NotificationKind = 'booking' | 'reschedule' | 'cancellation' | 'request';
+export type NotificationKind =
+  | 'booking'
+  | 'reschedule'
+  | 'cancellation'
+  | 'request'
+  | 'lapsed';
 
 /**
  * Tek bir bildirim. `kind` bilerek `string`: backend ileride yeni bir tür
@@ -13,6 +18,8 @@ export interface AppNotification {
   id: number;
   kind: string;
   message: string;
+  /** Bildirimin işaret ettiği kayıt (danışan telefonu). Boş olabilir. */
+  ref: string | null;
   read: boolean;
   created_at: string; // ISO
 }
