@@ -37,6 +37,24 @@ const FLAGS: Flag[] = [
   },
 ];
 
+/** Anahtarın altında beliren küçük ayar alanlarının ortak görünümü. */
+const fieldStyle: React.CSSProperties = {
+  marginLeft: 8,
+  border: '1px solid var(--line-strong)',
+  borderRadius: 8,
+  padding: '6px 8px',
+  font: 'inherit',
+  fontSize: 13,
+  background: 'var(--cream)',
+};
+
+const subLabelStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: 'var(--ink-60)',
+  display: 'block',
+  marginTop: 8,
+};
+
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <button
@@ -75,6 +93,9 @@ export default function AiSection() {
   // Kaç gün sonra "kayıp" sayılsın. Klinikler arasında çok değişiyor:
   // diş kontrolü altı ay, lazer seansı bir ay.
   const [lapsedDays, setLapsedDays] = useState(120);
+  // Meta'nın onayladığı şablonun adı. Boşsa hatırlatma gönderilemez: 24 saat
+  // dışında serbest metin teslim edilmiyor, anahtar tek başına yetmiyor.
+  const [reminderTemplate, setReminderTemplate] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +108,7 @@ export default function AiSection() {
         for (const flag of FLAGS) f[flag.key] = Boolean(s[flag.key]);
         setFlags(f);
         setLapsedDays(Number(s.lapsed_after_days) || 120);
+        setReminderTemplate(String(s.reminder_template_name ?? ''));
         setLoaded(true);
       })
       .catch(() => setError('Ayarlar yüklenemedi.'));
@@ -98,7 +120,11 @@ export default function AiSection() {
     // Alan boşaltılırsa 0 gelir; 0 gün herkesi kayıp yapardı, o yüzden taban 7.
     const days = Math.max(7, lapsedDays || 120);
     setLapsedDays(days);
-    updateSettings({ ...flags, lapsed_after_days: days })
+    updateSettings({
+      ...flags,
+      lapsed_after_days: days,
+      reminder_template_name: reminderTemplate.trim(),
+    })
       .then(() => toast('AI ayarları kaydedildi.'))
       .catch(() => setError('Kaydedilemedi.'))
       .finally(() => setSaving(false));
@@ -157,33 +183,35 @@ export default function AiSection() {
               )}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-60)', marginTop: 3 }}>{f.desc}</div>
-            {/* Eşik yalnızca anahtar açıkken sorulur: kapalıyken anlamı yok. */}
+            {/* Ek alanlar yalnızca anahtar açıkken sorulur: kapalıyken anlamı yok. */}
             {f.key === 'ai_lapsed_alert' && flags[f.key] && (
-              <label
-                style={{
-                  fontSize: 11,
-                  color: 'var(--ink-60)',
-                  display: 'block',
-                  marginTop: 8,
-                }}
-              >
+              <label style={subLabelStyle}>
                 Son ziyaretten kaç gün sonra
                 <input
                   type="number"
                   min={7}
                   value={lapsedDays}
                   onChange={(e) => setLapsedDays(Number(e.target.value))}
-                  style={{
-                    width: 90,
-                    marginLeft: 8,
-                    border: '1px solid var(--line-strong)',
-                    borderRadius: 8,
-                    padding: '6px 8px',
-                    font: 'inherit',
-                    fontSize: 13,
-                    background: 'var(--cream)',
-                  }}
+                  style={{ ...fieldStyle, width: 90 }}
                 />
+              </label>
+            )}
+            {f.key === 'ai_auto_reminder' && flags[f.key] && (
+              <label style={subLabelStyle}>
+                Onaylı şablon adı
+                <input
+                  type="text"
+                  value={reminderTemplate}
+                  placeholder="randevu_hatirlatma"
+                  onChange={(e) => setReminderTemplate(e.target.value)}
+                  style={{ ...fieldStyle, width: 200 }}
+                />
+                {!reminderTemplate.trim() && (
+                  <span style={{ display: 'block', marginTop: 4, color: 'var(--warn)' }}>
+                    Şablon adı boşken hatırlatma gönderilmiyor: 24 saat dışında
+                    yalnızca Meta'nın onayladığı şablonlar teslim ediliyor.
+                  </span>
+                )}
               </label>
             )}
           </div>
