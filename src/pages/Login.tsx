@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import RotatingWord from '../components/auth/RotatingWord';
 import { Icon } from '../components/icons';
 import './auth.css';
 
@@ -388,16 +389,7 @@ function AuthLeftPanel() {
           >
             Klinik Yönetim Sistemi
           </div>
-          <h1
-            style={{
-              fontSize: 46, fontWeight: 500, lineHeight: 1.08,
-              letterSpacing: '-0.032em', margin: 0,
-            }}
-          >
-            Operasyonunuzun
-            <br />
-            <span style={{ fontWeight: 600 }}>yeni merkezi.</span>
-          </h1>
+          <RotatingWord />
           <p
             style={{
               fontSize: 15, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7,

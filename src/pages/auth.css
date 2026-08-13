@@ -112,3 +112,8 @@
 @media (max-width: 860px) {
   .wl-auth-side { display: none; }
 }
+
+@keyframes wl-word {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}

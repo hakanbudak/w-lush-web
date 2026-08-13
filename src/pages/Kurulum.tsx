@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { applySetup, listPresets, type Preset } from '../api/clinic';
-import { useAuth } from '../auth/AuthContext';
+import RotatingWord from '../components/auth/RotatingWord';
 import './auth.css';
 
 const DAYS: [number, string][] = [
@@ -67,7 +67,6 @@ function StepDots({ step }: { step: number }) {
  */
 export default function Kurulum() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [presets, setPresets] = useState<Preset[]>([]);
   const [step, setStep] = useState(1);
   const [type, setType] = useState<string | null>(null);
@@ -118,11 +117,8 @@ export default function Kurulum() {
           <span>w-lush</span>
         </div>
         <div className="wl-auth-chip">KLİNİK YÖNETİM PLATFORMU</div>
-        <h1 className="wl-auth-hero">
-          {user?.clinic.name ?? 'Kliniğiniz'} için
-          <br />
-          birkaç dakikalık kurulum.
-        </h1>
+        {/* Tip seçilince kelime ona kilitlenir: panel de o kliniği anlatmaya başlar. */}
+        <RotatingWord locked={type} />
         <p className="wl-auth-lead">
           Seçtikleriniz sonradan Sistem ekranından değiştirilebilir — burada verdiğiniz
           hiçbir karar kalıcı değil.
