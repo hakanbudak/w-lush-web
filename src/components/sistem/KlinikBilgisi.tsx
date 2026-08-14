@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { getSettings, updateSettings } from '../../api/clinic';
 import { useToast } from '../shell/Toast';
 import RandevuAyarlari from './RandevuAyarlari';
+import Select from '../ui/Select';
 
 const field: CSSProperties = {
   width: '100%',
@@ -74,14 +75,15 @@ export default function KlinikBilgisi() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <label style={labelStyle}>
           Klinik tipi
-          <select value={type} onChange={(e) => setType(e.target.value)} style={field}>
-            <option value="">Seçilmedi</option>
-            {TYPES.map(([k, l]) => (
-              <option key={k} value={k}>
-                {l}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={type}
+            onChange={setType}
+            options={[
+              { value: '', label: 'Seçilmedi' },
+              ...TYPES.map(([k, l]) => ({ value: k, label: l })),
+            ]}
+            style={field}
+          />
         </label>
 
         <label style={labelStyle}>

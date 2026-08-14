@@ -3,6 +3,7 @@ import { listServices, type Service } from '../api/clinic';
 import { createPayment, type PaymentMethod } from '../api/payments';
 import CustomerPicker from './finance/CustomerPicker';
 import { Modal } from './modals';
+import Select from './ui/Select';
 
 const METHODS: [PaymentMethod, string][] = [
   ['cash', 'Nakit'],
@@ -102,32 +103,21 @@ export default function PaymentModal({
         </label>
         <label style={labelStyle}>
           Ödeme yöntemi
-          <select
+          <Select
             value={method}
-            onChange={(e) => setMethod(e.target.value as PaymentMethod)}
+            onChange={(v) => setMethod(v as PaymentMethod)}
+            options={METHODS.map(([k, lbl]) => ({ value: k, label: lbl }))}
             style={field}
-          >
-            {METHODS.map(([k, lbl]) => (
-              <option key={k} value={k}>
-                {lbl}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <label style={labelStyle}>
           Hizmet
-          <select
+          <Select
             value={serviceName}
-            onChange={(e) => setServiceName(e.target.value)}
+            onChange={setServiceName}
+            options={services.map((s) => ({ value: s.name, label: s.name }))}
             style={field}
-          >
-            <option value="">Seçilmedi</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <CustomerPicker
           name={customerName}

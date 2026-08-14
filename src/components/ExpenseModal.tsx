@@ -5,6 +5,7 @@ import {
   type PaymentMethod,
 } from '../api/expenses';
 import { Modal } from './modals';
+import Select from './ui/Select';
 
 const METHODS: [PaymentMethod, string][] = [
   ['transfer', 'Havale'],
@@ -89,17 +90,12 @@ export default function ExpenseModal({
           <>
             <label style={labelStyle}>
               Kategori
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(Number(e.target.value))}
+              <Select
+                value={String(categoryId)}
+                onChange={(v) => setCategoryId(Number(v))}
+                options={active.map((c) => ({ value: String(c.id), label: c.name }))}
                 style={field}
-              >
-                {active.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label style={labelStyle}>
               Tarih
@@ -123,17 +119,12 @@ export default function ExpenseModal({
             </label>
             <label style={labelStyle}>
               Ödeme yöntemi
-              <select
+              <Select
                 value={method}
-                onChange={(e) => setMethod(e.target.value as PaymentMethod)}
+                onChange={(v) => setMethod(v as PaymentMethod)}
+                options={METHODS.map(([k, lbl]) => ({ value: k, label: lbl }))}
                 style={field}
-              >
-                {METHODS.map(([k, lbl]) => (
-                  <option key={k} value={k}>
-                    {lbl}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label style={labelStyle}>
               Açıklama

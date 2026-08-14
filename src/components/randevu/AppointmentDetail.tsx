@@ -9,6 +9,7 @@ import {
 import { listConversations } from '../../api/conversations';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
+import Select from '../ui/Select';
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: 'Onaylı', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
@@ -125,19 +126,20 @@ export default function AppointmentDetail({
           </Line>
           <Line label="Hizmet">{appointment.service_name || '—'}</Line>
           <Line label="Uzman">
-            <select
+            <Select
               value={appointment.staff_id === null ? '' : String(appointment.staff_id)}
               disabled={busy}
-              onChange={(e) =>
+              ariaLabel="Uzman"
+              onChange={(v) =>
                 run(
-                  () =>
-                    assignAppointmentStaff(
-                      appointment.id,
-                      e.target.value === '' ? null : Number(e.target.value),
-                    ),
+                  () => assignAppointmentStaff(appointment.id, v === '' ? null : Number(v)),
                   'Personel ataması güncellendi.',
                 )
               }
+              options={[
+                { value: '', label: 'Atanmamış' },
+                ...staff.map((s) => ({ value: String(s.id), label: s.name })),
+              ]}
               style={{
                 width: '100%',
                 border: '1px solid var(--line-strong)',
@@ -147,14 +149,7 @@ export default function AppointmentDetail({
                 fontSize: 13,
                 background: 'var(--cream)',
               }}
-            >
-              <option value="">Atanmamış</option>
-              {staff.map((s) => (
-                <option key={s.id} value={String(s.id)}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            />
           </Line>
         </div>
 
