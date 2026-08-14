@@ -8,6 +8,7 @@ import {
 } from '../api/customers';
 import { Avatar, Chip } from '../components/ui';
 import { clockTime, relativeTime } from '../utils/time';
+import { displayName } from '../utils/people';
 
 type Tab = 'randevular' | 'mesajlar';
 
@@ -16,8 +17,6 @@ const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> =
   pending: { label: 'Bekliyor', tone: 'warn' },
   cancelled: { label: 'İptal', tone: 'bad' },
 };
-
-const displayName = (c: { name: string; phone: string }): string => c.name || c.phone;
 
 /** YYYY-MM-DD → "12 May 2026". Takvim günü; saat dilimi çevrimi yok. */
 const dayLabel = (isoDate: string): string =>

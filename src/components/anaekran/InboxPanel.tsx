@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '../icons';
 import type { Conversation } from '../../api/conversations';
+import { displayName, initials } from '../../utils/people';
 
 const MAX = 5;
-
-const initials = (name: string): string =>
-  name.split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase() || '••';
 
 /** "2 dk", "1 sa", "3 gün" — gelen kutusu için kaba yeterli. */
 function ago(iso: string): string {
@@ -64,7 +62,7 @@ export default function InboxPanel({ items }: { items: Conversation[] }) {
                 fontSize: 10, fontWeight: 500, flexShrink: 0,
               }}
             >
-              {initials(c.customer_name || c.phone)}
+              {initials({ name: c.customer_name, phone: c.phone })}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
@@ -73,7 +71,7 @@ export default function InboxPanel({ items }: { items: Conversation[] }) {
                 }}
               >
                 <div style={{ fontSize: 12, fontWeight: 500 }}>
-                  {c.customer_name || c.phone}
+                  {displayName({ name: c.customer_name, phone: c.phone })}
                 </div>
                 <span style={{ fontSize: 10, color: 'var(--ink-40)' }}>{ago(c.last_at)}</span>
               </div>

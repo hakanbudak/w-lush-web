@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ApiError } from '../../api/client';
 import { setStage, type CustomerSummary, type Stage } from '../../api/customers';
 import { Modal } from '../modals';
+import { displayName } from '../../utils/people';
 
 const WARMTH: Record<string, { label: string; bg: string; color: string }> = {
   hot: { label: 'Sıcak', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
@@ -40,7 +41,7 @@ export default function LeadModal({
   const [error, setError] = useState<string | null>(null);
   const [pinned, setPinned] = useState(false);
 
-  const who = customer.name || customer.phone;
+  const who = displayName(customer);
   const warmth = customer.warmth ? WARMTH[customer.warmth] : null;
 
   const move = (stage: Stage) => {

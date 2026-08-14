@@ -14,6 +14,7 @@ import { useSetTopBarActions } from '../components/shell/TopBarActions';
 import { useToast } from '../components/shell/Toast';
 import PaymentModal from '../components/PaymentModal';
 import { rangeFor, type Period } from '../utils/period';
+import { displayName } from '../utils/people';
 
 const fmt = (n: number): string => '₺ ' + n.toLocaleString('tr-TR');
 
@@ -198,7 +199,9 @@ export default function GelirRaporu() {
                     width: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
-                  {p.customer_name || p.phone || '—'}
+                  {p.phone || p.customer_name
+                    ? displayName({ name: p.customer_name, phone: p.phone })
+                    : '—'}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, color: 'var(--ink-60)' }}>
                   {p.service_name || 'Belirtilmemiş'}
