@@ -3,6 +3,8 @@ import { listServices, type Service } from '../api/clinic';
 import { createPayment, type PaymentMethod } from '../api/payments';
 import CustomerPicker from './finance/CustomerPicker';
 import { Modal } from './modals';
+import { isoDate } from '../utils/calendar';
+import DatePicker from './ui/DatePicker';
 import Select from './ui/Select';
 
 const METHODS: [PaymentMethod, string][] = [
@@ -11,11 +13,6 @@ const METHODS: [PaymentMethod, string][] = [
   ['transfer', 'Havale'],
   ['other', 'Diğer'],
 ];
-
-const todayIso = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 const field: CSSProperties = {
   width: '100%',
@@ -37,7 +34,7 @@ export default function PaymentModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [paidAt, setPaidAt] = useState(todayIso());
+  const [paidAt, setPaidAt] = useState(isoDate(new Date()));
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [serviceName, setServiceName] = useState('');
@@ -88,7 +85,14 @@ export default function PaymentModal({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20 }}>
         <label style={labelStyle}>
           Tarih
-          <input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} style={field} />
+          <DatePicker
+            value={paidAt}
+            onChange={setPaidAt}
+            // Sunucu gelecek tarihli ödemeyi reddediyor; kullanıcı hatayı
+            // "Kaydet"ten sonra görmek yerine o günü hiç seçemiyor.
+            max={isoDate(new Date())}
+            style={field}
+          />
         </label>
         <label style={labelStyle}>
           Tutar (₺)

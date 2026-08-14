@@ -9,6 +9,7 @@ import {
 } from '../../api/clinic';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
+import DatePicker from '../ui/DatePicker';
 import Select from '../ui/Select';
 
 const field: CSSProperties = {
@@ -155,12 +156,8 @@ export default function AppointmentModal({
         <div style={{ display: 'flex', gap: 12 }}>
           <label style={{ ...labelStyle, flex: 1 }}>
             Tarih
-            <input
-              type="date"
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              style={field}
-            />
+            {/* Sınır yok: geçmişte kalmış bir ziyareti kaydetmek meşru bir iş. */}
+            <DatePicker value={day} onChange={setDay} style={field} />
           </label>
           <label style={{ ...labelStyle, flex: 1 }}>
             Saat
