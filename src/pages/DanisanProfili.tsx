@@ -7,11 +7,12 @@ import {
   type CustomerDetail,
   type CustomerSummary,
 } from '../api/customers';
+import CustomerNotes from '../components/customer/CustomerNotes';
 import { Avatar, Chip } from '../components/ui';
 import { clockTime, relativeTime } from '../utils/time';
 import { displayName } from '../utils/people';
 
-type Tab = 'randevular' | 'mesajlar';
+type Tab = 'randevular' | 'mesajlar' | 'notlar';
 
 const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
   confirmed: { label: 'Onaylı', tone: 'good' },
@@ -338,6 +339,7 @@ export default function DanisanProfili() {
                 {([
                   ['randevular', 'Randevu geçmişi'],
                   ['mesajlar', 'Mesaj geçmişi'],
+                  ['notlar', 'Notlar'],
                 ] as [Tab, string][]).map(([key, label]) => (
                   <button
                     key={key}
@@ -419,6 +421,12 @@ export default function DanisanProfili() {
                   <div style={{ fontSize: 10, color: 'var(--ink-40)', textAlign: 'center', marginTop: 4 }}>
                     Cevap yazmak için Mesajlar ekranını kullanın.
                   </div>
+                </div>
+              )}
+
+              {tab === 'notlar' && (
+                <div style={{ padding: 16 }}>
+                  <CustomerNotes phone={detail.phone} />
                 </div>
               )}
             </div>
