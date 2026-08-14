@@ -9,6 +9,7 @@ import {
 import { listConversations } from '../../api/conversations';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
+import CustomerNotes from '../customer/CustomerNotes';
 import Select from '../ui/Select';
 import { displayName, formatPhone } from '../../utils/people';
 
@@ -154,6 +155,15 @@ export default function AppointmentDetail({
         </div>
 
         {error && <div style={{ fontSize: 12, color: 'var(--bad)' }}>{error}</div>}
+
+        {/* Not kişiye ait, bu randevuya değil: seansa girmeden önce
+            hatırlanması gereken şey burada da görünsün. */}
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+          <div className="wl-label" style={{ marginBottom: 8 }}>
+            Danışan notları
+          </div>
+          <CustomerNotes phone={appointment.phone} />
+        </div>
 
         {hasThread === false && (
           <div style={{ fontSize: 11, color: 'var(--ink-45)' }}>

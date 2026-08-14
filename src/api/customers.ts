@@ -99,3 +99,24 @@ export const setCustomerName = (phone: string, name: string) =>
     method: 'PUT',
     body: JSON.stringify({ name }),
   });
+
+/** Danışan hakkında yazılmış notlar, yeniden eskiye. */
+export interface CustomerNote {
+  id: number;
+  body: string;
+  created_at: string; // ISO
+}
+
+export const listNotes = (phone: string) =>
+  request<CustomerNote[]>(`/api/customers/${encodeURIComponent(phone)}/notes`).then(
+    (rows) => rows.map((n) => ({ ...n, created_at: toUtcIso(n.created_at) })),
+  );
+
+export const addNote = (phone: string, body: string) =>
+  request<CustomerNote>(`/api/customers/${encodeURIComponent(phone)}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  }).then((n) => ({ ...n, created_at: toUtcIso(n.created_at) }));
+
+export const deleteNote = (id: number) =>
+  request<void>(`/api/customers/notes/${id}`, { method: 'DELETE' });
