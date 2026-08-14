@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -11,5 +12,10 @@ export default defineConfig({
       // /api → backend (w-lush-api). Same-origin olur → CORS sorunu yok.
       '/api': { target: 'http://localhost:8000', changeOrigin: true },
     },
+  },
+  test: {
+    // Kendi dropdown'ımızın klavye ve odak davranışı ancak gerçek bir DOM'da
+    // doğrulanabiliyor. Saf fonksiyon testleri jsdom altında da aynı koşuyor.
+    environment: 'jsdom',
   },
 });

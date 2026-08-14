@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { listCustomers, type CustomerSummary } from '../../api/customers';
+import Combobox from '../ui/Combobox';
 
 const field: CSSProperties = {
   width: '100%',
@@ -41,22 +42,18 @@ export default function CustomerPicker({
     <>
       <label style={labelStyle}>
         Danışan
-        <input
-          list="wl-customers"
+        <Combobox
           value={name}
-          onChange={(e) => {
-            const typed = e.target.value;
-            const hit = rows.find((r) => (r.name || r.phone) === typed);
-            onChange(hit ? { name: hit.name || '', phone: hit.phone } : { name: typed, phone });
+          onChange={(typed) => onChange({ name: typed, phone })}
+          onPick={(o) => {
+            // Değer telefon: iki danışanın adı aynı olabilir, numarası olamaz.
+            const hit = rows.find((r) => r.phone === o.value);
+            onChange({ name: hit?.name || o.label, phone: o.value });
           }}
+          options={rows.map((r) => ({ value: r.phone, label: r.name || r.phone }))}
           placeholder="Kayıtlı danışan seçin ya da isim yazın"
           style={field}
         />
-        <datalist id="wl-customers">
-          {rows.map((r) => (
-            <option key={r.phone} value={r.name || r.phone} />
-          ))}
-        </datalist>
       </label>
 
       <label style={labelStyle}>

@@ -5,6 +5,7 @@ import {
   type ClinicSettings,
 } from '../../api/clinic';
 import { Icon } from '../icons';
+import Select from '../ui/Select';
 
 const GUN = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']; // iso = index + 1
 
@@ -174,16 +175,18 @@ export default function RandevuAyarlari() {
           "Diğer" talepleri — ekibe iletim
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select
-            className="wl-input"
+          <Select
             value={String(s.handoff_mode || 'log')}
+            onChange={(v) => set({ handoff_mode: v })}
+            ariaLabel="Talep iletim yolu"
+            options={[
+              { value: 'log', label: 'Sadece kaydet (panelde gör)' },
+              { value: 'whatsapp', label: 'WhatsApp ile ilet' },
+              { value: 'email', label: 'E-posta ile ilet' },
+            ]}
             style={{ width: 230 }}
-            onChange={(e) => set({ handoff_mode: e.target.value })}
-          >
-            <option value="log">Sadece kaydet (panelde gör)</option>
-            <option value="whatsapp">WhatsApp ile ilet</option>
-            <option value="email">E-posta ile ilet</option>
-          </select>
+            className="wl-input"
+          />
           <input
             className="wl-input"
             placeholder="Numara veya e-posta"

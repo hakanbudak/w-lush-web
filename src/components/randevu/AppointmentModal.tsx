@@ -9,6 +9,7 @@ import {
 } from '../../api/clinic';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
+import Select from '../ui/Select';
 
 const field: CSSProperties = {
   width: '100%',
@@ -140,18 +141,15 @@ export default function AppointmentModal({
 
         <label style={labelStyle}>
           Hizmet
-          <select
+          <Select
             value={serviceName}
-            onChange={(e) => setServiceName(e.target.value)}
+            onChange={setServiceName}
+            options={[
+              { value: '', label: 'Seçilmedi' },
+              ...services.map((s) => ({ value: s.name, label: s.name })),
+            ]}
             style={field}
-          >
-            <option value="">Seçilmedi</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -166,27 +164,29 @@ export default function AppointmentModal({
           </label>
           <label style={{ ...labelStyle, flex: 1 }}>
             Saat
-            <select value={time} onChange={(e) => setTime(e.target.value)} style={field}>
-              <option value="">Seçilmedi</option>
-              {slots.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={time}
+              onChange={setTime}
+              options={[
+                { value: '', label: 'Seçilmedi' },
+                ...slots.map((s) => ({ value: s, label: s })),
+              ]}
+              style={field}
+            />
           </label>
         </div>
 
         <label style={labelStyle}>
           Personel
-          <select value={staffId} onChange={(e) => setStaffId(e.target.value)} style={field}>
-            <option value={UNASSIGNED}>Atanmamış</option>
-            {staff.map((s) => (
-              <option key={s.id} value={String(s.id)}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={staffId}
+            onChange={setStaffId}
+            options={[
+              { value: UNASSIGNED, label: 'Atanmamış' },
+              ...staff.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+            style={field}
+          />
         </label>
 
         <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>

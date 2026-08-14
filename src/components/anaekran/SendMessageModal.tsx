@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { ApiError } from '../../api/client';
 import { listConversations, sendReply, type Conversation } from '../../api/conversations';
 import { Modal } from '../modals';
+import Select from '../ui/Select';
 
 const field: CSSProperties = {
   width: '100%',
@@ -83,13 +84,15 @@ export default function SendMessageModal({
           <>
             <label style={labelStyle}>
               Alıcı
-              <select value={phone} onChange={(e) => setPhone(e.target.value)} style={field}>
-                {(rows ?? []).map((r) => (
-                  <option key={r.phone} value={r.phone}>
-                    {r.customer_name || r.phone}
-                  </option>
-                ))}
-              </select>
+              <Select
+                value={phone}
+                onChange={setPhone}
+                options={(rows ?? []).map((r) => ({
+                  value: r.phone,
+                  label: r.customer_name || r.phone,
+                }))}
+                style={field}
+              />
             </label>
 
             <label style={labelStyle}>
