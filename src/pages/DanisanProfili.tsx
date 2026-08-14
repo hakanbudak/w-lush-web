@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   getCustomer,
   listCustomers,
+  setCustomerName,
   type CustomerDetail,
   type CustomerSummary,
 } from '../api/customers';
 import { Avatar, Chip } from '../components/ui';
 import { clockTime, relativeTime } from '../utils/time';
+import { displayName } from '../utils/people';
 
 type Tab = 'randevular' | 'mesajlar';
 
@@ -16,8 +18,6 @@ const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> =
   pending: { label: 'Bekliyor', tone: 'warn' },
   cancelled: { label: 'İptal', tone: 'bad' },
 };
-
-const displayName = (c: { name: string; phone: string }): string => c.name || c.phone;
 
 /** YYYY-MM-DD → "12 May 2026". Takvim günü; saat dilimi çevrimi yok. */
 const dayLabel = (isoDate: string): string =>
@@ -37,6 +37,11 @@ export default function DanisanProfili() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<Tab>('randevular');
+  // İsim düzenleme. Boşken açılıyorsa alan da boş: operatörün ilk işi
+  // "İsimsiz"i silmek olmasın.
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const loadList = useCallback(() => {
     setListError(null);
@@ -66,6 +71,25 @@ export default function DanisanProfili() {
   }, [phone]);
 
   useEffect(loadDetail, [loadDetail]);
+
+  // Başka bir danışana geçildiğinde açık kalan düzenleme kapanmalı; yoksa
+  // bir kişinin adı diğerinin alanında durur.
+  useEffect(() => {
+    setEditingName(false);
+    setNameError(null);
+  }, [phone]);
+
+  const saveName = () => {
+    if (!detail) return;
+    setNameError(null);
+    setCustomerName(detail.phone, nameDraft)
+      .then(() => {
+        setEditingName(false);
+        loadDetail();
+        loadList();
+      })
+      .catch(() => setNameError('İsim kaydedilemedi.'));
+  };
 
   const filtered = useMemo(() => {
     if (!list) return [];
@@ -206,11 +230,62 @@ export default function DanisanProfili() {
               }}
             >
               <Avatar name={displayName(detail)} size={44} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 600 }}>{displayName(detail)}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                {editingName ? (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      autoFocus
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveName();
+                        if (e.key === 'Escape') setEditingName(false);
+                      }}
+                      placeholder="Danışanın adı"
+                      style={{
+                        flex: 1, minWidth: 0, border: '1px solid var(--line-strong)',
+                        borderRadius: 8, padding: '7px 9px', font: 'inherit', fontSize: 15,
+                        background: 'var(--cream)',
+                      }}
+                    />
+                    <button type="button" className="wl-btn wl-btn-sm" onClick={saveName}>
+                      Kaydet
+                    </button>
+                    <button
+                      type="button"
+                      className="wl-btn wl-btn-sm"
+                      onClick={() => setEditingName(false)}
+                    >
+                      Vazgeç
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                    <div style={{ fontSize: 16, fontWeight: 600 }}>{displayName(detail)}</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNameDraft(detail.name);
+                        setEditingName(true);
+                      }}
+                      style={{
+                        border: 'none', background: 'transparent', font: 'inherit',
+                        fontSize: 11, color: 'var(--ink-45)', cursor: 'pointer',
+                        textDecoration: 'underline', padding: 0,
+                      }}
+                    >
+                      {detail.name ? 'düzenle' : 'isim ekle'}
+                    </button>
+                  </div>
+                )}
                 <div style={{ fontSize: 12, color: 'var(--ink-40)', marginTop: 2 }}>
                   {detail.phone} · İlk kayıt {relativeTime(detail.created_at)}
                 </div>
+                {nameError && (
+                  <div style={{ fontSize: 11, color: 'var(--bad)', marginTop: 4 }}>
+                    {nameError}
+                  </div>
+                )}
               </div>
             </div>
 

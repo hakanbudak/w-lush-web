@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchAll, type SearchResults } from '../../api/search';
 import { Icon } from '../icons';
+import { displayName } from '../../utils/people';
 
 const EMPTY: SearchResults = { customers: [], appointments: [], payments: [] };
 
@@ -164,7 +165,7 @@ export default function SearchBox() {
                   {results.customers.map((c) => (
                     <Row
                       key={c.phone}
-                      primary={c.name || c.phone}
+                      primary={displayName(c)}
                       secondary={c.name ? c.phone : ''}
                       onClick={() => go(`/danisan/${encodeURIComponent(c.phone)}`)}
                     />
@@ -176,7 +177,7 @@ export default function SearchBox() {
                   {results.appointments.map((a) => (
                     <Row
                       key={a.id}
-                      primary={a.customer_name || '—'}
+                      primary={displayName({ name: a.customer_name, phone: a.phone })}
                       secondary={`${a.appt_date} · ${a.appt_time} · ${a.service_name}`}
                       onClick={() => go('/randevu')}
                     />
@@ -188,7 +189,7 @@ export default function SearchBox() {
                   {results.payments.map((p) => (
                     <Row
                       key={p.id}
-                      primary={p.customer_name || '—'}
+                      primary={displayName({ name: p.customer_name, phone: p.phone })}
                       secondary={`${p.paid_at} · ${money(p.amount)} · ${p.service_name}`}
                       onClick={() => go('/gelir')}
                     />

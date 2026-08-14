@@ -5,6 +5,7 @@ import LeadModal from '../components/crm/LeadModal';
 import { useToast } from '../components/shell/Toast';
 import { Avatar } from '../components/ui';
 import { relativeTime } from '../utils/time';
+import { displayName } from '../utils/people';
 
 /** Kolonlar. Sıra panonun soldan sağa akışı. */
 const STAGES: { key: Stage; label: string; hint: string; edge: string }[] = [
@@ -20,8 +21,6 @@ const WARMTH: Record<Warmth, { label: string; bg: string; color: string }> = {
   warm: { label: 'Ilık', bg: '#FBF3E0', color: '#8A6A1F' },
   cold: { label: 'Soğuk', bg: 'var(--neutral-soft)', color: 'var(--neutral)' },
 };
-
-const displayName = (c: CustomerSummary): string => c.name || c.phone;
 
 /** "9 Ağu 14:30 · Lazer" — takvim günü, saat dilimi çevrimi yok. */
 const apptLabel = (a: NonNullable<CustomerSummary['next_appointment']>): string => {

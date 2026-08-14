@@ -86,3 +86,16 @@ export const setStage = (phone: string, stage: Stage | null) =>
     method: 'PUT',
     body: JSON.stringify({ stage }),
   });
+
+/**
+ * Danışanın adını düzeltir ya da doldurur. Boş metin adı temizler: yanlış
+ * kişiye yazılmış bir ismi bırakmaktansa "bilmiyoruz" demek daha doğru.
+ *
+ * setStage'in aksine bu uç mevcut ismi ezer — burada biri bakıp bilerek
+ * yazıyor, randevunun taşıdığı isim ise başka bir işin yan etkisi.
+ */
+export const setCustomerName = (phone: string, name: string) =>
+  request<void>(`/api/customers/${encodeURIComponent(phone)}/name`, {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  });

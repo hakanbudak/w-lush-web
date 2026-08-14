@@ -17,13 +17,12 @@ import SlotGrid, { type SlotColumn, type SlotItem } from '../components/randevu/
 import {
   addDays, dayLabel, fullDate, gridRows, isoDate, isoDay, startOfWeek,
 } from '../utils/calendar';
+import { displayName } from '../utils/people';
 
 type View = 'gun' | 'hafta';
 
 const UNASSIGNED = 'none';
 
-
-const maskPhone = (p: string): string => (p.length > 6 ? `${p.slice(0, 6)}•••${p.slice(-2)}` : p);
 
 const card: CSSProperties = {
   background: 'var(--paper)',
@@ -125,7 +124,7 @@ export default function RandevuTakvimi() {
         id: a.id,
         slot: a.appt_time,
         columnKey: view === 'gun' ? String(a.staff_id ?? UNASSIGNED) : a.appt_date,
-        title: a.customer_name || maskPhone(a.phone),
+        title: displayName({ name: a.customer_name, phone: a.phone }),
         subtitle: a.service_name,
         status: a.status,
         colorIndex: colorOf(a.staff_id),

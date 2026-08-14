@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { listCustomers, type CustomerSummary } from '../../api/customers';
 import Combobox from '../ui/Combobox';
+import { displayName } from '../../utils/people';
 
 const field: CSSProperties = {
   width: '100%',
@@ -50,7 +51,7 @@ export default function CustomerPicker({
             const hit = rows.find((r) => r.phone === o.value);
             onChange({ name: hit?.name || o.label, phone: o.value });
           }}
-          options={rows.map((r) => ({ value: r.phone, label: r.name || r.phone }))}
+          options={rows.map((r) => ({ value: r.phone, label: displayName(r) }))}
           placeholder="Kayıtlı danışan seçin ya da isim yazın"
           style={field}
         />

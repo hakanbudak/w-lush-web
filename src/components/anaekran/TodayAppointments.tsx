@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '../icons';
 import type { Appointment } from '../../api/clinic';
+import { displayName } from '../../utils/people';
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   confirmed: { label: 'Onaylı', cls: 'wl-chip wl-chip-good' },
@@ -8,7 +9,6 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: 'İptal', cls: 'wl-chip wl-chip-cream' },
 };
 
-const maskPhone = (p: string): string => (p.length > 6 ? `${p.slice(0, 6)}•••${p.slice(-2)}` : p);
 
 const initials = (name: string): string =>
   name.split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase() || '••';
@@ -72,7 +72,7 @@ export default function TodayAppointments({
           </thead>
           <tbody>
             {items.map((a, i) => {
-              const who = a.customer_name || maskPhone(a.phone);
+              const who = displayName({ name: a.customer_name, phone: a.phone });
               const st = STATUS[a.status] ?? { label: a.status, cls: 'wl-chip wl-chip-cream' };
               return (
                 <tr key={a.id}>
