@@ -5,6 +5,8 @@ import {
   type PaymentMethod,
 } from '../api/expenses';
 import { Modal } from './modals';
+import { isoDate } from '../utils/calendar';
+import DatePicker from './ui/DatePicker';
 import Select from './ui/Select';
 
 const METHODS: [PaymentMethod, string][] = [
@@ -13,11 +15,6 @@ const METHODS: [PaymentMethod, string][] = [
   ['cash', 'Nakit'],
   ['other', 'Diğer'],
 ];
-
-const todayIso = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 const field: CSSProperties = {
   width: '100%', border: '1px solid var(--line)', borderRadius: 8,
@@ -38,7 +35,7 @@ export default function ExpenseModal({
 }) {
   const active = categories.filter((c) => c.active);
   const [categoryId, setCategoryId] = useState<number | ''>(active[0]?.id ?? '');
-  const [spentAt, setSpentAt] = useState(todayIso());
+  const [spentAt, setSpentAt] = useState(isoDate(new Date()));
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<PaymentMethod>('transfer');
   const [description, setDescription] = useState('');
@@ -99,10 +96,11 @@ export default function ExpenseModal({
             </label>
             <label style={labelStyle}>
               Tarih
-              <input
-                type="date"
+              <DatePicker
                 value={spentAt}
-                onChange={(e) => setSpentAt(e.target.value)}
+                onChange={setSpentAt}
+                // Gider de gelecek tarihi kabul etmiyor (ERR_EXPENSE_FUTURE_DATE).
+                max={isoDate(new Date())}
                 style={field}
               />
             </label>
