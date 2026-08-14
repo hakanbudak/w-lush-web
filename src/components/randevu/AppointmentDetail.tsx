@@ -10,6 +10,7 @@ import { listConversations } from '../../api/conversations';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
 import Select from '../ui/Select';
+import { displayName, formatPhone } from '../../utils/people';
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: 'Onaylı', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
@@ -17,7 +18,6 @@ const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   cancelled: { label: 'İptal', bg: 'var(--neutral-soft)', color: 'var(--neutral)' },
 };
 
-const maskPhone = (p: string): string => (p.length > 6 ? `${p.slice(0, 6)}•••${p.slice(-2)}` : p);
 
 const initials = (name: string): string =>
   name.split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase() || '••';
@@ -71,7 +71,7 @@ export default function AppointmentDetail({
       });
   };
 
-  const who = appointment.customer_name || maskPhone(appointment.phone);
+  const who = displayName({ name: appointment.customer_name, phone: appointment.phone });
   const st = STATUS[appointment.status] ?? {
     label: appointment.status,
     bg: 'var(--neutral-soft)',
@@ -103,7 +103,7 @@ export default function AppointmentDetail({
               {who}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-45)' }}>
-              {maskPhone(appointment.phone)}
+              {formatPhone(appointment.phone)}
             </div>
           </div>
           <span

@@ -13,11 +13,13 @@ import {
 } from '../api/conversations';
 import { Icon } from '../components/icons';
 import { clockTime, relativeTime } from '../utils/time';
+import { displayName as personName } from '../utils/people';
 
 /** Liste ve açık thread bu aralıkla tazelenir (sekme görünürken). */
 const POLL_MS = 60_000;
 
-const displayName = (c: Conversation): string => c.customer_name || c.phone;
+const displayName = (c: Conversation): string =>
+  personName({ name: c.customer_name, phone: c.phone });
 
 /**
  * Tasarımın "handoff"u bizimkinin TERSİ: orada true = asistan yürütüyor,
@@ -378,8 +380,8 @@ function Thread({
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600 }}>{displayName(conversation)}</div>
-          {/* Kasıtlı olarak maskelenmemiş: operatör müşteriyi telefonla arayabilmek
-              için numarayı burada birebir okuyabilmeli (bkz. RandevuTakvimi'ndeki maskPhone). */}
+          {/* Ham hâliyle: operatör numarayı buradan okuyup telefonla arayacak,
+              biçimlendirilmiş hâli kopyalanınca çalışmaz. */}
           <div className="wl-mono" style={{ fontSize: 11, color: 'var(--ink-40)' }}>
             {conversation.phone}
           </div>

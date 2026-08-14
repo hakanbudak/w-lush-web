@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import { listConversations, sendReply, type Conversation } from '../../api/conversations';
 import { Modal } from '../modals';
 import Select from '../ui/Select';
+import { displayName } from '../../utils/people';
 
 const field: CSSProperties = {
   width: '100%',
@@ -60,7 +61,7 @@ export default function SendMessageModal({
     sendReply(phone, body)
       .then(() => {
         const who = rows?.find((r) => r.phone === phone);
-        onSent(who?.customer_name || phone);
+        onSent(displayName({ name: who?.customer_name, phone }));
         onClose();
       })
       .catch((e: unknown) => {
@@ -89,7 +90,7 @@ export default function SendMessageModal({
                 onChange={setPhone}
                 options={(rows ?? []).map((r) => ({
                   value: r.phone,
-                  label: r.customer_name || r.phone,
+                  label: displayName({ name: r.customer_name, phone: r.phone }),
                 }))}
                 style={field}
               />
