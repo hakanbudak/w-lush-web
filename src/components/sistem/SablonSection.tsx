@@ -17,6 +17,9 @@ interface Template {
    */
   live: boolean;
   note?: string;
+  /** Onaylı Meta şablonunun adını tutan ayar; varsa alan gösteriliyor. */
+  nameKey?: string;
+  daysKey?: string;
 }
 
 const TEMPLATES: Template[] = [
@@ -50,12 +53,26 @@ const TEMPLATES: Template[] = [
     when: 'Ziyaretten bir süre sonra',
     placeholder: 'Merhaba {ad}, kontrol randevusu için yazmanız yeterli.',
     vars: '{ad} {hizmet}',
-    live: false,
+    live: true,
+    nameKey: 'followup_template_name',
+    daysKey: 'followup_days_after',
     note:
-      'Bu çağrıyı gönderen bir iş henüz yok. Metniniz saklanıyor; özellik ' +
-      'geldiğinde kullanılacak.',
+      'Ziyaretten günler sonra gittiği için 24 saatlik yanıt penceresi kapalı: ' +
+      'metni Meta\'nın onayladığı şablon belirliyor. Şablonun gövdesi iki ' +
+      'değişken alıyor — {ad} ve {hizmet}. Şablon adı boşken hiçbir şey ' +
+      'gönderilmiyor.',
   },
 ];
+
+const smallField: React.CSSProperties = {
+  marginLeft: 8,
+  border: '1px solid var(--line-strong)',
+  borderRadius: 8,
+  padding: '6px 8px',
+  font: 'inherit',
+  fontSize: 13,
+  background: 'var(--cream)',
+};
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
@@ -97,6 +114,8 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 export default function SablonSection() {
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, boolean>>({});
+  // Onaylı şablonun adı ve gecikmesi; yalnızca kontrol çağrısında var.
+  const [extra, setExtra] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,12 +126,16 @@ export default function SablonSection() {
       .then((s) => {
         const t: Record<string, string> = {};
         const f: Record<string, boolean> = {};
+        const x: Record<string, string> = {};
         for (const tpl of TEMPLATES) {
           t[tpl.textKey] = String(s[tpl.textKey] ?? '');
           f[tpl.onKey] = Boolean(s[tpl.onKey]);
+          if (tpl.nameKey) x[tpl.nameKey] = String(s[tpl.nameKey] ?? '');
+          if (tpl.daysKey) x[tpl.daysKey] = String(s[tpl.daysKey] ?? '');
         }
         setTexts(t);
         setFlags(f);
+        setExtra(x);
         setLoaded(true);
       })
       .catch(() => setError('Şablonlar yüklenemedi.'));
@@ -121,7 +144,17 @@ export default function SablonSection() {
   const save = () => {
     setSaving(true);
     setError(null);
-    updateSettings({ ...texts, ...flags })
+    // Gün sayısı metin olarak tutuluyor (boş alan yazılabilsin diye), giderken
+    // sayıya çevriliyor; taban 1, aynı gün "kontrol" sayılmaz.
+    const numbers: Record<string, number> = {};
+    for (const tpl of TEMPLATES) {
+      if (tpl.daysKey) numbers[tpl.daysKey] = Math.max(1, Number(extra[tpl.daysKey]) || 7);
+    }
+    const names: Record<string, string> = {};
+    for (const tpl of TEMPLATES) {
+      if (tpl.nameKey) names[tpl.nameKey] = (extra[tpl.nameKey] ?? '').trim();
+    }
+    updateSettings({ ...texts, ...flags, ...names, ...numbers })
       .then(() => toast('Şablonlar kaydedildi.'))
       .catch(() => setError('Kaydedilemedi.'))
       .finally(() => setSaving(false));
@@ -143,8 +176,10 @@ export default function SablonSection() {
           lineHeight: 1.6,
         }}
       >
-        Bugün müşteriye ulaşan tek metin <strong>randevu onayı</strong>. Diğer ikisi
-        saklanıyor ama gönderilmiyor — her birinin altında nedeni yazıyor.
+        <strong>Randevu onayı</strong> sizin yazdığınız metinle gidiyor.
+        <strong>Kontrol çağrısı</strong> gidiyor ama metnini Meta'nın onayladığı
+        şablon belirliyor — aşağıya şablon adını yazın. <strong>Hatırlatma</strong>
+        için de aynısı geçerli; onun şablon adı AI bölümünde.
       </div>
       {TEMPLATES.map((t) => (
         <div
@@ -210,6 +245,41 @@ export default function SablonSection() {
               opacity: flags[t.onKey] ? 1 : 0.6,
             }}
           />
+          {t.nameKey && flags[t.onKey] && (
+            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+              <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                Onaylı şablon adı
+                <input
+                  value={extra[t.nameKey] ?? ''}
+                  placeholder="kontrol_cagrisi"
+                  onChange={(e) =>
+                    setExtra((x) => ({ ...x, [t.nameKey as string]: e.target.value }))
+                  }
+                  style={{ ...smallField, width: 190 }}
+                />
+              </label>
+              {t.daysKey && (
+                <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                  Ziyaretten kaç gün sonra
+                  <input
+                    type="number"
+                    min={1}
+                    value={extra[t.daysKey] ?? ''}
+                    onChange={(e) =>
+                      setExtra((x) => ({ ...x, [t.daysKey as string]: e.target.value }))
+                    }
+                    style={{ ...smallField, width: 80 }}
+                  />
+                </label>
+              )}
+              {!(extra[t.nameKey] ?? '').trim() && (
+                <div style={{ fontSize: 10.5, color: 'var(--warn)', alignSelf: 'center' }}>
+                  Şablon adı boşken çağrı gönderilmiyor.
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ fontSize: 10, color: 'var(--ink-45)', marginTop: 6, lineHeight: 1.5 }}>
             {t.note ?? `Değişkenler: ${t.vars} · Boş bırakırsanız sistemin hazır metni gönderilir.`}
           </div>
