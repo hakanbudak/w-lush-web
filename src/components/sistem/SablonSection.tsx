@@ -11,6 +11,12 @@ interface Template {
   /** Boş bırakılırsa botun kullanacağı hazır metin. */
   placeholder: string;
   vars: string;
+  /**
+   * Bu metin gerçekten müşteriye gidiyor mu. Gitmiyorsa neden gitmediği
+   * yazılıyor: klinik burada bir metin yazıp gönderildiğini sanmasın.
+   */
+  live: boolean;
+  note?: string;
 }
 
 const TEMPLATES: Template[] = [
@@ -21,6 +27,12 @@ const TEMPLATES: Template[] = [
     when: '24 saat önce',
     placeholder: 'Merhaba {ad}, {tarih} {saat} randevunuzu hatırlatırız.',
     vars: '{ad} {tarih} {saat} {hizmet}',
+    live: false,
+    note:
+      'Hatırlatma, randevudan 24 saat önce gidiyor — yani WhatsApp\'ın 24 saatlik ' +
+      'yanıt penceresinin dışında. Orada yalnızca Meta\'nın onayladığı şablonlar ' +
+      'teslim ediliyor, metni Meta belirliyor. Şablon adını AI bölümündeki ' +
+      '"Otomatik randevu hatırlatma" anahtarının altına yazın.',
   },
   {
     textKey: 'tmpl_confirmed',
@@ -29,6 +41,7 @@ const TEMPLATES: Template[] = [
     when: 'Randevu onaylanınca',
     placeholder: 'Randevunuz onaylandı ✅ {tarih} {saat} · {hizmet}',
     vars: '{ad} {tarih} {saat} {hizmet}',
+    live: true,
   },
   {
     textKey: 'tmpl_followup',
@@ -37,6 +50,10 @@ const TEMPLATES: Template[] = [
     when: 'Ziyaretten bir süre sonra',
     placeholder: 'Merhaba {ad}, kontrol randevusu için yazmanız yeterli.',
     vars: '{ad} {hizmet}',
+    live: false,
+    note:
+      'Bu çağrıyı gönderen bir iş henüz yok. Metniniz saklanıyor; özellik ' +
+      'geldiğinde kullanılacak.',
   },
 ];
 
@@ -116,6 +133,19 @@ export default function SablonSection() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}>
+      <div
+        style={{
+          background: 'var(--cream)',
+          borderRadius: 'var(--r-card)',
+          padding: '12px 14px',
+          fontSize: 11.5,
+          color: 'var(--ink-60)',
+          lineHeight: 1.6,
+        }}
+      >
+        Bugün müşteriye ulaşan tek metin <strong>randevu onayı</strong>. Diğer ikisi
+        saklanıyor ama gönderilmiyor — her birinin altında nedeni yazıyor.
+      </div>
       {TEMPLATES.map((t) => (
         <div
           key={t.textKey}
@@ -138,6 +168,20 @@ export default function SablonSection() {
             >
               {t.when}
             </span>
+            {!t.live && (
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  padding: '1px 7px',
+                  borderRadius: 999,
+                  background: 'var(--neutral-soft)',
+                  color: 'var(--neutral)',
+                }}
+              >
+                Gönderilmiyor
+              </span>
+            )}
             <span style={{ marginLeft: 'auto' }}>
               <Toggle
                 on={flags[t.onKey] ?? false}
@@ -166,8 +210,8 @@ export default function SablonSection() {
               opacity: flags[t.onKey] ? 1 : 0.6,
             }}
           />
-          <div style={{ fontSize: 10, color: 'var(--ink-45)', marginTop: 6 }}>
-            Değişkenler: {t.vars} · Boş bırakırsanız sistemin hazır metni gönderilir.
+          <div style={{ fontSize: 10, color: 'var(--ink-45)', marginTop: 6, lineHeight: 1.5 }}>
+            {t.note ?? `Değişkenler: ${t.vars} · Boş bırakırsanız sistemin hazır metni gönderilir.`}
           </div>
         </div>
       ))}
