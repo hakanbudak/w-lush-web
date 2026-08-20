@@ -11,6 +11,8 @@ import Login from './pages/Login';
 import Mesajlar from './pages/Mesajlar';
 import RandevuTakvimi from './pages/RandevuTakvimi';
 import Rapor from './pages/Rapor';
+import SifremiUnuttum from './pages/SifremiUnuttum';
+import SifreSifirla from './pages/SifreSifirla';
 import Signup from './pages/Signup';
 import Sistem from './pages/Sistem';
 import Yonetici from './pages/Yonetici';
@@ -21,6 +23,9 @@ export default function App() {
       {/* Public */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
+      {/* Postadaki bağlantı buraya geliyor: /sifre-sifirla?token=... */}
+      <Route path="/sifre-sifirla" element={<SifreSifirla />} />
 
       {/* Protected (auth gerekli) */}
       {/* Kurulum kabuğun dışında: sihirbaz kendi tam ekran yerleşimini kullanıyor. */}

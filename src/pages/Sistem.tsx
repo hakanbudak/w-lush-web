@@ -6,17 +6,19 @@ import PersonelSection from '../components/sistem/PersonelSection';
 import HizmetSection from '../components/sistem/HizmetSection';
 import PaketSection from '../components/sistem/PaketSection';
 import AiSection from '../components/sistem/AiSection';
+import GuvenlikSection from '../components/sistem/GuvenlikSection';
 import KlinikBilgisi from '../components/sistem/KlinikBilgisi';
 import SablonSection from '../components/sistem/SablonSection';
 
 /* ───────── bölümler ───────── */
-type Section = 'klinik' | 'personel' | 'hizmet' | 'whatsapp' | 'ai';
+type Section = 'klinik' | 'personel' | 'hizmet' | 'whatsapp' | 'ai' | 'guvenlik';
 const SECTIONS: { key: Section; label: string; icon: keyof typeof Icon; sub: string }[] = [
   { key: 'klinik', label: 'Klinik bilgisi', icon: 'home', sub: 'Tip, iletişim, çalışma saatleri' },
   { key: 'personel', label: 'Personel', icon: 'users', sub: 'Uzmanlar ve roller' },
   { key: 'hizmet', label: 'Hizmetler & paketler', icon: 'sparkle', sub: 'Fiyatlandırma' },
   { key: 'whatsapp', label: 'WhatsApp şablonları', icon: 'whatsapp', sub: 'Otomatik mesajlar' },
   { key: 'ai', label: 'AI asistan', icon: 'sparkle', sub: 'Davranış tercihleri' },
+  { key: 'guvenlik', label: 'Güvenlik', icon: 'user', sub: 'İki adımlı doğrulama' },
 ];
 
 
@@ -91,6 +93,8 @@ export default function Sistem() {
           )}
 
           {sec === 'ai' && <AiSection />}
+
+          {sec === 'guvenlik' && <GuvenlikSection />}
         </div>
       </div>
     </div>

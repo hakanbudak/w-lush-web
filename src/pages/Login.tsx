@@ -6,7 +6,10 @@ import { Icon } from '../components/icons';
 import './auth.css';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, verifyCode } = useAuth();
+  // Doluysa ikinci adımdayız: şifre doğrulandı, kod bekleniyor.
+  const [challenge, setChallenge] = useState('');
+  const [code, setCode] = useState('');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,13 +21,91 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login({ email, password });
+      const bekleyen = await login({ email, password });
+      if (bekleyen) {
+        setChallenge(bekleyen);
+        setBusy(false);
+        return;
+      }
       navigate('/', { replace: true });
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleCode(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await verifyCode(challenge, code.trim());
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError((err as Error).message);
+      setCode('');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (challenge) {
+    return (
+      <AuthShell
+        title="Giriş kodu"
+        subtitle={`${email} adresine 6 haneli bir kod gönderdik.`}
+      >
+        <form onSubmit={handleCode} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Kod">
+            <input
+              className="wl-input"
+              autoFocus
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              style={{ letterSpacing: '0.4em', fontSize: 18, textAlign: 'center' }}
+            />
+          </Field>
+          {error && <ErrorBox text={error} />}
+          <button
+            type="submit"
+            disabled={busy || code.length < 6}
+            className="wl-btn"
+            style={{
+              background: 'var(--forest)', color: 'var(--cream)', borderRadius: 8,
+              justifyContent: 'center', height: 40, marginTop: 4,
+              opacity: code.length < 6 ? 0.6 : 1,
+            }}
+          >
+            {busy ? 'Kontrol ediliyor…' : 'Giriş Yap'}
+          </button>
+        </form>
+        <div style={{ marginTop: 18, textAlign: 'center', fontSize: 13, color: 'var(--ink-60)' }}>
+          Kod gelmediyse{' '}
+          <button
+            type="button"
+            onClick={() => {
+              // Baştan başlamak yeni bir kod üretiyor; eskisi geçersiz oluyor.
+              setChallenge('');
+              setCode('');
+              setError(null);
+            }}
+            style={{
+              border: 'none', background: 'transparent', font: 'inherit',
+              color: 'var(--forest)', cursor: 'pointer', textDecoration: 'underline',
+              padding: 0,
+            }}
+          >
+            tekrar deneyin
+          </button>
+          .
+        </div>
+      </AuthShell>
+    );
   }
 
   return (
@@ -67,7 +148,12 @@ export default function Login() {
           {busy ? 'Giriş yapılıyor…' : 'Giriş Yap'}
         </button>
       </form>
-      <div style={{ marginTop: 18, textAlign: 'center', fontSize: 13, color: 'var(--ink-60)' }}>
+      <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13 }}>
+        <Link to="/sifremi-unuttum" style={{ color: 'var(--ink-60)' }}>
+          Şifremi unuttum
+        </Link>
+      </div>
+      <div style={{ marginTop: 10, textAlign: 'center', fontSize: 13, color: 'var(--ink-60)' }}>
         Hesabın yok mu?{' '}
         <Link to="/signup" style={{ color: 'var(--forest)', fontWeight: 500 }}>
           Klinik kaydı oluştur
