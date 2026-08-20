@@ -105,6 +105,32 @@ export default function KlinikBilgisi() {
             style={field}
           />
         </label>
+
+        {/* Bu iki alan artık gerçekten kullanılıyor; operatör doldurmanın
+            neye yaradığını bilsin. */}
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            fontSize: 11,
+            color: 'var(--ink-60)',
+            background: 'var(--cream)',
+            borderRadius: 'var(--r-card)',
+            padding: '10px 12px',
+            lineHeight: 1.6,
+          }}
+        >
+          {address.trim() || phone.trim() ? (
+            <>
+              WhatsApp'ta "neredesiniz?" diye soran danışana bot bu bilgiyi
+              gönderiyor{address.trim() ? ', adres için harita bağlantısıyla birlikte' : ''}.
+            </>
+          ) : (
+            <>
+              Bu alanlar boşken bot "neredesiniz?" sorusunu yanıtlayamıyor ve
+              soruyu ekibinize iletiyor. En sık gelen soru budur.
+            </>
+          )}
+        </div>
       </div>
 
       <div>
