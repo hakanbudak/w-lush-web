@@ -153,25 +153,27 @@ function ProductPreview() {
         overflow: 'hidden',
         color: 'var(--ink)',
         width: '100%',
-        maxWidth: 380,
+        // Sol panelde 56px iç boşluktan sonra ~680px yer var; 380 orada
+        // kaybolup oyuncak gibi duruyordu.
+        maxWidth: 500,
       }}
     >
       {/* başlık çubuğu */}
       <div
         style={{
-          padding: '14px 18px',
+          padding: '17px 22px',
           borderBottom: '1px solid var(--line)',
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 11,
         }}
       >
         <span style={{ color: 'var(--forest)', display: 'flex' }}>{Icon.calendar}</span>
-        <div style={{ fontSize: 12, fontWeight: 600 }}>Bugün · 16 Mayıs</div>
+        <div style={{ fontSize: 13.5, fontWeight: 600 }}>Bugün · 16 Mayıs</div>
         <span
           style={{
             marginLeft: 'auto',
-            fontSize: 10,
+            fontSize: 10.5,
             color: 'var(--ink-40)',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
@@ -182,7 +184,7 @@ function ProductPreview() {
       </div>
 
       {/* randevu satırları */}
-      <div style={{ padding: '8px 6px' }}>
+      <div style={{ padding: '10px 8px' }}>
         {ROWS.map((r, i) => (
           <div
             key={r.time}
@@ -190,21 +192,21 @@ function ProductPreview() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              padding: '9px 12px',
-              borderRadius: 8,
+              gap: 12,
+              padding: '12px 14px',
+              borderRadius: 9,
               background: r.status === 'sparkle' ? 'var(--lavender-soft)' : 'transparent',
             }}
           >
             <span
               className="wl-mono"
-              style={{ fontSize: 11, color: 'var(--ink-40)', width: 38 }}
+              style={{ fontSize: 12, color: 'var(--ink-40)', width: 44 }}
             >
               {r.time}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>{r.name}</div>
-              <div style={{ fontSize: 10, color: 'var(--ink-40)', marginTop: 1 }}>{r.staff}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>{r.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-40)', marginTop: 2 }}>{r.staff}</div>
             </div>
             {r.status === 'tamam' && (
               <span style={{ color: 'var(--sage-2)', display: 'flex' }}>{Icon.check}</span>
@@ -212,8 +214,8 @@ function ProductPreview() {
             {r.status === 'onay' && (
               <span
                 style={{
-                  fontSize: 10,
-                  padding: '2px 8px',
+                  fontSize: 10.5,
+                  padding: '3px 9px',
                   borderRadius: 999,
                   background: 'var(--cream)',
                   color: 'var(--ink-60)',
@@ -233,11 +235,11 @@ function ProductPreview() {
       {/* alt — doluluk + gelir */}
       <div
         style={{
-          padding: '14px 18px',
+          padding: '17px 22px',
           borderTop: '1px solid var(--line)',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: 18,
+          gap: 22,
         }}
       >
         <div>
@@ -245,14 +247,14 @@ function ProductPreview() {
             Doluluk
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-            <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em' }}>%87</span>
+            <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.02em' }}>%87</span>
           </div>
           <div
             style={{
-              height: 4,
+              height: 5,
               borderRadius: 999,
               background: 'var(--cream-2)',
-              marginTop: 6,
+              marginTop: 7,
               overflow: 'hidden',
             }}
           >
@@ -264,7 +266,7 @@ function ProductPreview() {
             Bu hafta gelir
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-            <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em' }}>₺ 142.580</span>
+            <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.02em' }}>₺ 142.580</span>
           </div>
           <div style={{ fontSize: 10, color: 'var(--sage-2)', marginTop: 6 }}>↑ %12 önceki hafta</div>
         </div>
@@ -378,7 +380,9 @@ function AuthLeftPanel() {
           position: 'relative', zIndex: 2,
         }}
       >
-        <div style={{ maxWidth: 460, marginBottom: 40 }}>
+        {/* Başlık bloğu kartla aynı genişlikte: sol kenarlar hizalı,
+            sütun tek parça okunuyor. */}
+        <div style={{ maxWidth: 500, marginBottom: 40 }}>
           <div
             style={{
               fontSize: 10, color: 'var(--sage)',
