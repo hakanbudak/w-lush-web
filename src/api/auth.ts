@@ -18,6 +18,8 @@ export interface User {
   email: string;
   name: string;
   is_admin: boolean;
+  /** E-posta ile iki adımlı doğrulama — kullanıcı başına. */
+  two_factor_enabled: boolean;
   clinic: ClinicInfo;
 }
 
@@ -49,10 +51,47 @@ export const signup = (body: SignupInput) =>
     body: JSON.stringify(body),
   });
 
+/**
+ * Girişin iki olası sonucu. `two_factor` true ise jeton yok: kod ekranına
+ * geçiliyor ve `challenge` oraya taşınıyor.
+ */
+export interface LoginOut {
+  two_factor: boolean;
+  challenge: string;
+  user: User | null;
+  token: TokenOut | null;
+}
+
 export const login = (body: LoginInput) =>
-  request<AuthOut>('/api/auth/login', {
+  request<LoginOut>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+
+export const verifyLoginCode = (challenge: string, code: string) =>
+  request<AuthOut>('/api/auth/login/verify', {
+    method: 'POST',
+    body: JSON.stringify({ challenge, code }),
+  });
+
+/** Sıfırlama bağlantısı ister. Adres kayıtlı olmasa da aynı cevabı verir. */
+export const forgotPassword = (email: string) =>
+  request<void>('/api/auth/forgot', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+
+export const resetPassword = (token: string, password: string) =>
+  request<void>('/api/auth/reset', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+
+/** Kapatmak şifre ister, açmak istemez. */
+export const setTwoFactor = (enabled: boolean, password = '') =>
+  request<User>('/api/auth/two-factor', {
+    method: 'PUT',
+    body: JSON.stringify({ enabled, password }),
   });
 
 export const fetchMe = () => request<User>('/api/auth/me');

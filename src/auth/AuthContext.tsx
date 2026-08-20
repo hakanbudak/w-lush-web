@@ -5,6 +5,7 @@ import {
   fetchMe,
   getToken,
   login as apiLogin,
+  verifyLoginCode as apiVerifyCode,
   setToken,
   signup as apiSignup,
   type LoginInput,
@@ -16,9 +17,17 @@ import { setUnauthorizedHandler } from '../api/client';
 interface AuthCtx {
   user: User | null;
   loading: boolean;          // ilk /me çağrısı sırasında
-  login: (b: LoginInput) => Promise<void>;
+  /**
+   * Giriş. İki adımlı doğrulama açıksa jeton yerine bir `challenge` dönüyor
+   * ve oturum **açılmıyor** — çağıran kod ekranına geçmeli.
+   */
+  login: (b: LoginInput) => Promise<string | null>;
+  /** Kod ekranının ikinci adımı; başarılıysa oturum açılır. */
+  verifyCode: (challenge: string, code: string) => Promise<void>;
   signup: (b: SignupInput) => Promise<void>;
   logout: () => void;
+  /** Ayarlardan 2FA değişince kullanıcıyı tazele. */
+  replaceUser: (u: User) => void;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -56,8 +65,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(body: LoginInput) {
+  async function login(body: LoginInput): Promise<string | null> {
     const out = await apiLogin(body);
+    if (out.two_factor || !out.token || !out.user) {
+      // Jeton yok: oturum açılmıyor, kod ekranına geçiliyor.
+      return out.challenge;
+    }
+    setToken(out.token.access_token);
+    setUser(out.user);
+    return null;
+  }
+
+  async function verifyCode(challenge: string, code: string) {
+    const out = await apiVerifyCode(challenge, code);
     setToken(out.token.access_token);
     setUser(out.user);
   }
@@ -69,7 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, loading, login, signup, logout }}>
+    <Ctx.Provider
+      value={{ user, loading, login, verifyCode, signup, logout, replaceUser: setUser }}
+    >
       {children}
     </Ctx.Provider>
   );
