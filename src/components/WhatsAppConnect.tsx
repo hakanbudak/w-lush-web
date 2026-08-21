@@ -19,6 +19,9 @@ export default function WhatsAppConnect() {
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [number, setNumber] = useState('');
+  const [inUse, setInUse] = useState<boolean | null>(null);
+  const [note, setNote] = useState('');
 
   const load = useCallback(async () => {
     const next = await getConnection();
@@ -58,14 +61,18 @@ export default function WhatsAppConnect() {
     setBusy(true);
     setError(null);
     try {
-      const next = await requestConnection();
-      setConn(next);
+      setConn(
+        await requestConnection({
+          desired_number: number.trim(),
+          note: note.trim(),
+          number_in_use: inUse,
+        }),
+      );
     } catch (e) {
-      const msg = (e as Error).message || '';
-      // Uçlar henüz yoksa (404) ham JSON yerine dostça mesaj göster.
+      const msg = (e as Error).message;
       setError(
-        /404|not found/i.test(msg)
-          ? 'WhatsApp bağlama servisi henüz hazır değil — yakında aktif olacak.'
+        msg.includes('401')
+          ? 'Oturumun sonlanmış olabilir, tekrar giriş yap.'
           : msg || 'Talep gönderilemedi, lütfen tekrar deneyin.',
       );
     } finally {
@@ -104,18 +111,46 @@ export default function WhatsAppConnect() {
     );
   }
 
-  // — Talep alındı, kuruluyor —
+  // — Talep alındı: sırada ne olduğunu söyle —
+  //
+  // Eskiden yalnızca "hazırlanıyor" yazıyordu; klinik kendisinden ne
+  // isteneceğini bilmeden bekliyordu. Doğrulama adımı iki tarafın aynı anda
+  // müsait olmasını gerektirdiği için bunu önceden söylemek zorundayız.
   if (status === 'requested') {
+    const adimlar = [
+      {
+        baslik: 'Talebini aldık',
+        alt: conn?.requested_at ? fmtDate(conn.requested_at) : '',
+        bitti: true,
+      },
+      {
+        baslik: 'Numaranı Meta tarafında ekliyoruz',
+        alt: 'Görünen ad kliniğinin adını içermeli; Meta bunu inceliyor.',
+        bitti: false,
+      },
+      {
+        baslik: 'Doğrulama kodu senin telefonuna gelecek',
+        alt: 'Seninle iletişime geçip birlikte yapacağız — kodun birkaç dakika içinde iletilmesi gerekiyor.',
+        bitti: false,
+      },
+      {
+        baslik: 'Bot yayına giriyor',
+        alt: 'Bu kart "bağlı" olur ve danışanların yazmaya başlayabilir.',
+        bitti: false,
+      },
+    ];
+
     return (
       <div style={{ ...cardStyle, borderColor: 'var(--champagne)', background: 'var(--cream)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ color: 'var(--champagne-2)', display: 'flex' }}>{Icon.clock}</span>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>Bağlantı talebin alındı</div>
             <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3 }}>
-              WhatsApp numaran hazırlanıyor. Hazır olduğunda, bu sayfaya
-              döndüğünde burada görünür.
-              {conn?.requested_at && ` · Talep: ${fmtDate(conn.requested_at)}`}
+              {conn?.display_number
+                ? `Numara: ${conn.display_number}`
+                : 'Numara verilmedi — aşağıdan ekleyebilirsin.'}
+              {conn?.note ? ` · Müsaitlik: ${conn.note}` : ''}
             </div>
           </div>
           <button
@@ -128,37 +163,172 @@ export default function WhatsAppConnect() {
           </button>
           <span className="wl-chip wl-chip-warn" style={{ height: 20, fontSize: 11 }}>Bekliyor</span>
         </div>
+
+        <ol style={{ listStyle: 'none', margin: '14px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {adimlar.map((a, i) => (
+            <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span
+                style={{
+                  width: 18, height: 18, borderRadius: 999, flexShrink: 0, marginTop: 1,
+                  display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700,
+                  background: a.bitti ? 'var(--sage)' : 'var(--cream-2)',
+                  color: a.bitti ? 'var(--cream)' : 'var(--ink-60)',
+                }}
+              >
+                {a.bitti ? '✓' : i + 1}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 500 }}>{a.baslik}</span>
+                {a.alt && (
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-60)', lineHeight: 1.5 }}>
+                    {a.alt}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {conn?.number_in_use === true && (
+          <div
+            style={{
+              marginTop: 12, background: 'var(--warn-soft)', borderRadius: 8,
+              padding: '10px 12px', fontSize: 11.5, lineHeight: 1.6,
+            }}
+          >
+            <strong style={{ color: 'var(--warn)' }}>Senin tarafında bir hazırlık var:</strong>{' '}
+            verdiğin numara WhatsApp'ta kullanılıyor. Bağlayabilmemiz için o hesabın silinmesi
+            gerekiyor; sohbet geçmişi kaybolacağı için bunu sana haber vermeden yapmıyoruz.
+          </div>
+        )}
       </div>
     );
   }
 
-  // — Bağlı değil (none) —
+  // — Bağlı değil (none): talep bir form —
+  //
+  // Eskiden boş bir düğmeydi: klinik basıyor, "istek gönderildi" görüyor ve
+  // orada kalıyordu. Numarayı ekleyecek kişinin ise üç şeye ihtiyacı var —
+  // hangi numara, o numara WhatsApp'ta kullanılıyor mu, ve klinik doğrulama
+  // kodu için ne zaman müsait.
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
         <span style={{ color: 'var(--ink-40)', display: 'flex', marginTop: 2 }}>{Icon.whatsapp}</span>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600 }}>WhatsApp henüz bağlı değil</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3, lineHeight: 1.5, maxWidth: 480 }}>
-            Botun randevu alıp mesajlara yanıt verebilmesi için kliniğine bir WhatsApp Business
-            numarası bağlanması gerekiyor. Talep oluştur, numaranı hazırlayıp bağlayalım.
+          <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 3, lineHeight: 1.55, maxWidth: 520 }}>
+            Botun randevu alabilmesi için kliniğine bir WhatsApp numarası bağlanması
+            gerekiyor. Aşağıdakileri doldur; numarayı biz Meta tarafında ekleyip
+            sana döneceğiz.
           </div>
-          {error && (
-            <div style={{ fontSize: 12, color: 'var(--bad)', marginTop: 8 }}>{error}</div>
-          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14, maxWidth: 520 }}>
+            <label style={labelStyle}>
+              Bağlanacak numara
+              <input
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                placeholder="+90 5xx xxx xx xx"
+                inputMode="tel"
+                style={fieldStyle}
+              />
+            </label>
+
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 6 }}>
+                Bu numara şu an WhatsApp'ta kullanılıyor mu?
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  { v: true, l: 'Evet, kullanılıyor' },
+                  { v: false, l: 'Hayır' },
+                ].map((o) => (
+                  <button
+                    key={String(o.v)}
+                    type="button"
+                    onClick={() => setInUse(o.v)}
+                    aria-pressed={inUse === o.v}
+                    className={inUse === o.v ? 'wl-btn wl-btn-primary wl-btn-sm' : 'wl-btn wl-btn-sm'}
+                    style={{ borderRadius: 8 }}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+              {inUse === true && (
+                <div
+                  style={{
+                    marginTop: 8, background: 'var(--warn-soft)', color: 'var(--ink)',
+                    borderRadius: 8, padding: '10px 12px', fontSize: 11.5, lineHeight: 1.6,
+                  }}
+                >
+                  <strong style={{ color: 'var(--warn)' }}>Bunu bilerek başlayalım:</strong> bir
+                  numara WhatsApp'ta ya da WhatsApp Business uygulamasında aktifken bağlanamıyor.
+                  Bağlamadan önce o hesabın silinmesi gerekiyor —{' '}
+                  <strong>o numaradaki sohbet geçmişi kaybolur</strong> ve numara uygulamada
+                  çalışmayı bırakır. Kullanmadığın ikinci bir numaran varsa daha kolay olur.
+                </div>
+              )}
+            </div>
+
+            <label style={labelStyle}>
+              Doğrulama için ne zaman müsaitsin?
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Örn. hafta içi 14:00–17:00"
+                style={fieldStyle}
+              />
+              <span style={{ fontSize: 11, color: 'var(--ink-45)', marginTop: 4, display: 'block', lineHeight: 1.5 }}>
+                Meta doğrulama kodunu <strong>senin telefonuna</strong> gönderiyor ve kodun
+                birkaç dakika içinde bize iletilmesi gerekiyor. Yani bu adımı birlikte,
+                telefon başındayken yapıyoruz.
+              </span>
+            </label>
+          </div>
+
+          {error && <div style={{ fontSize: 12, color: 'var(--bad)', marginTop: 10 }}>{error}</div>}
+
           <button
             onClick={handleRequest}
-            disabled={busy}
+            disabled={busy || !number.trim() || inUse === null}
             className="wl-btn wl-btn-sm"
-            style={{ marginTop: 12, background: 'var(--wa-green)', color: '#fff', borderRadius: 8, fontSize: 12 }}
+            style={{
+              marginTop: 14, background: 'var(--wa-green)', color: '#fff',
+              borderColor: 'var(--wa-green)', borderRadius: 8, fontSize: 12,
+            }}
           >
-            {busy ? 'Gönderiliyor…' : 'Bağlantı talebi oluştur'}
+            {busy ? 'Gönderiliyor…' : 'Bağlantı talebi gönder'}
           </button>
+          {(!number.trim() || inUse === null) && (
+            <div style={{ fontSize: 11, color: 'var(--ink-45)', marginTop: 6 }}>
+              Numara ve WhatsApp durumu olmadan talep işimize yaramıyor.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+const labelStyle: CSSProperties = {
+  fontSize: 11,
+  color: 'var(--ink-60)',
+  display: 'block',
+  fontWeight: 500,
+};
+
+const fieldStyle: CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--line-strong)',
+  borderRadius: 8,
+  padding: '8px 10px',
+  font: 'inherit',
+  fontSize: 13,
+  background: 'var(--cream)',
+  marginTop: 5,
+};
 
 const cardStyle: CSSProperties = {
   border: '1px solid var(--line)',

@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listServices, type Service } from '../../api/clinic';
+import { getSettings, listServices, type Service } from '../../api/clinic';
 import { getConnection } from '../../api/whatsapp';
 import { Icon } from '../icons';
 
 /* ── İlk-deneyim dashboard'u (yeni / verisi boş klinik) ───── */
-type Step = { done: boolean; title: string; sub: string; cta: { label: string; to: string } | null };
+type Step = {
+  done: boolean;
+  title: string;
+  sub: string;
+  cta: { label: string; to: string } | null;
+  /** Önceki adım tamamlanmadan yapılmaması gereken adım. */
+  blocked?: boolean;
+};
 
 export default function FirstTimeDashboard({ clinicName }: { clinicName: string }) {
   const [waConnected, setWaConnected] = useState(false);
   const [services, setServices] = useState<Service[] | null>(null);
+  const [hasContact, setHasContact] = useState(false);
 
   // WhatsApp adımı gerçek bağlantı durumunu yansıtsın (bağlıysa ✓) +
   // gerçek hizmet listesini çek (panel boş görünmesin).
@@ -20,26 +28,46 @@ export default function FirstTimeDashboard({ clinicName }: { clinicName: string 
     listServices()
       .then(setServices)
       .catch(() => setServices([]));
+    getSettings()
+      .then((s) =>
+        setHasContact(
+          Boolean(String(s.clinic_address ?? '').trim() || String(s.clinic_phone ?? '').trim()),
+        ),
+      )
+      .catch(() => {});
   }, []);
 
+  // Sıra keyfi değil: hizmeti olmayan klinikte bot çalışamıyor — randevu
+  // akışı "hizmet yok" diyerek duruyor, fiyat sorusu yanıtsız kalıyor. O yüzden
+  // WhatsApp adımı hizmetler girilene kadar kilitli.
+  const hasServices = (services?.length ?? 0) > 0;
   const steps: Step[] = [
     {
-      done: true,
-      title: 'Hesabını oluşturdun',
-      sub: `${clinicName} panele hazır`,
-      cta: null,
+      done: hasServices,
+      title: 'Hizmetlerini ve fiyatlarını gir',
+      sub: hasServices
+        ? `${services?.length} hizmet tanımlı`
+        : 'Bot bu listeden randevu alıyor ve fiyat soruluyor',
+      cta: hasServices ? null : { label: 'Başla', to: '/kurulum' },
     },
     {
-      done: false,
-      title: 'Hizmet & fiyatların',
-      sub: '5 örnek hizmet hazır — kendine göre düzenle',
-      cta: { label: 'Düzenle', to: '/sistem?sec=hizmet' },
+      done: hasContact,
+      title: 'Klinik bilgilerin',
+      sub: hasContact
+        ? 'Adres ve telefon kayıtlı'
+        : '"Neredesiniz?" en sık gelen soru — bot bunu senin yerine yanıtlasın',
+      cta: hasContact ? null : { label: 'Doldur', to: '/sistem?sec=klinik' },
     },
     {
       done: waConnected,
+      blocked: !hasServices,
       title: "WhatsApp'ı bağla",
-      sub: waConnected ? 'Bağlandı — bot randevu alabilir' : 'Bot randevu almaya başlasın',
-      cta: waConnected ? null : { label: 'Bağla', to: '/sistem?sec=whatsapp' },
+      sub: waConnected
+        ? 'Bağlandı — bot randevu alabilir'
+        : hasServices
+          ? 'Danışanların yazmaya başlasın'
+          : 'Önce hizmetler: listesi boş bir bot her soruya "hizmet yok" der',
+      cta: waConnected || !hasServices ? null : { label: 'Bağla', to: '/sistem?sec=whatsapp' },
     },
   ];
   const doneCount = steps.filter((s) => s.done).length;
@@ -112,7 +140,11 @@ export default function FirstTimeDashboard({ clinicName }: { clinicName: string 
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{s.title}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-60)', marginTop: 3, lineHeight: 1.45 }}>{s.sub}</div>
               </div>
-              {s.cta ? (
+              {s.blocked && !s.done ? (
+                <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>
+                  Önceki adımdan sonra
+                </div>
+              ) : s.cta ? (
                 <Link
                   to={s.cta.to}
                   className="wl-btn wl-btn-sm"

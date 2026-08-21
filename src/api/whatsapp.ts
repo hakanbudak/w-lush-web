@@ -10,6 +10,10 @@ export interface WaConnection {
   display_number: string | null; // görünen no, ör. "+90 5xx xxx xx xx"
   requested_at: string | null; // ISO
   connected_at: string | null; // ISO
+  /** Kliniğin talepte yazdıkları — kendisine geri gösteriliyor. */
+  note: string | null;
+  /** Numara şu an WhatsApp'ta kullanılıyor mu. null = sorulmamış. */
+  number_in_use: boolean | null;
 }
 
 const EMPTY: WaConnection = {
@@ -18,6 +22,8 @@ const EMPTY: WaConnection = {
   display_number: null,
   requested_at: null,
   connected_at: null,
+  note: null,
+  number_in_use: null,
 };
 
 // Backend bu uçları henüz uygulamadıysa 'none' olarak düşeriz; kart yine render olur.
@@ -29,7 +35,11 @@ export async function getConnection(): Promise<WaConnection> {
   }
 }
 
-export const requestConnection = (body?: { desired_number?: string; note?: string }) =>
+export const requestConnection = (body?: {
+  desired_number?: string;
+  note?: string;
+  number_in_use?: boolean | null;
+}) =>
   request<WaConnection>('/api/whatsapp/request', {
     method: 'POST',
     body: JSON.stringify(body ?? {}),
