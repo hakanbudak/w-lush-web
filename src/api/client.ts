@@ -47,8 +47,30 @@ export async function request<T>(
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (res.status === 401) {
-    onUnauthorized();
-    throw new Error('Yetkisiz (oturum sonlanmış olabilir)');
+    // Sunucunun kendi açıklaması varsa o gösteriliyor. Yoksa "oturum
+    // sonlandı" deniyordu ve bu, şifresini yanlış yazan birine oturumunun
+    // bittiğini söylüyordu — yani yanlış sorunu aratıyordu.
+    const detail = await res
+      .text()
+      .then((body) => {
+        try {
+          return (JSON.parse(body) as { detail?: string }).detail ?? '';
+        } catch {
+          return '';
+        }
+      })
+      .catch(() => '');
+
+    // Elde jeton yoksa sonlanacak bir oturum da yok: bu bir giriş denemesi.
+    // O durumda kullanıcıyı /login'e atmak (zaten orada) ve jetonu silmek
+    // anlamsız.
+    if (token) onUnauthorized();
+
+    throw new ApiError(
+      401,
+      detail,
+      detail || (token ? 'Oturumunuz sonlandı, tekrar giriş yapın.' : 'Yetkisiz istek.'),
+    );
   }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
