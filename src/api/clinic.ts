@@ -136,6 +136,27 @@ export const assignAppointmentStaff = (id: number, staffId: number | null) =>
     body: JSON.stringify({ staff_id: staffId }),
   });
 
+/**
+ * Randevuyu başka bir güne/saate taşır.
+ *
+ * `keep_staff` varsayılan: uzman randevuyla birlikte gider. `notify: false`
+ * danışana mesaj göndermez — telefonda konuşuluyorsa ikinci bildirim gürültü.
+ */
+export const rescheduleAppointment = (
+  id: number,
+  body: {
+    appt_date: string;
+    appt_time: string;
+    staff_id?: number | null;
+    keep_staff?: boolean;
+    notify?: boolean;
+  },
+) =>
+  request<Appointment>(`/api/appointments/${id}/reschedule`, {
+    method: 'PUT',
+    body: JSON.stringify({ keep_staff: true, notify: true, ...body }),
+  });
+
 export interface ClinicRequest {
   id: number;
   phone: string;
