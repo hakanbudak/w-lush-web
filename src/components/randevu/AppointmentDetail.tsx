@@ -1,17 +1,31 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { ApiError } from '../../api/client';
 import {
   assignAppointmentStaff,
   cancelAppointment,
   confirmAppointment,
+  getSettings,
+  rescheduleAppointment,
   type Appointment,
 } from '../../api/clinic';
 import { listConversations } from '../../api/conversations';
+import DatePicker from '../ui/DatePicker';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
 import CustomerNotes from '../customer/CustomerNotes';
 import Select from '../ui/Select';
 import { displayName, formatPhone } from '../../utils/people';
+
+/** Erteleme formundaki iki alanın ortak görünümü — uzman seçicisiyle aynı. */
+const fieldStyle: CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--line-strong)',
+  borderRadius: 8,
+  padding: '7px 9px',
+  font: 'inherit',
+  fontSize: 13,
+  background: 'var(--cream)',
+};
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: 'Onaylı', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
@@ -47,9 +61,25 @@ export default function AppointmentDetail({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Erteleme formu. Kapalıyken hiç çizilmiyor: en sık kullanılan iki düğme
+  // (onayla / mesaj) tarih seçicinin altında kalmasın.
+  const [moving, setMoving] = useState(false);
+  const [day, setDay] = useState(appointment.appt_date);
+  const [time, setTime] = useState(appointment.appt_time);
+  const [slots, setSlots] = useState<string[]>([]);
+  // Danışan telefondaysa ikinci bir bildirim gürültü.
+  const [notify, setNotify] = useState(true);
   // Konuşması olmayan numaraya API yazmaya izin vermiyor; düğmeyi boşuna
   // göstermek yerine nedenini yazıyoruz.
   const [hasThread, setHasThread] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Saat listesi kliniğin kendi slot_times ayarından; sunucu bu listede
+    // olmayan saati zaten reddediyor.
+    getSettings()
+      .then((s) => setSlots(s.slot_times ?? []))
+      .catch(() => setSlots([]));
+  }, []);
 
   useEffect(() => {
     listConversations()
@@ -171,6 +201,81 @@ export default function AppointmentDetail({
           </div>
         )}
 
+        {moving && (
+          <div
+            style={{
+              borderTop: '1px solid var(--line)',
+              paddingTop: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div className="wl-label">Yeni gün ve saat</div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 150px', minWidth: 0 }}>
+                {/* Geçmişe taşımak meşru: dün gelmiş biri bugün kaydediliyor
+                    olabilir, o yüzden alt sınır yok. */}
+                <DatePicker
+                  value={day}
+                  onChange={setDay}
+                  ariaLabel="Yeni gün"
+                  style={fieldStyle}
+                />
+              </div>
+              <div style={{ flex: '1 1 110px', minWidth: 0 }}>
+                <Select
+                  value={time}
+                  onChange={setTime}
+                  ariaLabel="Yeni saat"
+                  options={slots.map((s) => ({ value: s, label: s }))}
+                  style={fieldStyle}
+                />
+              </div>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              <input
+                type="checkbox"
+                checked={notify}
+                onChange={(e) => setNotify(e.target.checked)}
+              />
+              Danışana yeni saati WhatsApp'tan bildir
+            </label>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="wl-btn wl-btn-ghost wl-btn-sm"
+                onClick={() => {
+                  setMoving(false);
+                  setDay(appointment.appt_date);
+                  setTime(appointment.appt_time);
+                  setError(null);
+                }}
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                className="wl-btn wl-btn-sm"
+                disabled={busy || !day || !time}
+                onClick={() =>
+                  run(
+                    () =>
+                      rescheduleAppointment(appointment.id, {
+                        appt_date: day,
+                        appt_time: time,
+                        notify,
+                      }),
+                    'Randevu ertelendi.',
+                  )
+                }
+              >
+                Taşı
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           {appointment.status === 'pending' && (
             <button
@@ -180,6 +285,16 @@ export default function AppointmentDetail({
               onClick={() => run(() => confirmAppointment(appointment.id), 'Randevu onaylandı.')}
             >
               Onayla
+            </button>
+          )}
+          {appointment.status !== 'cancelled' && !moving && (
+            <button
+              type="button"
+              className="wl-btn wl-btn-ghost wl-btn-sm"
+              disabled={busy}
+              onClick={() => setMoving(true)}
+            >
+              Ertele
             </button>
           )}
           <button
