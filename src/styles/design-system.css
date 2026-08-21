@@ -201,6 +201,9 @@ body {
 }
 
 /* ─── buttons ─────────────────────── */
+/* Temel sınıf kendi başına da bir düğme gibi görünmek zorunda: kodun yarısı
+   (85 kullanımın 48'i) bunu varyantsız kullanıyor ve zemin/renk tanımlı
+   olmadığı için tarayıcının varsayılan gri kutusuna düşüyordu. */
 .wl-btn {
   height: 38px;
   padding: 0 16px;
@@ -209,17 +212,29 @@ body {
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  transition: filter .15s;
+  transition: filter .15s, border-color .15s;
 }
-.wl-btn:hover { filter: brightness(0.95); }
-.wl-btn-primary { background: var(--forest); color: var(--cream); }
-.wl-btn-gold { background: var(--ink); color: var(--cream); }
-.wl-btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
+.wl-btn:hover { filter: brightness(0.97); border-color: var(--ink-20); }
+.wl-btn:disabled { opacity: 0.5; cursor: default; filter: none; }
+/* Klavyeyle gezen kimse düğmenin nerede olduğunu görebilmeli. */
+.wl-btn:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+.wl-btn-primary { background: var(--forest); color: var(--cream); border-color: var(--forest); }
+.wl-btn-gold { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+/* Hayalet düğme de bir düğme: kenarlığı okunur olmalı. Eskiden --line-strong
+   (%14 opaklık) kullanıyordu ve düz yazıdan ayırt edilemiyordu. */
+.wl-btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink-20); }
+.wl-btn-ghost:hover { background: var(--cream); }
 .wl-btn-sm { height: 32px; padding: 0 12px; font-size: 12px; }
 
 /* WhatsApp green */
