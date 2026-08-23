@@ -28,7 +28,7 @@ function slotsBetween(startHour: number, endHour: number, minutes: number): stri
 function StepDots({ step }: { step: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
-      {[1, 2, 3].map((n) => (
+      {[1, 2].map((n) => (
         <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
@@ -67,9 +67,8 @@ function StepDots({ step }: { step: number }) {
  */
 export default function Kurulum() {
   const navigate = useNavigate();
-  const [presets, setPresets] = useState<Preset[]>([]);
+  const [preset, setPreset] = useState<Preset | null>(null);
   const [step, setStep] = useState(1);
-  const [type, setType] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [openDays, setOpenDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
   const [interval, setInterval] = useState(60);
@@ -78,25 +77,18 @@ export default function Kurulum() {
 
   useEffect(() => {
     listPresets()
-      .then(setPresets)
-      .catch(() => setError('Klinik tipleri yüklenemedi.'));
+      .then((p) => {
+        setPreset(p);
+        // Liste tamamı seçili başlıyor: çoğu merkez kısaltır, uzatmaz.
+        setChosen(new Set(p.services.map((s) => s.name)));
+      })
+      .catch(() => setError('Hizmet listesi yüklenemedi.'));
   }, []);
 
-  const preset = presets.find((p) => p.key === type) ?? null;
-
-  const pickType = (key: string) => {
-    setType(key);
-    // Tipin tamamı seçili başlar: çoğu klinik listeyi kısaltır, uzatmaz.
-    const p = presets.find((x) => x.key === key);
-    setChosen(new Set(p ? p.services.map((s) => s.name) : []));
-  };
-
   const finish = () => {
-    if (!type) return;
     setBusy(true);
     setError(null);
     applySetup({
-      clinic_type: type,
       services: [...chosen],
       open_days: openDays,
       slot_times: slotsBetween(9, 19, interval),
@@ -116,9 +108,8 @@ export default function Kurulum() {
           <span className="wl-auth-logo">w</span>
           <span>w-lush</span>
         </div>
-        <div className="wl-auth-chip">KLİNİK YÖNETİM PLATFORMU</div>
-        {/* Tip seçilince kelime ona kilitlenir: panel de o kliniği anlatmaya başlar. */}
-        <RotatingWord locked={type} />
+        <div className="wl-auth-chip">GÜZELLİK MERKEZİ YÖNETİMİ</div>
+        <RotatingWord />
         <p className="wl-auth-lead">
           Seçtikleriniz sonradan Sistem ekranından değiştirilebilir — burada verdiğiniz
           hiçbir karar kalıcı değil.
@@ -129,40 +120,7 @@ export default function Kurulum() {
         <div style={{ width: '100%', maxWidth: 460 }}>
           <StepDots step={step} />
 
-          {step === 1 && (
-            <>
-              <h2 className="wl-auth-title">Klinik tipiniz</h2>
-              <p className="wl-auth-sub">Hazır hizmet listesi buna göre gelir.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {presets.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => pickType(p.key)}
-                    style={{
-                      textAlign: 'left',
-                      font: 'inherit',
-                      cursor: 'pointer',
-                      padding: '12px 14px',
-                      borderRadius: 10,
-                      background: type === p.key ? 'var(--forest-3)' : 'var(--paper)',
-                      border:
-                        type === p.key
-                          ? '1px solid var(--forest)'
-                          : '1px solid var(--line-strong)',
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{p.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-45)', marginTop: 2 }}>
-                      {p.services.length} hazır hizmet
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {step === 2 && preset && (
+          {step === 1 && preset && (
             <>
               <h2 className="wl-auth-title">Hizmetleriniz</h2>
               <p className="wl-auth-sub">
@@ -204,7 +162,7 @@ export default function Kurulum() {
             </>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <>
               <h2 className="wl-auth-title">Çalışma düzeni</h2>
               <p className="wl-auth-sub">Açık günler ve randevu aralığı.</p>
@@ -284,12 +242,12 @@ export default function Kurulum() {
               </button>
             )}
             <div style={{ flex: 1 }} />
-            {step < 3 ? (
+            {step < 2 ? (
               <button
                 type="button"
                 className="wl-btn wl-btn-sm"
                 style={{ height: 40, borderRadius: 9, fontWeight: 600, padding: '0 20px' }}
-                disabled={step === 1 && !type}
+                disabled={chosen.size === 0}
                 onClick={() => setStep(step + 1)}
               >
                 Devam et

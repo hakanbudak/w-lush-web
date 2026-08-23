@@ -1,48 +1,37 @@
 import { useEffect, useState } from 'react';
 
-/** Dönen kelimeler. "diger" dönmüyor — o bir kaçış seçeneği, tip değil. */
-const WORDS: Record<string, string> = {
-  dis: 'diş kliniği',
-  guzellik: 'güzellik merkezi',
-  dermatoloji: 'dermatoloji kliniği',
-  fizyoterapi: 'fizyoterapi merkezi',
-  poliklinik: 'poliklinik',
-  diger: 'sağlık merkezi',
-};
-
-const ROTATION = ['dis', 'guzellik', 'dermatoloji', 'fizyoterapi', 'poliklinik'];
+/**
+ * Dönen kelimeler: merkezin *yaptığı iş*, artık tipi değil.
+ *
+ * Eskiden klinik tipleri arasında dönüyordu (diş, dermatoloji, fizyoterapi…)
+ * ve sihirbazda seçilen tipe kilitleniyordu. Ürün güzellik ve estetik
+ * merkezleri için; hepsini destekliyormuş gibi görünen bir liste satmak
+ * istemediğimiz şeyi vaat ederdi.
+ */
+const WORDS = ['randevu', 'danışan', 'seans', 'tahsilat', 'hatırlatma'];
 
 const EVERY_MS = 2800;
 
-/**
- * Hangi kelime gösterilecek. Kilit her zaman kazanır; bilinmeyen bir kilit
- * değeri (eski bir ayar, elle düzenlenmiş veri) dönmeye geri düşer, boş
- * ekran bırakmaz.
- */
-export function wordFor(locked: string | null | undefined, index: number): string {
-  if (locked && WORDS[locked]) return WORDS[locked];
-  return WORDS[ROTATION[index % ROTATION.length]];
+/** Hangi kelime gösterilecek. Dizinin dışına taşan bir sayı başa döner. */
+export function wordFor(index: number): string {
+  return WORDS[index % WORDS.length];
 }
 
 /**
- * "Her ___ için ortak bir dil." — boşluk klinik tipleri arasında döner.
- *
- * `locked` verilirse dönme durur ve kelime o tipe sabitlenir: sihirbazda tip
- * seçildiği anda panel de o kliniği anlatmaya başlar.
+ * "Her ___ tek bir yerde." — boşluk merkezin günlük işleri arasında döner.
  *
  * Başlığın yüksekliği sabit: kelimeler farklı uzunlukta olduğu için aksi
  * hâlde satır sayısı değişir ve altındaki her şey zıplar.
  */
-export default function RotatingWord({ locked }: { locked?: string | null }) {
+export default function RotatingWord() {
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    if (locked) return;
-    const t = window.setInterval(() => setI((n) => (n + 1) % ROTATION.length), EVERY_MS);
+    const t = window.setInterval(() => setI((n) => (n + 1) % WORDS.length), EVERY_MS);
     return () => window.clearInterval(t);
-  }, [locked]);
+  }, []);
 
-  const word = wordFor(locked, i);
+  const word = wordFor(i);
 
   return (
     <h1 className="wl-auth-hero" style={{ minHeight: 156 }}>
@@ -59,9 +48,7 @@ export default function RotatingWord({ locked }: { locked?: string | null }) {
       >
         {word}
       </span>{' '}
-      için
-      <br />
-      ortak bir dil.
+      tek bir yerde.
     </h1>
   );
 }
