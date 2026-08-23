@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { NAV } from '../config/nav';
+import { NAV_GROUPS } from '../config/nav';
 import { useShellBadges } from '../hooks/useShellBadges';
 import { useWhatsAppStatus } from '../hooks/useWhatsAppStatus';
 import { Icon } from './icons';
@@ -70,58 +70,78 @@ export default function Sidebar() {
         </span>
       </NavLink>
 
-      <nav data-tour="nav" style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV.map((n) => {
-          const badge =
-            n.key === 'crm' ? badges.crm : n.key === 'mesajlar' ? badges.mesajlar : 0;
-          return (
-            <NavLink
-              key={n.key}
-              to={n.path}
-              end={n.path === '/'}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 10px',
-                borderRadius: 8,
-                fontSize: 13,
-                textDecoration: 'none',
-                color: isActive ? '#FFFFFF' : 'rgba(244,242,236,0.62)',
-                background: isActive ? 'rgba(255,255,255,0.09)' : 'transparent',
-                fontWeight: isActive ? 600 : 400,
-              })}
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    style={{
+      <nav
+        data-tour="nav"
+        style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={group.label ?? `bolum-${gi}`} style={{ marginTop: gi === 0 ? 0 : 12 }}>
+            {group.label && (
+              <div
+                style={{
+                  fontSize: 10, fontWeight: 600, letterSpacing: '0.09em',
+                  textTransform: 'uppercase', color: '#5E7285', padding: '0 10px 6px',
+                }}
+              >
+                {group.label}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {group.items.map((n) => {
+                const badge =
+                  n.key === 'crm' ? badges.crm : n.key === 'mesajlar' ? badges.mesajlar : 0;
+                return (
+                  <NavLink
+                    key={n.key}
+                    to={n.path}
+                    end={n.path === '/'}
+                    className="wl-nav-link"
+                    style={({ isActive }) => ({
                       display: 'flex',
-                      color: isActive ? 'var(--accent-soft)' : 'rgba(244,242,236,0.4)',
-                    }}
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      textDecoration: 'none',
+                      color: isActive ? '#FFFFFF' : '#9CADBC',
+                      background: isActive ? 'var(--navy-hover)' : 'transparent',
+                      fontWeight: isActive ? 600 : 400,
+                    })}
                   >
-                    {Icon[n.icon]}
-                  </span>
-                  <span style={{ flex: 1 }}>{n.label}</span>
-                  {badge > 0 && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: '1px 7px',
-                        borderRadius: 999,
-                        background: 'rgba(46,125,91,0.35)',
-                        color: '#9ED0B5',
-                      }}
-                    >
-                      {badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+                    {({ isActive }) => (
+                      <>
+                        <span
+                          style={{
+                            display: 'flex',
+                            color: isActive ? 'var(--accent-soft)' : '#6F8496',
+                          }}
+                        >
+                          {Icon[n.icon]}
+                        </span>
+                        <span style={{ flex: 1 }}>{n.label}</span>
+                        {badge > 0 && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '1px 7px',
+                              borderRadius: 999,
+                              background: 'rgba(46,125,91,0.35)',
+                              color: '#9ED0B5',
+                            }}
+                          >
+                            {badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div style={{ flex: 1 }} />

@@ -13,11 +13,17 @@ const iso = (d: Date): string =>
 export default function QuickActions({
   onCreated,
   onSent,
+  openAt,
+  onOpened,
 }: {
   onCreated: (created: AppointmentCreated) => void;
   onSent: (name: string) => void;
+  /** Günün akışındaki boş satır bu saatle randevu formunu açıyor. */
+  openAt?: string | null;
+  onOpened?: () => void;
 }) {
   const [modal, setModal] = useState<'msg' | 'appt' | null>(null);
+  const [time, setTime] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
 
@@ -29,6 +35,13 @@ export default function QuickActions({
       .then((r) => setStaff(r.filter((s) => s.active)))
       .catch(() => setStaff([]));
   }, []);
+
+  useEffect(() => {
+    if (!openAt) return;
+    setTime(openAt);
+    setModal('appt');
+    onOpened?.();
+  }, [openAt, onOpened]);
 
   useSetTopBarActions(
     <>
@@ -61,8 +74,8 @@ export default function QuickActions({
         <AppointmentModal
           slots={slots}
           staff={staff}
-          initial={{ date: iso(new Date()), time: slots[0] ?? '', staffId: null }}
-          onClose={() => setModal(null)}
+          initial={{ date: iso(new Date()), time: time ?? slots[0] ?? '', staffId: null }}
+          onClose={() => { setModal(null); setTime(null); }}
           onCreated={onCreated}
         />
       )}

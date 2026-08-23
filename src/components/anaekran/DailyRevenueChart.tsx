@@ -97,7 +97,7 @@ export default function DailyRevenueChart({
           <div
             style={{
               display: 'flex', justifyContent: 'space-between', marginTop: 8,
-              fontSize: 10, color: 'var(--ink-40)', fontFamily: 'Geist Mono, monospace',
+              fontSize: 10, color: 'var(--ink-40)', fontFamily: "'IBM Plex Mono', monospace",
             }}
           >
             <span>{days[0]?.day.slice(-2)}</span>
