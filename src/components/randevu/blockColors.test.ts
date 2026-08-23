@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { blockColor, NEUTRAL_COLOR } from './blockColors';
 
 describe('blockColor', () => {
-  it('hizmet renginden zemin, bar ve metin türetir', () => {
-    expect(blockColor('#2E7D5B')).toEqual({
-      bg: '#2E7D5B1A', bar: '#2E7D5B', text: '#2E7D5B',
+  it('zemin rengin kendisi, metin beyaz', () => {
+    // Saydam bir tint takvimi soluk bırakıyordu; palet beyaz metinle
+    // en az 4.1:1 kontrast verecek şekilde seçildi.
+    expect(blockColor('#0B8A57')).toEqual({
+      bg: '#0B8A57',
+      bar: '#0B8A57',
+      text: '#FFFFFF',
+      subtext: 'rgba(255, 255, 255, 0.78)',
     });
   });
 

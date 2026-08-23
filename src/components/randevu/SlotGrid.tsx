@@ -124,13 +124,13 @@ export default function SlotGrid({
                             padding: '6px 8px',
                             borderRadius: 8,
                             background: cancelled ? 'var(--cream)' : color.bg,
-                            border:
-                              item.status === 'pending'
-                                ? '1px dashed var(--line-strong)'
+                            // Onay bekleyen randevu kesik çerçeveyle ayrılıyor;
+                            // dolu zeminde soluk bir ton bunu söyleyemiyor.
+                            border: cancelled
+                              ? '1px solid var(--bad)'
+                              : item.status === 'pending'
+                                ? '1px dashed rgba(255, 255, 255, 0.85)'
                                 : '1px solid transparent',
-                            borderLeftWidth: 3,
-                            borderLeftStyle: 'solid',
-                            borderLeftColor: cancelled ? 'var(--bad)' : color.bar,
                             outline: selectedId === item.id ? '2px solid var(--forest)' : 'none',
                             opacity: cancelled ? 0.55 : 1,
                           }}
@@ -139,7 +139,7 @@ export default function SlotGrid({
                             style={{
                               fontSize: 11,
                               fontWeight: 600,
-                              color: cancelled ? 'var(--bad)' : 'var(--ink)',
+                              color: cancelled ? 'var(--bad)' : color.text,
                               textDecoration: cancelled ? 'line-through' : 'none',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -151,7 +151,7 @@ export default function SlotGrid({
                           <div
                             style={{
                               fontSize: 10,
-                              color: cancelled ? 'var(--bad)' : color.text,
+                              color: cancelled ? 'var(--bad)' : color.subtext,
                               textDecoration: cancelled ? 'line-through' : 'none',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',

@@ -5,9 +5,9 @@ import { kisaGun } from '../../utils/karsilama';
 import { displayName } from '../../utils/people';
 import { Icon } from '../icons';
 
-const STATUS: Record<string, { label: string; cls: string }> = {
-  confirmed: { label: 'Onaylı', cls: 'wl-chip wl-chip-good' },
-  pending: { label: 'Bekliyor', cls: 'wl-chip wl-chip-warn' },
+const STATUS: Record<string, string> = {
+  confirmed: 'Onaylı',
+  pending: 'Bekliyor',
 };
 
 const initials = (name: string): string =>
@@ -72,7 +72,7 @@ export default function GununAkisi({
           {rows.map((r, i) => {
             const a = r.appointment;
             const who = a ? displayName({ name: a.customer_name, phone: a.phone }) : '';
-            const st = a ? STATUS[a.status] : null;
+            const st = a ? STATUS[a.status] ?? a.status : null;
             const renk = a ? colorOf(a.service_name) ?? NOTR : null;
             return (
               <li
@@ -81,14 +81,15 @@ export default function GununAkisi({
                   display: 'grid', gridTemplateColumns: '68px minmax(0, 1fr) auto',
                   alignItems: 'center', gap: 12, padding: '11px 20px',
                   borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-                  borderLeft: `3px solid ${renk ?? 'transparent'}`,
-                  paddingLeft: 17,
-                  background: a ? 'transparent' : 'var(--cream-2)',
+                  // Dolu satır hizmet rengiyle **dolduruluyor**. Dar bir sol
+                  // çubuk, günün nasıl geçtiğini uzaktan okutmuyordu.
+                  background: a ? (renk ?? NOTR) : 'var(--cream-2)',
+                  color: a ? '#FFFFFF' : 'inherit',
                 }}
               >
                 <span
                   className="wl-mono"
-                  style={{ fontSize: 12.5, color: a ? 'var(--ink)' : 'var(--ink-45)' }}
+                  style={{ fontSize: 12.5, color: a ? '#FFFFFF' : 'var(--ink-45)' }}
                 >
                   {r.time}
                 </span>
@@ -99,8 +100,9 @@ export default function GununAkisi({
                       aria-hidden
                       style={{
                         width: 30, height: 30, borderRadius: 999, flexShrink: 0,
-                        background: renk ?? NOTR, color: 'var(--paper)', display: 'grid',
-                        placeItems: 'center', fontSize: 10.5, fontWeight: 600,
+                        background: 'rgba(255, 255, 255, 0.22)', color: '#FFFFFF',
+                        display: 'grid', placeItems: 'center',
+                        fontSize: 10.5, fontWeight: 600,
                       }}
                     >
                       {initials(who)}
@@ -114,7 +116,12 @@ export default function GununAkisi({
                       >
                         {who}
                       </span>
-                      <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-45)' }}>
+                      <span
+                        style={{
+                          display: 'block', fontSize: 11.5,
+                          color: 'rgba(255, 255, 255, 0.82)',
+                        }}
+                      >
                         {a.service_name}
                         {a.staff_name ? ` · ${a.staff_name}` : ' · uzman atanmadı'}
                       </span>
@@ -134,7 +141,23 @@ export default function GununAkisi({
                   </button>
                 )}
 
-                {st && <span className={st.cls}>{st.label}</span>}
+                {st && (
+                  <span
+                    style={{
+                      fontSize: 10.5, fontWeight: 600, padding: '3px 9px',
+                      borderRadius: 999, whiteSpace: 'nowrap',
+                      background: a?.status === 'pending'
+                        ? 'transparent'
+                        : 'rgba(255, 255, 255, 0.22)',
+                      border: a?.status === 'pending'
+                        ? '1px dashed rgba(255, 255, 255, 0.7)'
+                        : '1px solid transparent',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {st}
+                  </span>
+                )}
               </li>
             );
           })}
