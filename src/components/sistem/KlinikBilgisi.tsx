@@ -2,7 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { getSettings, updateSettings } from '../../api/clinic';
 import { useToast } from '../shell/Toast';
 import RandevuAyarlari from './RandevuAyarlari';
-import Select from '../ui/Select';
 
 const field: CSSProperties = {
   width: '100%',
@@ -18,20 +17,10 @@ const field: CSSProperties = {
 const labelStyle: CSSProperties = { fontSize: 11, color: 'var(--ink-60)', display: 'block' };
 
 /** Tasarımın altı klinik tipi. Değer arayüzün dilini etkiler, iş kurallarını değil. */
-const TYPES: [string, string][] = [
-  ['dis', 'Diş kliniği'],
-  ['guzellik', 'Güzellik & estetik'],
-  ['dermatoloji', 'Dermatoloji'],
-  ['fizyoterapi', 'Fizyoterapi'],
-  ['poliklinik', 'Poliklinik'],
-  ['diger', 'Diğer'],
-];
-
 /** Randevu ızgarasının adım aralığı. */
 const INTERVALS = [15, 30, 45, 60];
 
 export default function KlinikBilgisi() {
-  const [type, setType] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [interval, setInterval] = useState(60);
@@ -43,7 +32,6 @@ export default function KlinikBilgisi() {
   useEffect(() => {
     getSettings()
       .then((s) => {
-        setType(String(s.clinic_type ?? ''));
         setPhone(String(s.clinic_phone ?? ''));
         setAddress(String(s.clinic_address ?? ''));
         setInterval(Number(s.slot_interval_minutes ?? 60));
@@ -56,7 +44,6 @@ export default function KlinikBilgisi() {
     setSaving(true);
     setError(null);
     updateSettings({
-      clinic_type: type,
       clinic_phone: phone.trim(),
       clinic_address: address.trim(),
       slot_interval_minutes: interval,
@@ -73,19 +60,6 @@ export default function KlinikBilgisi() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 720 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <label style={labelStyle}>
-          Klinik tipi
-          <Select
-            value={type}
-            onChange={setType}
-            options={[
-              { value: '', label: 'Seçilmedi' },
-              ...TYPES.map(([k, l]) => ({ value: k, label: l })),
-            ]}
-            style={field}
-          />
-        </label>
-
         <label style={labelStyle}>
           Telefon
           <input

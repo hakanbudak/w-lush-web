@@ -23,8 +23,8 @@ export default function Signup() {
     setError(null);
     try {
       await signup({ clinic_name: clinicName, email, password, name });
-      // Yeni klinik demo hizmetlerle açılıyor; sihirbaz onları kendi listesiyle
-      // değiştiriyor. Atlanabilir.
+      // Yeni merkez hizmetsiz açılıyor; sihirbaz başlangıç listesini sunuyor.
+      // Atlanabilir.
       navigate('/kurulum', { replace: true });
     } catch (err) {
       setError((err as Error).message);
@@ -34,15 +34,18 @@ export default function Signup() {
   }
 
   return (
-    <AuthShell title="Klinik kaydı oluştur" subtitle="Klinik bilgilerinizi girin, hemen başlayalım.">
+    <AuthShell
+      title="Merkezinizi kaydedin"
+      subtitle="Birkaç bilgi yeter; hizmetlerinizi hemen ardından seçersiniz."
+    >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label="Klinik adı">
+        <Field label="Merkez adı">
           <input
             className="wl-input"
             required
             value={clinicName}
             onChange={(e) => setClinicName(e.target.value)}
-            placeholder="Örn. w-lush Maslak"
+            placeholder="Örn. Lush Güzellik Merkezi"
           />
         </Field>
         <Field label="Adınız soyadınız">

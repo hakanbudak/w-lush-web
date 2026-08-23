@@ -173,17 +173,18 @@ export interface PresetService {
   duration_minutes: number;
 }
 
+/**
+ * Sihirbazın sunduğu başlangıç hizmetleri. Tek liste: ürün güzellik ve
+ * estetik merkezleri için, seçilecek bir merkez tipi yok.
+ */
 export interface Preset {
-  key: string;
-  label: string;
   services: PresetService[];
 }
 
-/** Klinik tipine göre başlangıç listeleri. Giriş gerektirmez. */
-export const listPresets = () => request<Preset[]>('/api/setup/presets');
+/** Başlangıç hizmet listesi. Giriş gerektirmez. */
+export const listPresets = () => request<Preset>('/api/setup/presets');
 
 export interface SetupInput {
-  clinic_type: string;
   services: string[];
   open_days: number[];
   slot_times: string[];

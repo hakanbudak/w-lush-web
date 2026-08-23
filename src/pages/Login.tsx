@@ -156,7 +156,7 @@ export default function Login() {
       <div style={{ marginTop: 10, textAlign: 'center', fontSize: 13, color: 'var(--ink-60)' }}>
         Hesabın yok mu?{' '}
         <Link to="/signup" style={{ color: 'var(--forest)', fontWeight: 500 }}>
-          Klinik kaydı oluştur
+          Merkezini kaydet
         </Link>
       </div>
     </AuthShell>
@@ -376,7 +376,7 @@ function AuthBrand() {
       </div>
       <div>
         <div style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.01em' }}>w-lush</div>
-        <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>klinik yönetim paneli</div>
+        <div style={{ fontSize: 11, color: 'var(--ink-40)' }}>güzellik merkezi paneli</div>
       </div>
     </div>
   );
@@ -477,7 +477,7 @@ function AuthLeftPanel() {
               marginBottom: 18,
             }}
           >
-            Klinik Yönetim Sistemi
+            Güzellik Merkezi Yönetimi
           </div>
           <RotatingWord />
           <p
@@ -486,8 +486,8 @@ function AuthLeftPanel() {
               margin: '22px 0 0', fontWeight: 400, maxWidth: 420,
             }}
           >
-            Randevu, müşteri, hizmet, paket ve gelir — kliniğinizin günlük
-            akışı için sade ve net bir panel.
+            Randevudan tahsilata, danışan geçmişinden WhatsApp'tan gelen
+            mesajlara — merkezinizin günü tek ekranda.
           </p>
         </div>
 
