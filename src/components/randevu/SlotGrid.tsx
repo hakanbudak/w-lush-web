@@ -1,4 +1,4 @@
-import { staffColor, type StaffColor } from './staffColors';
+import { blockColor, type BlockColor } from './blockColors';
 
 /**
  * Slot ızgarası: satırlar kliniğin slot saatleri, sütunlar çağıranın verdiği
@@ -26,7 +26,8 @@ export interface SlotItem {
   subtitle: string; // hizmet
   status: string; // pending | confirmed | cancelled
   /** Paletteki sıra; atanmamış randevularda null. */
-  colorIndex: number | null;
+  /** Hizmetin rengi (#RRGGBB); bilinmiyorsa nötr blok. */
+  color: string | null;
 }
 
 export default function SlotGrid({
@@ -47,7 +48,7 @@ export default function SlotGrid({
   /** Boş (veya yalnızca iptal içeren) hücreye tıklanınca. Verilmezse hücre pasiftir. */
   onEmptyClick?: (slot: string, columnKey: string) => void;
   /** Renk lejantı. Boş dizi verilirse çizilmez. */
-  legend?: { label: string; color: StaffColor }[];
+  legend?: { label: string; color: BlockColor }[];
   /**
    * `slots` içindeki hangi satırlar kliniğin çalışma saati **değil**. Bunlar
    * yalnızca orada bir randevu olduğu için çizilir; boş bırakılsalardı o
@@ -106,7 +107,7 @@ export default function SlotGrid({
                 return (
                   <td key={c.key} className="wl-slot-cell" style={{ verticalAlign: 'top', padding: 4 }}>
                     {here.slice(0, MAX_PER_CELL).map((item) => {
-                      const color = staffColor(item.colorIndex);
+                      const color = blockColor(item.color);
                       const cancelled = item.status === 'cancelled';
                       return (
                         <button
