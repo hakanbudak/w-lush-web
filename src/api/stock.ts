@@ -25,7 +25,31 @@ export interface StockMovement {
   reason: MovementReason;
   note: string;
   quantity_after: number;
+  /** Hareketin takvim günü, kliniğin saat diliminde. */
+  happened_on: string;
   created_at: string; // ISO
+  /** Bu hareketin yazdığı para satırı; yoksa paraya dokunulmamış. */
+  payment_id: number | null;
+  expense_id: number | null;
+}
+
+/** Hareketle birlikte yazılacak gelir/gider satırı. */
+export interface MovementMoney {
+  amount: number;
+  method?: string;
+  note?: string;
+  /** Gider için zorunlu. */
+  category_id?: number | null;
+}
+
+export interface ProductSales {
+  product_id: number;
+  name: string;
+  unit: string;
+  sold: number;
+  revenue: number;
+  cost: number;
+  profit: number;
 }
 
 export const listProducts = () => request<Product[]>('/api/products');
@@ -46,12 +70,21 @@ export const listMovements = (productId: number) =>
 
 export const addMovement = (
   productId: number,
-  body: { delta: number; reason: MovementReason; note?: string },
+  body: {
+    delta: number;
+    reason: MovementReason;
+    note?: string;
+    /** Verilirse satış gelire, giriş gidere yazılır — aynı işlemde. */
+    money?: MovementMoney | null;
+  },
 ) =>
   request<StockMovement>(`/api/products/${productId}/movements`, {
     method: 'POST',
-    body: JSON.stringify({ note: '', ...body }),
+    body: JSON.stringify({ note: '', money: null, ...body }),
   });
+
+export const productSales = (start: string, end: string) =>
+  request<ProductSales[]>(`/api/products/sales?start=${start}&end=${end}`);
 
 /** Fiziksel sayım: sunucu farkı hareket olarak yazıyor. */
 export const countProduct = (productId: number, counted: number, note = '') =>
