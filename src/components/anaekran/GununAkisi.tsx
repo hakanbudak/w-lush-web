@@ -13,13 +13,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const initials = (name: string): string =>
   name.split(' ').map((s) => s[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR') || '••';
 
-/** Danışan adına bağlı sabit renk: aynı kişi her açılışta aynı tonda. */
-const AVATAR = ['var(--forest)', 'var(--blue)', 'var(--ai)', 'var(--dot-warn)'];
-const tone = (s: string): string => {
-  let n = 0;
-  for (const ch of s) n = (n + ch.charCodeAt(0)) % 997;
-  return AVATAR[n % AVATAR.length];
-};
+/** Hizmeti silinmiş eski randevunun rengi. */
+const NOTR = 'var(--neutral)';
 
 /**
  * Günün akışı: çalışma saatleri baştan sona, dolu saatler danışanıyla,
@@ -30,10 +25,13 @@ export default function GununAkisi({
   items,
   slots,
   upcoming,
+  colorOf,
   onPick,
 }: {
   items: Appointment[];
   slots: string[];
+  /** Hizmet rengi — takvimdeki blok rengiyle aynı kaynak. */
+  colorOf: (serviceName: string) => string | null;
   /** Bugünden sonraki ilk randevular; yalnızca bugün boşken gösteriliyor. */
   upcoming: Appointment[];
   onPick: (time: string) => void;
@@ -75,6 +73,7 @@ export default function GununAkisi({
             const a = r.appointment;
             const who = a ? displayName({ name: a.customer_name, phone: a.phone }) : '';
             const st = a ? STATUS[a.status] : null;
+            const renk = a ? colorOf(a.service_name) ?? NOTR : null;
             return (
               <li
                 key={`${r.time}-${a?.id ?? 'bos'}`}
@@ -82,6 +81,8 @@ export default function GununAkisi({
                   display: 'grid', gridTemplateColumns: '68px minmax(0, 1fr) auto',
                   alignItems: 'center', gap: 12, padding: '11px 20px',
                   borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                  borderLeft: `3px solid ${renk ?? 'transparent'}`,
+                  paddingLeft: 17,
                   background: a ? 'transparent' : 'var(--cream-2)',
                 }}
               >
@@ -98,7 +99,7 @@ export default function GununAkisi({
                       aria-hidden
                       style={{
                         width: 30, height: 30, borderRadius: 999, flexShrink: 0,
-                        background: tone(who), color: 'var(--paper)', display: 'grid',
+                        background: renk ?? NOTR, color: 'var(--paper)', display: 'grid',
                         placeItems: 'center', fontSize: 10.5, fontWeight: 600,
                       }}
                     >

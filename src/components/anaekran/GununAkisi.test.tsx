@@ -10,10 +10,13 @@ const randevu = (over: Partial<Appointment> = {}): Appointment =>
      staff_name: 'Elif', ...over } as Appointment);
 
 type Props = Parameters<typeof GununAkisi>[0];
-const ciz = (props: Omit<Props, 'upcoming'> & { upcoming?: Props['upcoming'] }) =>
+type Verilen = Omit<Props, 'upcoming' | 'colorOf'> &
+  Partial<Pick<Props, 'upcoming' | 'colorOf'>>;
+
+const ciz = (props: Verilen) =>
   render(
     <MemoryRouter>
-      <GununAkisi upcoming={[]} {...props} />
+      <GununAkisi upcoming={[]} colorOf={() => '#2E7D5B'} {...props} />
     </MemoryRouter>,
   );
 
@@ -64,5 +67,25 @@ describe('GununAkisi · sıradaki randevular', () => {
   it('bugün doluysa sıradakini göstermez', () => {
     ciz({ items: [randevu()], slots: ['11:00'], upcoming: [ileri], onPick: vi.fn() });
     expect(screen.queryByText('Sıradaki randevular')).toBeNull();
+  });
+});
+
+describe('GununAkisi · hizmet renkleri', () => {
+  it('satırı hizmetin rengiyle işaretler', () => {
+    ciz({
+      items: [randevu()],
+      slots: ['11:00'],
+      colorOf: (ad) => (ad === 'Cilt bakımı' ? '#B0577F' : null),
+      onPick: vi.fn(),
+    });
+    const satir = screen.getByText('Ayşe Yılmaz').closest('li');
+    // jsdom hex'i rgb'ye çeviriyor.
+    expect(satir?.style.borderLeftColor).toBe('rgb(176, 87, 127)');
+  });
+
+  it('hizmeti silinmiş randevu nötr kalır, renksiz kalmaz', () => {
+    ciz({ items: [randevu()], slots: ['11:00'], colorOf: () => null, onPick: vi.fn() });
+    const satir = screen.getByText('Ayşe Yılmaz').closest('li');
+    expect(satir?.getAttribute('style')).toContain('var(--neutral)');
   });
 });

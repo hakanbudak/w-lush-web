@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  getSettings, listAppointments, listServices, type Appointment,
+  getSettings, listAppointments, listServices, type Appointment, type Service,
 } from '../../api/clinic';
 import { listConversations } from '../../api/conversations';
 import { listCustomers } from '../../api/customers';
@@ -33,6 +33,7 @@ interface Loaded {
   monthRevenue: number;
   prevMonthToDateRevenue: number;
   waConnected: boolean;
+  services: Service[];
   days: { day: string; amount: number }[];
 }
 
@@ -119,6 +120,7 @@ export default function AnaEkranPanosu() {
           monthRevenue: monthS.total,
           prevMonthToDateRevenue: prevMonthS.total,
           waConnected,
+          services,
           // Grafik ayın tamamını çiziyor; bugünde kesmek yarım ayı
           // çöküş gibi gösteriyordu.
           days: dailyTotals(monthPayments, monthFull(today).start, monthFull(today).end),
@@ -225,6 +227,7 @@ export default function AnaEkranPanosu() {
             items={data.appts}
             slots={data.slots}
             upcoming={data.upcoming}
+            colorOf={(name) => data.services.find((s) => s.name === name)?.color ?? null}
             onPick={setOpenAt}
           />
         </div>
