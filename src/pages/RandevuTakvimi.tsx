@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   getSettings,
   listAppointments,
+  listServices,
   type Appointment,
   type AppointmentCreated,
+  type Service,
 } from '../api/clinic';
 import { listStaff, type StaffMember } from '../api/staff';
 import AppointmentDetail from '../components/randevu/AppointmentDetail';
 import AppointmentModal from '../components/randevu/AppointmentModal';
-import { staffColor, UNASSIGNED_COLOR } from '../components/randevu/staffColors';
+import { blockColor } from '../components/randevu/blockColors';
 import { useSetTopBarActions } from '../components/shell/TopBarActions';
 import { useToast } from '../components/shell/Toast';
 import { Icon } from '../components/icons';
@@ -36,6 +38,7 @@ export default function RandevuTakvimi() {
   const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [items, setItems] = useState<Appointment[] | null>(null);
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [slots, setSlots] = useState<string[]>([]);
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -68,6 +71,9 @@ export default function RandevuTakvimi() {
     listStaff()
       .then((rows) => setStaff(rows.filter((s) => s.active)))
       .catch(() => setStaff([]));
+    listServices()
+      .then(setServices)
+      .catch(() => setServices([]));
     getSettings()
       .then((s) => {
         setSlots(s.slot_times ?? []);
@@ -100,23 +106,24 @@ export default function RandevuTakvimi() {
       });
   }, [view, staff, anchor, openDays, items]);
 
-  // Renk personelden gelir; atanmamış son rengi alır.
+  // Renk hizmetten gelir. Randevu hizmeti adıyla taşıyor, o yüzden eşleme
+  // ada göre; silinmiş bir hizmetin eski randevusu nötr blok oluyor.
   const colorOf = useCallback(
-    (staffId: number | null): number | null => {
-      if (staffId === null) return null;
-      const idx = staff.findIndex((s) => s.id === staffId);
-      return idx < 0 ? null : idx;
-    },
-    [staff],
+    (serviceName: string): string | null =>
+      services.find((s) => s.name === serviceName)?.color ?? null,
+    [services],
   );
 
-  const legend = useMemo(
-    () => [
-      ...staff.map((s, i) => ({ label: s.name, color: staffColor(i) })),
-      { label: 'Atanmamış', color: UNASSIGNED_COLOR },
-    ],
-    [staff],
-  );
+  // Lejant yalnızca ekranda görünen hizmetleri sayıyor: elli kalemlik bir
+  // katalog lejantı takvimden uzun bir listeye çevirirdi.
+  const legend = useMemo(() => {
+    const gorunen = new Map<string, string>();
+    for (const a of items ?? []) {
+      const renk = colorOf(a.service_name);
+      if (renk && !gorunen.has(a.service_name)) gorunen.set(a.service_name, renk);
+    }
+    return [...gorunen].map(([label, hex]) => ({ label, color: blockColor(hex) }));
+  }, [items, colorOf]);
 
   const gridItems: SlotItem[] = useMemo(
     () =>
@@ -127,7 +134,7 @@ export default function RandevuTakvimi() {
         title: displayName({ name: a.customer_name, phone: a.phone }),
         subtitle: a.service_name,
         status: a.status,
-        colorIndex: colorOf(a.staff_id),
+        color: colorOf(a.service_name),
       })),
     [items, view, colorOf],
   );

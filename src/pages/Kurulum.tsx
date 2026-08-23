@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applySetup, listPresets, type Preset } from '../api/clinic';
+import {
+  applySetup, listPresets, type Preset, type SetupService,
+} from '../api/clinic';
+import HizmetSecimi, { key as adAnahtari } from '../components/kurulum/HizmetSecimi';
 import RotatingWord from '../components/auth/RotatingWord';
 import './auth.css';
 
@@ -69,7 +72,7 @@ export default function Kurulum() {
   const navigate = useNavigate();
   const [preset, setPreset] = useState<Preset | null>(null);
   const [step, setStep] = useState(1);
-  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [chosen, setChosen] = useState<Map<string, SetupService>>(new Map());
   const [openDays, setOpenDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
   const [interval, setInterval] = useState(60);
   const [busy, setBusy] = useState(false);
@@ -79,8 +82,16 @@ export default function Kurulum() {
     listPresets()
       .then((p) => {
         setPreset(p);
-        // Liste tamamı seçili başlıyor: çoğu merkez kısaltır, uzatmaz.
-        setChosen(new Set(p.services.map((s) => s.name)));
+        // Yalnızca `common` işaretliler seçili başlıyor. Elli kalemin
+        // hepsini işaretlemek, sadece epilasyon yapan bir merkeze başkasının
+        // fiyat listesini vermek olurdu.
+        setChosen(new Map(
+          p.services
+            .filter((s) => s.common)
+            .map((s) => [adAnahtari(s.name), {
+              name: s.name, duration_minutes: s.duration_minutes, color: s.color,
+            }]),
+        ));
       })
       .catch(() => setError('Hizmet listesi yüklenemedi.'));
   }, []);
@@ -89,7 +100,7 @@ export default function Kurulum() {
     setBusy(true);
     setError(null);
     applySetup({
-      services: [...chosen],
+      services: [...chosen.values()],
       open_days: openDays,
       slot_times: slotsBetween(9, 19, interval),
       slot_interval_minutes: interval,
@@ -124,41 +135,28 @@ export default function Kurulum() {
             <>
               <h2 className="wl-auth-title">Hizmetleriniz</h2>
               <p className="wl-auth-sub">
-                Sunmadıklarınızı çıkarın. Fiyatları sonra Sistem'den girersiniz.
+                Merkezinizde olanları işaretleyin, olmayanları kaldırın. Listede
+                yoksa kendiniz ekleyebilirsiniz. Fiyatları sonra Sistem'den girersiniz.
               </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {preset.services.map((s) => {
-                  const on = chosen.has(s.name);
-                  return (
-                    <button
-                      key={s.name}
-                      type="button"
-                      onClick={() =>
-                        setChosen((c) => {
-                          const next = new Set(c);
-                          if (next.has(s.name)) next.delete(s.name);
-                          else next.add(s.name);
-                          return next;
-                        })
-                      }
-                      style={{
-                        font: 'inherit',
-                        fontSize: 12.5,
-                        cursor: 'pointer',
-                        padding: '7px 12px',
-                        borderRadius: 999,
-                        background: on ? 'var(--forest-3)' : 'var(--paper)',
-                        color: on ? 'var(--forest-2)' : 'var(--ink-60)',
-                        border: on ? '1px solid var(--forest)' : '1px solid var(--line-strong)',
-                      }}
-                    >
-                      {on ? '✓ ' : ''}
-                      {s.name}
-                      <span style={{ opacity: 0.6 }}> · {s.duration_minutes} dk</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <HizmetSecimi
+                groups={preset.groups}
+                secim={{
+                  secili: chosen,
+                  ekle: (s) =>
+                    setChosen((c) => new Map(c).set(adAnahtari(s.name), s)),
+                  cikar: (name) =>
+                    setChosen((c) => {
+                      const next = new Map(c);
+                      next.delete(adAnahtari(name));
+                      return next;
+                    }),
+                }}
+              />
+              <p style={{ fontSize: 11.5, color: 'var(--ink-45)', marginTop: 14 }}>
+                {chosen.size === 0
+                  ? 'Hiç hizmet seçilmedi — bot randevu alamaz, her soruya "hizmet yok" der.'
+                  : `${chosen.size} hizmet seçildi. Renkler takvimde randevu bloklarına iniyor.`}
+              </p>
             </>
           )}
 
