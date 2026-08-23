@@ -30,3 +30,24 @@ export const bosSlotSayisi = (slots: string[], appts: Appointment[]): number => 
   const dolu = new Set(appts.filter((a) => a.status !== 'cancelled').map((a) => a.appt_time));
   return slots.filter((s) => !dolu.has(s)).length;
 };
+
+/**
+ * Bugünden sonraki ilk randevular.
+ *
+ * Ana ekran yalnızca bugünü gösteriyor. Bugünü boş olan klinikte ekran
+ * bomboş kalıyordu ve az önce ileri tarihe randevu yazan operatör
+ * randevusunun kaydolmadığını sanıyordu.
+ */
+export function yaklasanlar(
+  appts: Appointment[],
+  today: string,
+  limit = 3,
+): Appointment[] {
+  return appts
+    .filter((a) => a.status !== 'cancelled' && a.appt_date > today)
+    .sort((x, y) =>
+      x.appt_date === y.appt_date
+        ? x.appt_time.localeCompare(y.appt_time)
+        : x.appt_date.localeCompare(y.appt_date))
+    .slice(0, limit);
+}

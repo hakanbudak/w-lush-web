@@ -9,8 +9,13 @@ const randevu = (over: Partial<Appointment> = {}): Appointment =>
      customer_name: 'Ayşe Yılmaz', phone: '05321112233', service_name: 'Cilt bakımı',
      staff_name: 'Elif', ...over } as Appointment);
 
-const ciz = (props: Parameters<typeof GununAkisi>[0]) =>
-  render(<MemoryRouter><GununAkisi {...props} /></MemoryRouter>);
+type Props = Parameters<typeof GununAkisi>[0];
+const ciz = (props: Omit<Props, 'upcoming'> & { upcoming?: Props['upcoming'] }) =>
+  render(
+    <MemoryRouter>
+      <GununAkisi upcoming={[]} {...props} />
+    </MemoryRouter>,
+  );
 
 afterEach(cleanup);
 
@@ -43,5 +48,21 @@ describe('GununAkisi', () => {
   it('çalışma saati yoksa ne yapılacağını söyler', () => {
     ciz({ items: [], slots: [], onPick: vi.fn() });
     expect(screen.getByText(/çalışma saati tanımlı değil/)).toBeTruthy();
+  });
+});
+
+describe('GununAkisi · sıradaki randevular', () => {
+  const ileri = randevu({ id: 9, appt_date: '2026-08-27', appt_time: '09:00',
+                          customer_name: 'Elif Gülşen' });
+
+  it('bugün boşken sıradakini gösterir', () => {
+    ciz({ items: [], slots: ['10:00'], upcoming: [ileri], onPick: vi.fn() });
+    expect(screen.getByText('Sıradaki randevular')).toBeTruthy();
+    expect(screen.getByText('27 Ağustos Perşembe 09:00')).toBeTruthy();
+  });
+
+  it('bugün doluysa sıradakini göstermez', () => {
+    ciz({ items: [randevu()], slots: ['11:00'], upcoming: [ileri], onPick: vi.fn() });
+    expect(screen.queryByText('Sıradaki randevular')).toBeNull();
   });
 });

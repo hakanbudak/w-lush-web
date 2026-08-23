@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   getSettings, listAppointments, listServices, type Appointment,
 } from '../../api/clinic';
@@ -8,12 +8,14 @@ import { listCustomers } from '../../api/customers';
 import { getSummary, listPayments } from '../../api/payments';
 import { listStaff } from '../../api/staff';
 import { getConnection } from '../../api/whatsapp';
-import { bosSlotSayisi } from '../../utils/akis';
+import { bosSlotSayisi, yaklasanlar } from '../../utils/akis';
 import {
   dailyTotals, dayRange, monthFull, monthRange, occupancy, prevMonthToDate,
 } from '../../utils/dashboard';
 import { gorevler, type Gorev } from '../../utils/gorevler';
-import { gunSatiri, ozetSatiri, selamlama } from '../../utils/karsilama';
+import {
+  gunSatiri, ozetSatiri, randevuBildirimi, selamlama, type RandevuBildirimi,
+} from '../../utils/karsilama';
 import BekleyenIsler from './BekleyenIsler';
 import BugunPanel, { type BugunVerisi } from './BugunPanel';
 import DailyRevenueChart from './DailyRevenueChart';
@@ -26,6 +28,7 @@ interface Loaded {
   bugun: BugunVerisi;
   gorevListesi: Gorev[];
   appts: Appointment[];
+  upcoming: Appointment[];
   slots: string[];
   monthRevenue: number;
   prevMonthToDateRevenue: number;
@@ -49,7 +52,7 @@ const TOUR: TourStep[] = [
 export default function AnaEkranPanosu() {
   const [data, setData] = useState<Loaded | null>(null);
   const [error, setError] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<RandevuBildirimi | null>(null);
   const [openAt, setOpenAt] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
   const [tourOn, setTourOn] = useState(params.get('tour') === '1');
@@ -73,6 +76,8 @@ export default function AnaEkranPanosu() {
       getSummary(month.start, month.end),
       getSummary(prevMonth.start, prevMonth.end),
       listAppointments(t.start, t.end),
+      // Yaklaşanlar için ayrı çağrı: bugünü boş gören ekran sıradakini de söylesin.
+      listAppointments(t.start, monthFull(today).end),
       getSettings(),
       listStaff(),
       listCustomers(),
@@ -82,7 +87,7 @@ export default function AnaEkranPanosu() {
       getConnection().then((c) => c.status === 'connected').catch(() => false),
     ])
       .then(([
-        todayS, monthS, prevMonthS, appts, settings, staff, customers,
+        todayS, monthS, prevMonthS, appts, ileri, settings, staff, customers,
         conversations, monthPayments, services, waConnected,
       ]) => {
         const slots = settings.slot_times ?? [];
@@ -109,6 +114,7 @@ export default function AnaEkranPanosu() {
             monthPaymentCount: monthS.count,
           }),
           appts,
+          upcoming: yaklasanlar(ileri, t.start),
           slots,
           monthRevenue: monthS.total,
           prevMonthToDateRevenue: prevMonthS.total,
@@ -147,13 +153,11 @@ export default function AnaEkranPanosu() {
         onOpened={() => setOpenAt(null)}
         onCreated={(created) => {
           setNotice(
-            created.notified
-              ? 'Randevu oluşturuldu, danışana WhatsApp bilgisi gönderildi.'
-              : 'Randevu oluşturuldu, ancak danışana mesaj iletilemedi.',
+            randevuBildirimi(created.appointment, created.notified, dayRange(0).start),
           );
           load();
         }}
-        onSent={(name) => setNotice(`${name} kişisine mesaj gönderildi.`)}
+        onSent={(name) => setNotice({ text: `${name} kişisine mesaj gönderildi.`, baskaGun: false })}
       />
 
       <header>
@@ -178,10 +182,26 @@ export default function AnaEkranPanosu() {
             background: 'var(--forest-3)', color: 'var(--forest-2)',
             border: '1px solid var(--line)', borderRadius: 'var(--r-card)',
             padding: '10px 16px', fontSize: 12.5, display: 'flex', gap: 12,
-            alignItems: 'center',
+            alignItems: 'center', lineHeight: 1.5,
           }}
         >
-          <span style={{ flex: 1 }}>{notice}</span>
+          <span style={{ flex: 1 }}>
+            {notice.text}
+            {notice.baskaGun && (
+              <span style={{ display: 'block', marginTop: 2, color: 'var(--ink-60)' }}>
+                Başka bir güne yazıldı — bugünün akışında görünmüyor.
+              </span>
+            )}
+          </span>
+          {notice.baskaGun && (
+            <Link
+              to="/randevu"
+              className="wl-btn wl-btn-ghost wl-btn-sm"
+              style={{ textDecoration: 'none' }}
+            >
+              Takvimde aç
+            </Link>
+          )}
           <button
             type="button"
             className="wl-btn wl-btn-ghost wl-btn-sm"
@@ -201,7 +221,12 @@ export default function AnaEkranPanosu() {
         }}
       >
         <div data-tour="akis" style={{ minWidth: 0 }}>
-          <GununAkisi items={data.appts} slots={data.slots} onPick={setOpenAt} />
+          <GununAkisi
+            items={data.appts}
+            slots={data.slots}
+            upcoming={data.upcoming}
+            onPick={setOpenAt}
+          />
         </div>
         <div
           data-tour="isler"

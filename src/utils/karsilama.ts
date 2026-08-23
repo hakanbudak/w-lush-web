@@ -40,3 +40,36 @@ export function ozetSatiri(o: GunOzeti): string {
   const s = parcalar.join(' · ');
   return `${s.charAt(0).toUpperCase()}${s.slice(1)}.`;
 }
+
+/** "27 Ağustos Perşembe" — yıl yok, çünkü bildirim hep yakın bir güne bakıyor. */
+export function kisaGun(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const t = new Date(y, m - 1, d);
+  return `${t.getDate()} ${AYLAR[t.getMonth()]} ${GUNLER[t.getDay()]}`;
+}
+
+export interface RandevuBildirimi {
+  text: string;
+  /** Randevu bugüne düşmediyse ana ekranın akışında görünmüyor. */
+  baskaGun: boolean;
+}
+
+/**
+ * Randevu oluşturulduktan sonraki bildirim.
+ *
+ * Tarihi yazmak şart: ana ekran yalnızca bugünü gösteriyor, ileri tarihe
+ * yazılan randevu kaydedildiği hâlde ekranda hiçbir iz bırakmıyordu ve
+ * "oluşturuldu" diyen bir mesajın ardından boş bir gün görmek randevunun
+ * kaybolduğu izlenimi veriyordu.
+ */
+export function randevuBildirimi(
+  a: { appt_date: string; appt_time: string },
+  notified: boolean,
+  today: string,
+): RandevuBildirimi {
+  const ne = `${kisaGun(a.appt_date)} ${a.appt_time} randevusu oluşturuldu`;
+  const posta = notified
+    ? ', danışana WhatsApp bilgisi gönderildi.'
+    : ', ancak danışana mesaj iletilemedi.';
+  return { text: ne + posta, baskaGun: a.appt_date !== today };
+}

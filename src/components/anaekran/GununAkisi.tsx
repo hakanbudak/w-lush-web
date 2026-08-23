@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Appointment } from '../../api/clinic';
 import { gunAkisi } from '../../utils/akis';
+import { kisaGun } from '../../utils/karsilama';
 import { displayName } from '../../utils/people';
 import { Icon } from '../icons';
 
@@ -28,13 +29,17 @@ const tone = (s: string): string => {
 export default function GununAkisi({
   items,
   slots,
+  upcoming,
   onPick,
 }: {
   items: Appointment[];
   slots: string[];
+  /** Bugünden sonraki ilk randevular; yalnızca bugün boşken gösteriliyor. */
+  upcoming: Appointment[];
   onPick: (time: string) => void;
 }) {
   const rows = gunAkisi(slots, items);
+  const bosGun = rows.every((r) => r.appointment === null);
 
   return (
     <section
@@ -133,6 +138,28 @@ export default function GununAkisi({
             );
           })}
         </ul>
+      )}
+
+      {bosGun && upcoming.length > 0 && (
+        <footer style={{ borderTop: '1px solid var(--line)', padding: '12px 20px' }}>
+          <div className="wl-label" style={{ marginBottom: 6 }}>Sıradaki randevular</div>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            {upcoming.map((a) => (
+              <li
+                key={a.id}
+                style={{ display: 'flex', gap: 10, fontSize: 12.5, padding: '3px 0' }}
+              >
+                <span className="wl-mono" style={{ color: 'var(--ink-60)' }}>
+                  {kisaGun(a.appt_date)} {a.appt_time}
+                </span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+                               whiteSpace: 'nowrap' }}>
+                  {displayName({ name: a.customer_name, phone: a.phone })} · {a.service_name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </footer>
       )}
     </section>
   );
