@@ -4,17 +4,21 @@ import Popover, { rectOf, type Rect } from './Popover';
 /**
  * Hizmet renkleri. Katalogdaki grup renkleriyle aynı — merkez kendi
  * hizmetini eklerken takvimin diline yabancı bir ton seçmesin diye sınırlı
- * bir paletten seçiyor.
+ * bir paletten seçiyor. Hepsi beyaz metinle en az 4.1:1 kontrast veriyor;
+ * bloklar bu renkle dolduruluyor ve üstüne beyaz yazılıyor.
  */
 export const SERVICE_COLORS: { hex: string; label: string }[] = [
-  { hex: '#2E7D5B', label: 'Yeşil' },
-  { hex: '#4A85B5', label: 'Mavi' },
-  { hex: '#5B4FA3', label: 'Mor' },
-  { hex: '#C2582F', label: 'Kiremit' },
-  { hex: '#B0577F', label: 'Gül' },
-  { hex: '#8A6416', label: 'Kehribar' },
-  { hex: '#2A7B84', label: 'Turkuaz' },
-  { hex: '#6B7A2F', label: 'Zeytin' },
+  { hex: '#0B8A57', label: 'Yeşil' },
+  { hex: '#1667C7', label: 'Mavi' },
+  { hex: '#0E7C8C', label: 'Turkuaz' },
+  { hex: '#6837C9', label: 'Mor' },
+  { hex: '#D24A0B', label: 'Turuncu' },
+  { hex: '#C2185B', label: 'Pembe' },
+  { hex: '#A21CAF', label: 'Magenta' },
+  { hex: '#B06A00', label: 'Kehribar' },
+  { hex: '#5C8A0F', label: 'Zeytin' },
+  { hex: '#BE123C', label: 'Kırmızı' },
+  { hex: '#0F766E', label: 'Çam' },
 ];
 
 export default function ColorPicker({
@@ -56,7 +60,7 @@ export default function ColorPicker({
         }}
       >
         <span
-          style={{ width: 16, height: 16, borderRadius: 5, background: value || '#2E7D5B' }}
+          style={{ width: 16, height: 16, borderRadius: 5, background: value || '#0B8A57' }}
         />
       </button>
 

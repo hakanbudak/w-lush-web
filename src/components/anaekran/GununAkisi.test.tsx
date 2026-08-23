@@ -16,7 +16,7 @@ type Verilen = Omit<Props, 'upcoming' | 'colorOf'> &
 const ciz = (props: Verilen) =>
   render(
     <MemoryRouter>
-      <GununAkisi upcoming={[]} colorOf={() => '#2E7D5B'} {...props} />
+      <GununAkisi upcoming={[]} colorOf={() => '#0B8A57'} {...props} />
     </MemoryRouter>,
   );
 
@@ -75,12 +75,12 @@ describe('GununAkisi · hizmet renkleri', () => {
     ciz({
       items: [randevu()],
       slots: ['11:00'],
-      colorOf: (ad) => (ad === 'Cilt bakımı' ? '#B0577F' : null),
+      colorOf: (ad) => (ad === 'Cilt bakımı' ? '#C2185B' : null),
       onPick: vi.fn(),
     });
     const satir = screen.getByText('Ayşe Yılmaz').closest('li');
-    // jsdom hex'i rgb'ye çeviriyor.
-    expect(satir?.style.borderLeftColor).toBe('rgb(176, 87, 127)');
+    // Satırın tamamı hizmet rengiyle doluyor; jsdom hex'i rgb'ye çeviriyor.
+    expect(satir?.style.background).toBe('rgb(194, 24, 91)');
   });
 
   it('hizmeti silinmiş randevu nötr kalır, renksiz kalmaz', () => {
