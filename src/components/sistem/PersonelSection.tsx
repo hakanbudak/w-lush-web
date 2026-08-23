@@ -7,6 +7,7 @@ import {
   type StaffMember,
 } from '../../api/staff';
 import { Icon } from '../icons';
+import IzinSection from './IzinSection';
 
 type StaffRow = StaffMember & { _new?: boolean };
 
@@ -15,6 +16,8 @@ export default function PersonelSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
+  // Aynı anda tek personelin izinleri açık: hepsi açıkken tablo okunmuyor.
+  const [openLeaves, setOpenLeaves] = useState<number | null>(null);
 
   function load() {
     setLoading(true);
@@ -129,7 +132,7 @@ export default function PersonelSection() {
                 </td>
               </tr>
             )}
-            {rows.map((p, i) => (
+            {rows.flatMap((p, i) => [
               <tr key={p.id}>
                 <td>
                   <input
@@ -173,9 +176,27 @@ export default function PersonelSection() {
                   >
                     Sil
                   </button>
+                  {/* İzinler kendi satırında: her personelin altında sürekli
+                      açık dursa tablo okunmaz hâle gelirdi. */}
+                  <button
+                    className="wl-btn wl-btn-ghost wl-btn-sm"
+                    style={{ borderRadius: 8 }}
+                    onClick={() => setOpenLeaves((x) => (x === p.id ? null : p.id))}
+                  >
+                    {openLeaves === p.id ? 'İzinleri gizle' : 'İzinler'}
+                  </button>
                 </td>
-              </tr>
-            ))}
+              </tr>,
+              ...(openLeaves === p.id && p.id > 0
+                ? [
+                    <tr key={`${p.id}-izin`}>
+                      <td colSpan={4} style={{ background: 'var(--cream)' }}>
+                        <IzinSection person={p} />
+                      </td>
+                    </tr>,
+                  ]
+                : []),
+            ])}
           </tbody>
         </table>
       )}
