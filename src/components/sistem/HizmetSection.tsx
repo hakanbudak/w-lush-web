@@ -6,6 +6,7 @@ import {
   updateService,
   type Service,
 } from '../../api/clinic';
+import ColorPicker, { SERVICE_COLORS } from '../ui/ColorPicker';
 import { Icon } from '../icons';
 import { Toggle } from './ui';
 
@@ -35,6 +36,9 @@ export default function HizmetSection() {
       ...r,
       {
         id: -Date.now(), name: '', price: 0, duration_minutes: 60,
+        // Yeni satır paletten sıradaki rengi alıyor: hepsini aynı renkle
+        // başlatmak takvimi tek renge boğuyordu.
+        color: SERVICE_COLORS[r.length % SERVICE_COLORS.length].hex,
         active: true, sort_order: r.length, _new: true,
       },
     ]);
@@ -51,6 +55,7 @@ export default function HizmetSection() {
       name: row.name.trim(),
       price: Number(row.price) || 0,
       duration_minutes: Number(row.duration_minutes) || 60,
+      color: row.color,
       active: row.active,
       sort_order: row.sort_order,
     };
@@ -90,7 +95,7 @@ export default function HizmetSection() {
           <div style={{ fontSize: 13, fontWeight: 600 }}>
             Hizmetler & fiyatlar
             <span style={{ fontSize: 11, color: 'var(--ink-40)', fontWeight: 400, marginLeft: 8 }}>
-              · WhatsApp botu bu listeyi kullanır
+              · WhatsApp botu bu listeyi kullanır, takvim bu renkleri
             </span>
           </div>
           <button className="wl-btn wl-btn-ghost wl-btn-sm" style={{ borderRadius: 8 }} onClick={addRow}>
@@ -110,6 +115,7 @@ export default function HizmetSection() {
           <table className="wl-table" style={{ border: '1px solid var(--line)', borderRadius: 10 }}>
             <thead>
               <tr>
+                <th style={{ width: 46 }}>Renk</th>
                 <th>Hizmet</th>
                 <th style={{ width: 110, textAlign: 'right' }}>Süre (dk)</th>
                 <th style={{ width: 150, textAlign: 'right' }}>Fiyat (₺)</th>
@@ -120,13 +126,20 @@ export default function HizmetSection() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ color: 'var(--ink-40)', fontSize: 13 }}>
+                  <td colSpan={5} style={{ color: 'var(--ink-40)', fontSize: 13 }}>
                     Henüz hizmet yok — "Hizmet ekle" ile başlayın.
                   </td>
                 </tr>
               )}
               {rows.map((s, i) => (
                 <tr key={s.id}>
+                  <td>
+                    <ColorPicker
+                      value={s.color}
+                      onChange={(hex) => patch(i, { color: hex })}
+                      ariaLabel={`${s.name || 'Yeni hizmet'} rengi`}
+                    />
+                  </td>
                   <td>
                     <input
                       className="wl-input"

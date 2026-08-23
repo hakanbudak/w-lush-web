@@ -10,6 +10,8 @@ export interface Service {
   duration_minutes: number;
   active: boolean;
   sort_order: number;
+  /** Takvim bloğunun rengi (#RRGGBB). */
+  color: string;
 }
 export type ServiceInput = Omit<Service, 'id'>;
 
@@ -171,21 +173,40 @@ export const listRequests = () => request<ClinicRequest[]>('/api/requests');
 export interface PresetService {
   name: string;
   duration_minutes: number;
+  color: string;
+  /** Sihirbazda seçili başlayan, neredeyse her merkezde bulunan hizmet. */
+  common: boolean;
+}
+
+export interface PresetGroup {
+  name: string;
+  color: string;
+  services: PresetService[];
 }
 
 /**
- * Sihirbazın sunduğu başlangıç hizmetleri. Tek liste: ürün güzellik ve
- * estetik merkezleri için, seçilecek bir merkez tipi yok.
+ * Sihirbazın sunduğu hizmet kataloğu. Merkez tipi diye bir seçim yok — ürün
+ * güzellik ve estetik merkezleri için. Katalog kapalı değil: merkez kendi
+ * hizmetini de yazabiliyor.
  */
 export interface Preset {
+  groups: PresetGroup[];
+  /** Grupların toplamı; grup umursamayan yerler için. */
   services: PresetService[];
 }
 
 /** Başlangıç hizmet listesi. Giriş gerektirmez. */
 export const listPresets = () => request<Preset>('/api/setup/presets');
 
+export interface SetupService {
+  name: string;
+  /** Boş bırakılırsa sunucu katalogdan tamamlıyor. */
+  duration_minutes?: number;
+  color?: string;
+}
+
 export interface SetupInput {
-  services: string[];
+  services: SetupService[];
   open_days: number[];
   slot_times: string[];
   slot_interval_minutes: number;
