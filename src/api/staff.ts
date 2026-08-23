@@ -72,3 +72,29 @@ export const createLeave = (
 
 export const deleteLeave = (leaveId: number) =>
   request<void>(`/api/staff/leaves/${leaveId}`, { method: 'DELETE' });
+
+
+export interface StaffPerformance {
+  staff_id: number | null;
+  name: string;
+  appointments: number;
+  completed: number;
+  cancelled: number;
+  /**
+   * Tarihi geçmiş ama tamamlandı işaretlenmemiş randevular. "Gelmedi"
+   * DEĞİL: işaretlemenin unutulmuş olması da mümkün ve ikisini ayırt
+   * edecek bir kaydımız yok.
+   */
+  unmarked: number;
+  booked_minutes: number;
+  available_minutes: number | null;
+  /** Hesaplanamıyorsa null — uydurulmuş bir oran yazılmıyor. */
+  occupancy: number | null;
+  revenue: number;
+  services: Record<string, number>;
+}
+
+export const staffPerformance = (start: string, end: string) =>
+  request<StaffPerformance[]>(
+    `/api/staff/performance?start=${start}&end=${end}`,
+  );
