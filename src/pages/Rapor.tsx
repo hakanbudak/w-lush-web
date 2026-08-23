@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import PersonelPerformans from '../components/rapor/PersonelPerformans';
 import {
   deleteReport,
   generateIncomeExpenseReport,
@@ -78,6 +79,9 @@ export default function Rapor() {
 
   return (
     <>
+      {/* Rakamlar önce: yapay zekâ yorumu bunların üstüne konuşuyor. */}
+      <PersonelPerformans />
+
       {/* üretici */}
       <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <span
