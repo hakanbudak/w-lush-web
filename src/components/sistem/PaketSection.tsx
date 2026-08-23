@@ -3,9 +3,12 @@ import {
   createPackage,
   deletePackage,
   listPackages,
+  listServices,
   updatePackage,
   type Package,
+  type Service,
 } from '../../api/clinic';
+import Select from '../ui/Select';
 import { Icon } from '../icons';
 import { Toggle } from './ui';
 
@@ -16,6 +19,7 @@ export default function PaketSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
 
   function load() {
     setLoading(true);
@@ -27,6 +31,19 @@ export default function PaketSection() {
   }
   useEffect(load, []);
 
+  // Paketin kapsadığı hizmet buradan seçiliyor: seans yalnızca o hizmetin
+  // randevusu tamamlanınca düşüyor.
+  useEffect(() => {
+    listServices()
+      .then(setServices)
+      .catch(() => setServices([]));
+  }, []);
+
+  const serviceOptions = [
+    { value: '', label: 'Hizmete bağlı değil' },
+    ...services.map((s) => ({ value: s.name, label: s.name })),
+  ];
+
   const patch = (i: number, p: Partial<PkgRow>) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...p } : row)));
 
@@ -34,7 +51,7 @@ export default function PaketSection() {
     setRows((r) => [
       ...r,
       {
-        id: -Date.now(), name: '', sessions: 1, price: 0,
+        id: -Date.now(), name: '', sessions: 1, service_name: '', price: 0,
         save_percent: 0, active: true, sort_order: r.length, _new: true,
       },
     ]);
@@ -50,6 +67,7 @@ export default function PaketSection() {
     const body = {
       name: row.name.trim(),
       sessions: Number(row.sessions) || 1,
+      service_name: row.service_name || '',
       price: Number(row.price) || 0,
       save_percent: Number(row.save_percent) || 0,
       active: row.active,
@@ -112,6 +130,7 @@ export default function PaketSection() {
           <thead>
             <tr>
               <th>Paket</th>
+              <th style={{ width: 190 }}>Hizmet</th>
               <th style={{ width: 90, textAlign: 'right' }}>Seans</th>
               <th style={{ width: 140, textAlign: 'right' }}>Fiyat (₺)</th>
               <th style={{ width: 110, textAlign: 'right' }}>%Avantaj</th>
@@ -122,7 +141,7 @@ export default function PaketSection() {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ color: 'var(--ink-40)', fontSize: 13 }}>
+                <td colSpan={7} style={{ color: 'var(--ink-40)', fontSize: 13 }}>
                   Henüz paket yok — "Paket ekle" ile başlayın.
                 </td>
               </tr>
@@ -135,6 +154,15 @@ export default function PaketSection() {
                     value={p.name}
                     placeholder="Paket adı"
                     onChange={(e) => patch(i, { name: e.target.value })}
+                  />
+                </td>
+                <td>
+                  <Select
+                    value={p.service_name}
+                    onChange={(v) => patch(i, { service_name: v })}
+                    options={serviceOptions}
+                    placeholder="Seans elle düşülür"
+                    ariaLabel={`${p.name || 'Paket'} hangi hizmeti kapsıyor`}
                   />
                 </td>
                 <td>

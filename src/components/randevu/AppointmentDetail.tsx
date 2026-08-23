@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import {
   assignAppointmentStaff,
   cancelAppointment,
+  completeAppointment,
   confirmAppointment,
   getSettings,
   rescheduleAppointment,
@@ -29,6 +30,7 @@ const fieldStyle: CSSProperties = {
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: 'Onaylı', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
+  completed: { label: 'Tamamlandı', bg: 'var(--forest)', color: 'var(--paper)' },
   pending: { label: 'Bekliyor', bg: 'var(--warn-soft)', color: 'var(--warn)' },
   cancelled: { label: 'İptal', bg: 'var(--neutral-soft)', color: 'var(--neutral)' },
 };
@@ -287,6 +289,23 @@ export default function AppointmentDetail({
               Onayla
             </button>
           )}
+          {/* Seans, tarihin geçmesine değil operatörün "geldi" demesine
+              bağlı: gelmeyen danışanın paketinden seans düşmemeli. */}
+          {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+            <button
+              type="button"
+              className="wl-btn wl-btn-sm"
+              disabled={busy}
+              onClick={() =>
+                run(
+                  () => completeAppointment(appointment.id),
+                  'Randevu tamamlandı. Danışanın paketi varsa bir seans düşüldü.',
+                )
+              }
+            >
+              Tamamlandı
+            </button>
+          )}
           {appointment.status !== 'cancelled' && !moving && (
             <button
               type="button"
@@ -311,7 +330,14 @@ export default function AppointmentDetail({
               className="wl-btn wl-btn-ghost wl-btn-sm"
               style={{ color: 'var(--bad)' }}
               disabled={busy}
-              onClick={() => run(() => cancelAppointment(appointment.id), 'Randevu iptal edildi.')}
+              onClick={() =>
+                run(
+                  () => cancelAppointment(appointment.id),
+                  appointment.status === 'completed'
+                    ? 'Randevu iptal edildi, düşülen seans pakete geri verildi.'
+                    : 'Randevu iptal edildi.',
+                )
+              }
             >
               İptal et
             </button>

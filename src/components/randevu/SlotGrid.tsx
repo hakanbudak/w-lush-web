@@ -146,6 +146,7 @@ export default function SlotGrid({
                               whiteSpace: 'nowrap',
                             }}
                           >
+                            {item.status === 'completed' && '✓ '}
                             {item.title}
                           </div>
                           <div
