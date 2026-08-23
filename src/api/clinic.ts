@@ -65,6 +65,8 @@ export const deletePackage = (id: number) =>
 
 /* ── Ayarlar (çalışma saatleri / ekip iletimi) ── */
 export interface ClinicSettings {
+  /** Online randevu sayfası açık mı. */
+  online_booking?: boolean;
   open_days: number[];
   slot_times: string[];
   days_ahead: number;

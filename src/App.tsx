@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './auth/ProtectedRoute';
+import OnlineRandevu from './pages/OnlineRandevu';
 import Layout from './components/Layout';
 import AnaEkran from './pages/AnaEkran';
 import CRM from './pages/CRM';
@@ -21,6 +22,9 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
+      {/* Herkese açık: oturum, kenar menü ve üst bar olmadan. */}
+      <Route path="/r/:slug" element={<OnlineRandevu />} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/sifremi-unuttum" element={<SifremiUnuttum />} />
