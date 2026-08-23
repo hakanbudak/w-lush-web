@@ -8,14 +8,16 @@ import {
   type CustomerSummary,
 } from '../api/customers';
 import CustomerNotes from '../components/customer/CustomerNotes';
+import CustomerPackages from '../components/customer/CustomerPackages';
 import { Avatar, Chip } from '../components/ui';
 import { clockTime, relativeTime } from '../utils/time';
 import { displayName } from '../utils/people';
 
-type Tab = 'randevular' | 'mesajlar' | 'notlar';
+type Tab = 'randevular' | 'mesajlar' | 'paketler' | 'notlar';
 
 const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
   confirmed: { label: 'Onaylı', tone: 'good' },
+  completed: { label: 'Tamamlandı', tone: 'good' },
   pending: { label: 'Bekliyor', tone: 'warn' },
   cancelled: { label: 'İptal', tone: 'bad' },
 };
@@ -339,6 +341,7 @@ export default function DanisanProfili() {
                 {([
                   ['randevular', 'Randevu geçmişi'],
                   ['mesajlar', 'Mesaj geçmişi'],
+                  ['paketler', 'Paketler'],
                   ['notlar', 'Notlar'],
                 ] as [Tab, string][]).map(([key, label]) => (
                   <button
@@ -423,6 +426,8 @@ export default function DanisanProfili() {
                   </div>
                 </div>
               )}
+
+              {tab === 'paketler' && <CustomerPackages phone={detail.phone} />}
 
               {tab === 'notlar' && (
                 <div style={{ padding: 16 }}>

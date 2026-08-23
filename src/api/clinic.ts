@@ -37,6 +37,8 @@ export interface Package {
   id: number;
   name: string;
   sessions: number;     // seans sayısı
+  /** Paketin kapsadığı hizmet. Boşsa seans otomatik düşmüyor. */
+  service_name: string;
   price: number;        // TL, toplam
   save_percent: number; // %avantaj
   active: boolean;
@@ -104,6 +106,10 @@ export const listAppointments = (start?: string, end?: string) => {
 
 export const confirmAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/confirm`, { method: 'POST' });
+
+/** Randevuyu tamamlandı işaretler; danışanın paketi varsa seans düşer. */
+export const completeAppointment = (id: number) =>
+  request<Appointment>(`/api/appointments/${id}/complete`, { method: 'POST' });
 
 export const cancelAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/cancel`, { method: 'POST' });

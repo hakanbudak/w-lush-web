@@ -7,6 +7,7 @@ import { Icon } from '../icons';
 
 const STATUS: Record<string, string> = {
   confirmed: 'Onaylı',
+  completed: 'Tamamlandı',
   pending: 'Bekliyor',
 };
 
