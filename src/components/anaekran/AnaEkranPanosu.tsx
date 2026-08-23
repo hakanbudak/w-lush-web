@@ -7,6 +7,7 @@ import { listConversations } from '../../api/conversations';
 import { listCustomers } from '../../api/customers';
 import { getSummary, listPayments } from '../../api/payments';
 import { listStaff } from '../../api/staff';
+import { listLowStock } from '../../api/stock';
 import { getConnection } from '../../api/whatsapp';
 import { bosSlotSayisi, yaklasanlar } from '../../utils/akis';
 import {
@@ -86,10 +87,11 @@ export default function AnaEkranPanosu() {
       listPayments(month.start, month.end),
       listServices().catch(() => []),
       getConnection().then((c) => c.status === 'connected').catch(() => false),
+      listLowStock().catch(() => []),
     ])
       .then(([
         todayS, monthS, prevMonthS, appts, ileri, settings, staff, customers,
-        conversations, monthPayments, services, waConnected,
+        conversations, monthPayments, services, waConnected, lowStock,
       ]) => {
         const slots = settings.slot_times ?? [];
         const activeStaff = staff.filter((s) => s.active).length;
@@ -113,6 +115,7 @@ export default function AnaEkranPanosu() {
             waitingConversations: conversations.filter((c) => c.waiting).length,
             pendingAppointments: appts.filter((a) => a.status === 'pending').length,
             monthPaymentCount: monthS.count,
+            lowStockCount: lowStock.length,
           }),
           appts,
           upcoming: yaklasanlar(ileri, t.start),

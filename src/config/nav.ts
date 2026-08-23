@@ -42,6 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'gelir', label: 'Gelir', title: 'Gelir raporu', path: '/gelir', icon: 'trending' },
       { key: 'gider', label: 'Gider', title: 'Giderler', path: '/gider', icon: 'wallet' },
+      { key: 'stok', label: 'Stok', title: 'Stok', path: '/stok', icon: 'wallet' },
       { key: 'rapor', label: 'Raporlar', title: 'Rapor', path: '/rapor', icon: 'chart' },
     ],
   },
