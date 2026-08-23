@@ -8,17 +8,20 @@ import PaketSection from '../components/sistem/PaketSection';
 import AiSection from '../components/sistem/AiSection';
 import GuvenlikSection from '../components/sistem/GuvenlikSection';
 import KlinikBilgisi from '../components/sistem/KlinikBilgisi';
+import OnamSection from '../components/sistem/OnamSection';
 import OnlineRandevuSection from '../components/sistem/OnlineRandevuSection';
 import SablonSection from '../components/sistem/SablonSection';
 
 /* ───────── bölümler ───────── */
-type Section = 'klinik' | 'personel' | 'hizmet' | 'online' | 'whatsapp' | 'ai' | 'guvenlik';
+type Section =
+  | 'klinik' | 'personel' | 'hizmet' | 'online' | 'onam' | 'whatsapp' | 'ai' | 'guvenlik';
 const SECTIONS: { key: Section; label: string; icon: keyof typeof Icon; sub: string }[] = [
   { key: 'klinik', label: 'Klinik bilgisi', icon: 'home', sub: 'Tip, iletişim, çalışma saatleri' },
   { key: 'personel', label: 'Personel', icon: 'users', sub: 'Uzmanlar ve roller' },
   { key: 'hizmet', label: 'Hizmetler & paketler', icon: 'sparkle', sub: 'Fiyatlandırma' },
   { key: 'online', label: 'Online randevu', icon: 'calendar', sub: 'Danışan kendi alsın' },
   { key: 'whatsapp', label: 'WhatsApp şablonları', icon: 'whatsapp', sub: 'Otomatik mesajlar' },
+  { key: 'onam', label: 'Onam formları', icon: 'check', sub: 'Danışanın imzaladığı metinler' },
   { key: 'ai', label: 'AI asistan', icon: 'sparkle', sub: 'Davranış tercihleri' },
   { key: 'guvenlik', label: 'Güvenlik', icon: 'user', sub: 'İki adımlı doğrulama' },
 ];
@@ -97,6 +100,12 @@ export default function Sistem() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
               <WhatsAppConnect />
               <SablonSection />
+            </div>
+          )}
+
+          {sec === 'onam' && (
+            <div style={{ maxWidth: 760 }}>
+              <OnamSection />
             </div>
           )}
 
