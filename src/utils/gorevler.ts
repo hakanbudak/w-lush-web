@@ -23,6 +23,8 @@ export interface GorevGirdisi {
   waitingConversations: number;
   pendingAppointments: number;
   monthPaymentCount: number;
+  /** Uyarı eşiğinin altına düşmüş ürün sayısı. */
+  lowStockCount: number;
 }
 
 export function gorevler(g: GorevGirdisi): Gorev[] {
@@ -73,6 +75,17 @@ export function gorevler(g: GorevGirdisi): Gorev[] {
       tone: 'warn',
       to: '/mesajlar',
       cta: 'Aç',
+    });
+  }
+
+  if (g.lowStockCount > 0) {
+    out.push({
+      key: 'stok',
+      title: `${g.lowStockCount} üründe stok azaldı`,
+      sub: 'Biten ürün, yapılamayan seans demek.',
+      tone: 'warn',
+      to: '/stok',
+      cta: 'Stok',
     });
   }
 

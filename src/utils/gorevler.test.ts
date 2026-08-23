@@ -8,6 +8,7 @@ const hazir: GorevGirdisi = {
   waitingConversations: 0,
   pendingAppointments: 0,
   monthPaymentCount: 3,
+  lowStockCount: 0,
 };
 
 const anahtarlar = (g: Partial<GorevGirdisi>) =>
@@ -48,5 +49,17 @@ describe('gorevler', () => {
     expect(anahtarlar({ monthPaymentCount: 0, serviceCount: 0, waConnected: false }))
       .not.toContain('odeme');
     expect(anahtarlar({ monthPaymentCount: 0 })).toContain('odeme');
+  });
+});
+
+describe('gorevler · stok', () => {
+  it('azalan ürünü sayısıyla listeler', () => {
+    const g = gorevler({ ...hazir, lowStockCount: 2 }).find((x) => x.key === 'stok');
+    expect(g?.title).toBe('2 üründe stok azaldı');
+    expect(g?.to).toBe('/stok');
+  });
+
+  it('stok yeterliyken uyarı çıkmaz', () => {
+    expect(anahtarlar({})).not.toContain('stok');
   });
 });
