@@ -5,21 +5,21 @@
 
 :root {
   /* --- Zeminler --- */
-  --cream: #F4F2EC;        /* bone — sayfa zemini */
+  --cream: #F5F4EF;        /* bone — sayfa zemini */
   --cream-2: #FAF9F5;      /* ikincil zemin / satır hover */
   --cream-3: #EFEDE6;      /* seçili yüzey */
   --paper: #FFFFFF;        /* kartlar */
 
   /* --- Lacivert (kenar menü, birincil) --- */
-  --navy: #17233D;
-  --navy-hover: #22335A;
+  --navy: #12212F;
+  --navy-hover: #1E3446;
   --navy-ink: #F4F2EC;     /* lacivert üzerindeki metin */
 
   /* --- Klinik yeşili (accent / CTA) --- */
   --forest: #2E7D5B;
-  --forest-hover: #256B4D;
+  --forest-hover: #24654A;
   --forest-2: #1F5C42;     /* koyu metin */
-  --forest-3: #E7F1EB;     /* açık zemin */
+  --forest-3: #E4EFE9;     /* açık zemin */
   --accent-soft: #8FC0A6;  /* lacivert üstünde açık ton */
 
   /* --- Yardımcı renkler --- */
@@ -29,8 +29,11 @@
   --ai-soft: #EDEBF7;
   --ai-band: #F3F0FA;
   --ai-dark: #463C85;
-  --warn: #B4552F;
-  --warn-soft: #FBEAE3;
+  --warn: #8A6416;
+  --warn-soft: #FBF0DE;
+  /* Bekleyen iş noktaları: dikkat (kehribar) ve acele (kızıl). */
+  --dot-warn: #D9A227;
+  --dot-urgent: #C2582F;
   --bad: #C66B65;
   --bad-soft: #FBEAE8;
   --good: #2E7D5B;
@@ -38,16 +41,16 @@
   --neutral-soft: #EFEDE6;
 
   /* --- Metin --- */
-  --ink: #1C2434;
-  --ink-60: rgba(28, 36, 52, 0.6);
-  --ink-45: rgba(28, 36, 52, 0.45);
-  --ink-40: rgba(28, 36, 52, 0.4);
-  --ink-20: rgba(28, 36, 52, 0.2);
-  --ink-08: rgba(28, 36, 52, 0.08);
+  --ink: #16222E;
+  --ink-60: rgba(22, 34, 46, 0.66);
+  --ink-45: rgba(22, 34, 46, 0.5);
+  --ink-40: rgba(22, 34, 46, 0.42);
+  --ink-20: rgba(22, 34, 46, 0.22);
+  --ink-08: rgba(22, 34, 46, 0.08);
 
   /* --- Çizgiler --- */
-  --line: rgba(28, 36, 52, 0.08);
-  --line-strong: rgba(28, 36, 52, 0.14);
+  --line: #EFEBE1;
+  --line-strong: #E8E4DA;
 
   /* --- WhatsApp --- */
   --wa-green: #25D366;
@@ -91,7 +94,7 @@ html, body, #root {
 }
 html, body {
   background: var(--cream);
-  font-family: "Hanken Grotesk", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 body {
   height: 100vh;
@@ -99,7 +102,7 @@ body {
 }
 
 .wl {
-  font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  font-family: Manrope, system-ui, -apple-system, sans-serif;
   color: var(--ink);
   font-size: 13px;
   line-height: 1.45;
@@ -127,10 +130,10 @@ body {
 }
 
 .wl-mono {
-  font-family: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   letter-spacing: -0.01em;
 }
-.wl-mono, [style*="Geist Mono"] { font-feature-settings: "tnum"; }
+.wl-mono, [style*="IBM Plex Mono"] { font-feature-settings: "tnum"; }
 
 /* ─── uygulama kabuğu (tam viewport, sabit sidebar) ─────────────────────── */
 .stage {
@@ -336,3 +339,7 @@ body {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.45; }
 }
+
+/* Kenar menü bağlantısı. Aktif renk NavLink'ten satır içi geliyor; hover
+   yalnızca CSS'te tanımlanabildiği için burada. */
+.wl-nav-link:hover { background: #19293A !important; color: #FFFFFF !important; }
