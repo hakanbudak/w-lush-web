@@ -4,6 +4,7 @@ import {
   listProducts, updateProduct,
   type MovementReason, type Product, type StockMovement,
 } from '../api/stock';
+import { listCategories, type ExpenseCategory } from '../api/expenses';
 import { Icon } from '../components/icons';
 import Select from '../components/ui/Select';
 import { durum, ozet, REASON_LABEL, signed } from '../utils/stok';
@@ -285,6 +286,14 @@ function Detay({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Para kaydı yalnızca satış ve girişte anlamlı; sayım bir düzeltme,
+  // çıkış ise fire/iç kullanım olabiliyor.
+  const [money, setMoney] = useState(true);
+  const [amount2, setAmount2] = useState('');
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [categoryId, setCategoryId] = useState('');
+
+  const paraliMi = reason === 'satis' || reason === 'giris';
 
   const load = useCallback(() => {
     listMovements(product.id)
@@ -292,6 +301,26 @@ function Detay({
       .catch(() => setMoves([]));
   }, [product.id]);
   useEffect(load, [load]);
+
+  useEffect(() => {
+    listCategories()
+      .then((c) => {
+        const aktif = c.filter((x) => x.active);
+        setCategories(aktif);
+        // "Ürün & sarf" varsayılan: stok girişi tam olarak o.
+        const urun = aktif.find((x) => x.name.toLowerCase().includes('ürün'));
+        setCategoryId(String(urun?.id ?? aktif[0]?.id ?? ''));
+      })
+      .catch(() => setCategories([]));
+  }, []);
+
+  // Tutar önerisi: satışta satış fiyatı, girişte alış fiyatı × miktar.
+  useEffect(() => {
+    const n = Number(amount);
+    if (!paraliMi || !Number.isFinite(n) || n <= 0) return;
+    const birim = reason === 'satis' ? product.price : product.cost;
+    setAmount2(birim > 0 ? String(birim * n) : '');
+  }, [amount, reason, paraliMi, product.price, product.cost]);
 
   const uygula = () => {
     const n = Number(amount);
@@ -304,6 +333,13 @@ function Detay({
 
     // Sayım "kaç tane var" sorusunu soruyor; diğerleri "kaç tane değişti".
     // Farkı sunucu hesaplıyor, ikinci bir yerde tekrar edilmiyor.
+    const tutar = Number(amount2);
+    if (paraliMi && money && (!Number.isFinite(tutar) || tutar <= 0)) {
+      setError('Tutar sıfırdan büyük olmalı.');
+      setBusy(false);
+      return;
+    }
+
     const istek =
       reason === 'sayim'
         ? countProduct(product.id, n, note)
@@ -311,6 +347,15 @@ function Detay({
             delta: reason === 'giris' ? n : -n,
             reason,
             note,
+            money:
+              paraliMi && money
+                ? {
+                    amount: tutar,
+                    method: reason === 'satis' ? 'cash' : 'transfer',
+                    category_id:
+                      reason === 'giris' ? Number(categoryId) || null : null,
+                  }
+                : null,
           });
 
     istek
@@ -318,6 +363,7 @@ function Detay({
         setMoves((x) => [m, ...(x ?? [])]);
         onChanged(m.quantity_after);
         setAmount('');
+        setAmount2('');
         setNote('');
       })
       .catch((e: Error) => setError(e.message))
@@ -382,6 +428,71 @@ function Detay({
         </p>
       )}
 
+      {paraliMi && (
+        <div
+          style={{
+            marginTop: 10, padding: '10px 12px', borderRadius: 10,
+            background: 'var(--cream-2)', border: '1px solid var(--line)',
+          }}
+        >
+          <label
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={money}
+              onChange={(e) => setMoney(e.target.checked)}
+            />
+            {reason === 'satis' ? 'Gelire de yaz' : 'Gidere de yaz'}
+          </label>
+
+          {money && (
+            <div
+              style={{
+                display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end',
+                marginTop: 8,
+              }}
+            >
+              <Alan etiket="Tutar (₺)">
+                <input
+                  className="wl-input wl-mono"
+                  type="number"
+                  min={1}
+                  value={amount2}
+                  style={{ width: 120, textAlign: 'right' }}
+                  onChange={(e) => setAmount2(e.target.value)}
+                />
+              </Alan>
+              {reason === 'giris' && (
+                <Alan etiket="Gider kategorisi">
+                  <Select
+                    value={categoryId}
+                    onChange={setCategoryId}
+                    options={categories.map((c) => ({
+                      value: String(c.id),
+                      label: c.name,
+                    }))}
+                    ariaLabel="Gider kategorisi"
+                    style={{ width: 180 }}
+                  />
+                </Alan>
+              )}
+            </div>
+          )}
+
+          <p style={{ fontSize: 11, color: 'var(--ink-45)', margin: '8px 0 0' }}>
+            {money
+              ? 'Stok ve para tek işlemde yazılıyor; biri olup diğeri olmuyor.'
+              : reason === 'satis'
+                ? 'Kapalıyken satış adette görünür ama gelir raporuna girmez.'
+                : 'Kapalıyken giriş gider raporuna girmez.'}
+          </p>
+        </div>
+      )}
+
       {error && (
         <p style={{ fontSize: 12, color: 'var(--bad)', margin: '8px 0 0' }}>{error}</p>
       )}
@@ -402,9 +513,16 @@ function Detay({
             }}
           >
             <span className="wl-mono" style={{ minWidth: 78, color: 'var(--ink-45)' }}>
-              {m.created_at.slice(0, 10)}
+              {m.happened_on}
             </span>
-            <span style={{ flex: 1 }}>{ozet(m, product.unit)}</span>
+            <span style={{ flex: 1 }}>
+              {ozet(m, product.unit)}
+              {(m.payment_id || m.expense_id) && (
+                <span style={{ color: 'var(--forest)' }}>
+                  {' '}· {m.payment_id ? 'gelire yazıldı' : 'gidere yazıldı'}
+                </span>
+              )}
+            </span>
             <span className="wl-mono" style={{ color: 'var(--ink-45)' }}>
               {signed(m.delta)} → {m.quantity_after}
             </span>

@@ -2,8 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Stok from './Stok';
-import type { Product } from '../api/stock';
+import type { Product, StockMovement } from '../api/stock';
 
+vi.mock('../api/expenses', () => ({ listCategories: vi.fn() }));
 vi.mock('../api/stock', () => ({
   listProducts: vi.fn(),
   listMovements: vi.fn(),
@@ -17,6 +18,13 @@ vi.mock('../api/stock', () => ({
 import {
   addMovement, countProduct, listMovements, listProducts,
 } from '../api/stock';
+import { listCategories } from '../api/expenses';
+
+const hareket = (over: Partial<StockMovement> = {}): StockMovement => ({
+  id: 1, product_id: 1, delta: -3, reason: 'cikis', note: '',
+  quantity_after: 7, happened_on: '2026-08-24',
+  created_at: '2026-08-24T10:00:00', payment_id: null, expense_id: null, ...over,
+});
 
 const urun = (over: Partial<Product> = {}): Product => ({
   id: 1, name: 'Şampuan', unit: 'adet', quantity: 10, min_quantity: 5,
@@ -28,6 +36,9 @@ const ciz = () => render(<MemoryRouter><Stok /></MemoryRouter>);
 beforeEach(() => {
   vi.mocked(listProducts).mockResolvedValue([urun()]);
   vi.mocked(listMovements).mockResolvedValue([]);
+  vi.mocked(listCategories).mockResolvedValue([
+    { id: 1, name: 'Ürün & sarf', active: true, sort_order: 0 },
+  ]);
 });
 afterEach(() => {
   cleanup();
@@ -38,9 +49,13 @@ const hareketAc = async () => {
   fireEvent.click(await screen.findByText('Hareket'));
 };
 
-/** Select seçenekleri onMouseDown ile seçiliyor (bkz. ui/OptionList). */
+/**
+ * Select seçenekleri onMouseDown ile seçiliyor (bkz. ui/OptionList).
+ * Ekranda birden çok combobox var (hareket türü ve gider kategorisi),
+ * o yüzden erişilebilir adıyla seçiliyor.
+ */
 const turSec = async (etiket: string) => {
-  fireEvent.click(screen.getByRole('combobox'));
+  fireEvent.click(screen.getByRole('combobox', { name: 'Hareket türü' }));
   fireEvent.mouseDown(await screen.findByText(etiket));
 };
 
@@ -58,10 +73,7 @@ describe('Stok', () => {
   });
 
   it('çıkış hareketi eksi delta olarak gider', async () => {
-    vi.mocked(addMovement).mockResolvedValue({
-      id: 1, product_id: 1, delta: -3, reason: 'cikis', note: '',
-      quantity_after: 7, created_at: '2026-08-24T10:00:00',
-    });
+    vi.mocked(addMovement).mockResolvedValue(hareket());
     ciz();
     await hareketAc();
     await turSec('Çıkış');
@@ -70,16 +82,13 @@ describe('Stok', () => {
 
     await waitFor(() =>
       expect(vi.mocked(addMovement).mock.calls[0][1]).toEqual({
-        delta: -3, reason: 'cikis', note: '',
+        delta: -3, reason: 'cikis', note: '', money: null,
       }),
     );
   });
 
   it('sayımda sayılan toplam gider, farkı sunucu hesaplar', async () => {
-    vi.mocked(countProduct).mockResolvedValue({
-      id: 1, product_id: 1, delta: -3, reason: 'sayim', note: '',
-      quantity_after: 7, created_at: '2026-08-24T10:00:00',
-    });
+    vi.mocked(countProduct).mockResolvedValue(hareket({ reason: 'sayim' }));
     ciz();
     await hareketAc();
     await turSec('Sayım');
@@ -110,5 +119,74 @@ describe('Stok', () => {
     fireEvent.click(screen.getByText('Kaydet'));
     expect(await screen.findByText('Miktar sıfırdan büyük olmalı.')).toBeTruthy();
     expect(addMovement).not.toHaveBeenCalled();
+  });
+});
+
+describe('Stok · para kaydı', () => {
+  it('satış geliri hareketle aynı istekte gönderir', async () => {
+    vi.mocked(addMovement).mockResolvedValue(
+      hareket({ reason: 'satis', payment_id: 7 }),
+    );
+    ciz();
+    await hareketAc();
+    await turSec('Satış');
+    fireEvent.change(screen.getByLabelText(/Miktar/), { target: { value: '2' } });
+    fireEvent.click(screen.getByText('Kaydet'));
+
+    await waitFor(() => {
+      const [, body] = vi.mocked(addMovement).mock.calls[0];
+      // Tutar ürünün satış fiyatından öneriliyor: 2 × 300.
+      expect(body.money).toEqual({ amount: 600, method: 'cash', category_id: null });
+      expect(body.delta).toBe(-2);
+    });
+  });
+
+  it('giriş gideri kategorisiyle gönderir', async () => {
+    vi.mocked(addMovement).mockResolvedValue(
+      hareket({ reason: 'giris', expense_id: 4 }),
+    );
+    ciz();
+    await hareketAc();
+    fireEvent.change(await screen.findByLabelText(/Miktar/), {
+      target: { value: '10' },
+    });
+    fireEvent.click(screen.getByText('Kaydet'));
+
+    await waitFor(() => {
+      const [, body] = vi.mocked(addMovement).mock.calls[0];
+      // 10 × alış fiyatı (180), "Ürün & sarf" kategorisiyle.
+      expect(body.money).toEqual({ amount: 1800, method: 'transfer', category_id: 1 });
+    });
+  });
+
+  it('para kaydı kapatılınca hareket paraya dokunmuyor', async () => {
+    vi.mocked(addMovement).mockResolvedValue(hareket({ reason: 'satis' }));
+    ciz();
+    await hareketAc();
+    await turSec('Satış');
+    fireEvent.click(screen.getByLabelText('Gelire de yaz'));
+    fireEvent.change(screen.getByLabelText(/Miktar/), { target: { value: '2' } });
+    fireEvent.click(screen.getByText('Kaydet'));
+
+    await waitFor(() =>
+      expect(vi.mocked(addMovement).mock.calls[0][1].money).toBeNull(),
+    );
+  });
+
+  it('sayımda para alanı hiç sorulmuyor', async () => {
+    ciz();
+    await hareketAc();
+    await turSec('Sayım');
+    expect(screen.queryByLabelText('Gelire de yaz')).toBeNull();
+    expect(screen.queryByLabelText('Gidere de yaz')).toBeNull();
+  });
+
+  it('geçmişte hangi hareketin paraya yazıldığını gösterir', async () => {
+    vi.mocked(listMovements).mockResolvedValue([
+      hareket({ reason: 'satis', payment_id: 7 }),
+    ]);
+    ciz();
+    await hareketAc();
+    expect(await screen.findByText(/gelire yazıldı/)).toBeTruthy();
   });
 });

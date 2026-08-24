@@ -36,7 +36,8 @@ describe('durum', () => {
 describe('ozet', () => {
   const hareket = (over: Partial<StockMovement> = {}): StockMovement => ({
     id: 1, product_id: 1, delta: 12, reason: 'giris', note: '',
-    quantity_after: 12, created_at: '2026-08-24T10:00:00', ...over,
+    quantity_after: 12, happened_on: '2026-08-24',
+    created_at: '2026-08-24T10:00:00', payment_id: null, expense_id: null, ...over,
   });
 
   it('türü, miktarı ve birimi yazar', () => {
