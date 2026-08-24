@@ -8,13 +8,15 @@ import PaketSection from '../components/sistem/PaketSection';
 import AiSection from '../components/sistem/AiSection';
 import GuvenlikSection from '../components/sistem/GuvenlikSection';
 import KlinikBilgisi from '../components/sistem/KlinikBilgisi';
+import FaturaBilgisi from '../components/sistem/FaturaBilgisi';
 import OnamSection from '../components/sistem/OnamSection';
 import OnlineRandevuSection from '../components/sistem/OnlineRandevuSection';
 import SablonSection from '../components/sistem/SablonSection';
 
 /* ───────── bölümler ───────── */
 type Section =
-  | 'klinik' | 'personel' | 'hizmet' | 'online' | 'onam' | 'whatsapp' | 'ai' | 'guvenlik';
+  | 'klinik' | 'personel' | 'hizmet' | 'online' | 'onam' | 'fatura'
+  | 'whatsapp' | 'ai' | 'guvenlik';
 const SECTIONS: { key: Section; label: string; icon: keyof typeof Icon; sub: string }[] = [
   { key: 'klinik', label: 'Klinik bilgisi', icon: 'home', sub: 'Tip, iletişim, çalışma saatleri' },
   { key: 'personel', label: 'Personel', icon: 'users', sub: 'Uzmanlar ve roller' },
@@ -22,6 +24,7 @@ const SECTIONS: { key: Section; label: string; icon: keyof typeof Icon; sub: str
   { key: 'online', label: 'Online randevu', icon: 'calendar', sub: 'Danışan kendi alsın' },
   { key: 'whatsapp', label: 'WhatsApp şablonları', icon: 'whatsapp', sub: 'Otomatik mesajlar' },
   { key: 'onam', label: 'Onam formları', icon: 'check', sub: 'Danışanın imzaladığı metinler' },
+  { key: 'fatura', label: 'Fatura bilgileri', icon: 'wallet', sub: 'UBL-TR için satıcı bilgileri' },
   { key: 'ai', label: 'AI asistan', icon: 'sparkle', sub: 'Davranış tercihleri' },
   { key: 'guvenlik', label: 'Güvenlik', icon: 'user', sub: 'İki adımlı doğrulama' },
 ];
@@ -106,6 +109,12 @@ export default function Sistem() {
           {sec === 'onam' && (
             <div style={{ maxWidth: 760 }}>
               <OnamSection />
+            </div>
+          )}
+
+          {sec === 'fatura' && (
+            <div style={{ maxWidth: 760 }}>
+              <FaturaBilgisi />
             </div>
           )}
 
