@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './auth/ProtectedRoute';
 import OnamFormu from './pages/OnamFormu';
 import OnlineRandevu from './pages/OnlineRandevu';
+import Faturalar from './pages/Faturalar';
 import Stok from './pages/Stok';
 import Layout from './components/Layout';
 import AnaEkran from './pages/AnaEkran';
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/gelir" element={<GelirRaporu />} />
           <Route path="/gider" element={<Giderler />} />
           <Route path="/stok" element={<Stok />} />
+          <Route path="/fatura" element={<Faturalar />} />
           <Route path="/rapor" element={<Rapor />} />
           <Route path="/sistem" element={<Sistem />} />
           <Route path="/yonetici" element={<Yonetici />} />
