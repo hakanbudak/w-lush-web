@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ApiError } from '../api/client';
 import {
   getSettings,
   listAppointments,
   listServices,
+  rescheduleAppointment,
   type Appointment,
   type AppointmentCreated,
   type Service,
@@ -149,6 +151,44 @@ export default function RandevuTakvimi() {
   const selected = (items ?? []).find((a) => a.id === selectedId) ?? null;
 
   // Gün görünümünde sütun personeldir, haftada gündür — ön dolum buna göre.
+  /**
+   * Sürüklenen randevuyu bırakıldığı hücreye taşır.
+   *
+   * Gün görünümünde sütun uzman, satır saat: tek bırakma hareketi ikisini
+   * de belirliyor ve **tek istekte** kaydediliyor. Ayrı ayrı göndermek,
+   * uzmanı değişip saati değişmemiş bir randevu bırakabilirdi.
+   *
+   * Sunucu izin, çakışma ve kapasiteyi zaten denetliyor; reddi olduğu gibi
+   * gösteriyoruz — "taşınamadı" demek operatöre nedenini söylemezdi.
+   */
+  const moveTo = (id: number, slot: string, columnKey: string) => {
+    const hedef =
+      view === 'gun'
+        ? {
+            appt_date: isoDate(anchor),
+            appt_time: slot,
+            staff_id: columnKey === UNASSIGNED ? null : Number(columnKey),
+          }
+        : { appt_date: columnKey, appt_time: slot };
+    rescheduleAppointment(id, {
+      ...hedef,
+      // Gün görünümünde uzman da taşınıyor; haftada sütun gün olduğu için
+      // uzmana dokunulmuyor.
+      keep_staff: view !== 'gun',
+      // Sürükleme bir düzenleme; her taşımada danışana mesaj gitmesi
+      // istenmeyen bir yan etki olurdu.
+      notify: false,
+    })
+      .then(() => {
+        toast('Randevu taşındı.');
+        load();
+      })
+      .catch((e: unknown) => {
+        const api = e instanceof ApiError ? e : null;
+        toast(api?.detail || 'Randevu taşınamadı.');
+      });
+  };
+
   const openCreate = (slot: string, columnKey: string) =>
     setCreating(
       view === 'gun'
@@ -300,6 +340,7 @@ export default function RandevuTakvimi() {
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 onEmptyClick={openCreate}
+                onMove={moveTo}
                 offSlots={offSlots}
                 legend={legend}
               />

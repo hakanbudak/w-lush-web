@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { blockColor, type BlockColor } from './blockColors';
 
 /**
@@ -37,6 +38,7 @@ export default function SlotGrid({
   selectedId,
   onSelect,
   onEmptyClick,
+  onMove,
   offSlots,
   legend = [],
 }: {
@@ -47,6 +49,13 @@ export default function SlotGrid({
   onSelect: (id: number) => void;
   /** Boş (veya yalnızca iptal içeren) hücreye tıklanınca. Verilmezse hücre pasiftir. */
   onEmptyClick?: (slot: string, columnKey: string) => void;
+  /**
+   * Blok başka bir hücreye sürüklendiğinde. Verilmezse sürükleme kapalı.
+   *
+   * Saat ve sütun birlikte gidiyor: gün görünümünde sütun uzman olduğu
+   * için tek bırakma hareketi hem "kime" hem "kaça" sorusunu yanıtlıyor.
+   */
+  onMove?: (id: number, slot: string, columnKey: string) => void;
   /** Renk lejantı. Boş dizi verilirse çizilmez. */
   legend?: { label: string; color: BlockColor }[];
   /**
@@ -56,8 +65,15 @@ export default function SlotGrid({
    */
   offSlots?: ReadonlySet<string>;
 }) {
+  // Sürüklenen blok ve üzerinde durulan hücre. Hücrenin işaretlenmesi
+  // şart: aksi hâlde bırakma anında nereye düşeceği görünmüyor.
+  const [dragging, setDragging] = useState<number | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+
   const cell = (slot: string, columnKey: string) =>
     items.filter((i) => i.slot === slot && i.columnKey === columnKey);
+
+  const cellKey = (slot: string, columnKey: string) => `${slot}|${columnKey}`;
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -104,8 +120,35 @@ export default function SlotGrid({
               </td>
               {columns.map((c) => {
                 const here = cell(slot, c.key);
+                const anahtar = cellKey(slot, c.key);
+                const hedef = onMove !== undefined && dragging !== null;
                 return (
-                  <td key={c.key} className="wl-slot-cell" style={{ verticalAlign: 'top', padding: 4 }}>
+                  <td
+                    key={c.key}
+                    className="wl-slot-cell"
+                    style={{
+                      verticalAlign: 'top',
+                      padding: 4,
+                      outline: over === anahtar ? '2px solid var(--forest)' : 'none',
+                      outlineOffset: -2,
+                      background: over === anahtar ? 'var(--forest-3)' : undefined,
+                    }}
+                    onDragOver={(e) => {
+                      if (!hedef) return;
+                      // preventDefault olmadan tarayıcı bırakmayı reddediyor.
+                      e.preventDefault();
+                      setOver(anahtar);
+                    }}
+                    onDragLeave={() => setOver((o) => (o === anahtar ? null : o))}
+                    onDrop={(e) => {
+                      if (!hedef || dragging === null) return;
+                      e.preventDefault();
+                      setOver(null);
+                      const id = dragging;
+                      setDragging(null);
+                      onMove?.(id, slot, c.key);
+                    }}
+                  >
                     {here.slice(0, MAX_PER_CELL).map((item) => {
                       const color = blockColor(item.color);
                       const cancelled = item.status === 'cancelled';
@@ -113,13 +156,25 @@ export default function SlotGrid({
                         <button
                           key={item.id}
                           type="button"
+                          // İptal edilmiş randevu taşınamıyor: sunucu da
+                          // reddediyor ve sürüklenebilir görünmesi yalan olurdu.
+                          draggable={onMove !== undefined && !cancelled}
+                          onDragStart={(e) => {
+                            setDragging(item.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                            // Firefox veri olmadan sürüklemeyi başlatmıyor.
+                            e.dataTransfer.setData('text/plain', String(item.id));
+                          }}
+                          onDragEnd={() => {
+                            setDragging(null);
+                            setOver(null);
+                          }}
                           onClick={() => onSelect(item.id)}
                           style={{
                             display: 'block',
                             width: '100%',
                             textAlign: 'left',
                             font: 'inherit',
-                            cursor: 'pointer',
                             marginBottom: 4,
                             padding: '6px 8px',
                             borderRadius: 8,
@@ -132,7 +187,8 @@ export default function SlotGrid({
                                 ? '1px dashed rgba(255, 255, 255, 0.85)'
                                 : '1px solid transparent',
                             outline: selectedId === item.id ? '2px solid var(--forest)' : 'none',
-                            opacity: cancelled ? 0.55 : 1,
+                            opacity: cancelled ? 0.55 : dragging === item.id ? 0.4 : 1,
+                            cursor: onMove !== undefined && !cancelled ? 'grab' : 'pointer',
                           }}
                         >
                           <div
