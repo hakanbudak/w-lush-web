@@ -51,6 +51,15 @@ export default function AppointmentModal({
   const [name, setName] = useState('');
   const [known, setKnown] = useState(false);
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  /**
+   * Kayıtlı danışan mı yeni danışan mı.
+   *
+   * Tek bir serbest alan ikisini karıştırıyordu: listede olan biri elle
+   * yazılınca numarası boş kalıyor, yeni biri yazılınca da listeden
+   * seçilmediği belli olmuyordu. Modu açıkça sormak, hangi bilgiyi
+   * doldurması gerektiğini de söylüyor.
+   */
+  const [yeniDanisan, setYeniDanisan] = useState(false);
   const [serviceName, setServiceName] = useState('');
   const [services, setServices] = useState<Service[]>([]);
   const [day, setDay] = useState(initial.date);
@@ -101,7 +110,13 @@ export default function AppointmentModal({
 
   const submit = () => {
     if (!phone.trim()) {
-      setError('Telefon zorunlu.');
+      // Kayıtlı modda numara seçimden gelir; boşsa seçim yapılmamıştır ve
+      // "telefon zorunlu" demek operatöre ne yapacağını söylemez.
+      setError(
+        yeniDanisan
+          ? 'Telefon zorunlu.'
+          : 'Listeden bir danışan seçin ya da "Yeni danışan"a geçin.',
+      );
       return;
     }
     if (!time) {
@@ -134,38 +149,109 @@ export default function AppointmentModal({
   return (
     <Modal title="Yeni randevu" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label style={labelStyle}>
-          Danışan
-          <Combobox
-            value={name}
-            onChange={setName}
-            onPick={(opt) => {
-              // Seçilen kişinin numarası da doluyor; asıl mesele buydu.
-              setPhone(opt.value);
-              const secilen = customers.find((c) => c.phone === opt.value);
-              setName(secilen?.name || opt.value);
-            }}
-            options={customerOptions}
-            placeholder="Ad yazın ya da listeden seçin"
-            ariaLabel="Danışan"
-            style={field}
-          />
-        </label>
+        <div
+          role="radiogroup"
+          aria-label="Danışan türü"
+          style={{ display: 'flex', gap: 6 }}
+        >
+          {([
+            [false, 'Kayıtlı danışan'],
+            [true, 'Yeni danışan'],
+          ] as [boolean, string][]).map(([deger, etiket]) => {
+            const secili = yeniDanisan === deger;
+            return (
+              <button
+                key={etiket}
+                type="button"
+                role="radio"
+                aria-checked={secili}
+                onClick={() => {
+                  // Mod değişince alanlar boşalıyor: yeni danışan formunda
+                  // listeden gelmiş bir numaranın kalması, yeni kişiyi
+                  // başkasının numarasına yazmak olurdu.
+                  setYeniDanisan(deger);
+                  setPhone('');
+                  setName('');
+                }}
+                style={{
+                  flex: 1, font: 'inherit', fontSize: 12.5, cursor: 'pointer',
+                  padding: '7px 10px', borderRadius: 9,
+                  background: secili ? 'var(--ink)' : 'var(--paper)',
+                  color: secili ? 'var(--paper)' : 'var(--ink-60)',
+                  border: '1px solid var(--line-strong)',
+                  fontWeight: secili ? 600 : 400,
+                }}
+              >
+                {etiket}
+              </button>
+            );
+          })}
+        </div>
 
-        <label style={labelStyle}>
-          Telefon
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="905321112233"
-            style={field}
-          />
-        </label>
+        {yeniDanisan ? (
+          <>
+            <label style={labelStyle}>
+              Danışan adı
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ad soyad"
+                style={field}
+              />
+            </label>
 
-        {known && (
-          <div style={{ fontSize: 11, color: 'var(--forest)' }}>
-            Mevcut danışan — geçmişi Danışan Profili'nde.
-          </div>
+            <label style={labelStyle}>
+              Telefon
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="905321112233"
+                style={field}
+              />
+            </label>
+
+            {known && (
+              <div style={{ fontSize: 11, color: 'var(--warn)' }}>
+                Bu numara zaten kayıtlı — "Kayıtlı danışan"dan seçerseniz
+                geçmişi tek kişide toplanır.
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <label style={labelStyle}>
+              Danışan
+              <Combobox
+                value={name}
+                onChange={(v) => {
+                  setName(v);
+                  // Listeden seçilmiş numara, ad elle değiştirilince
+                  // düşüyor: yanlış kişiye randevu yazılmasın.
+                  setPhone('');
+                }}
+                onPick={(opt) => {
+                  setPhone(opt.value);
+                  const secilen = customers.find((c) => c.phone === opt.value);
+                  setName(secilen?.name || opt.value);
+                }}
+                options={customerOptions}
+                placeholder="Ad ya da numara yazın"
+                ariaLabel="Danışan"
+                style={field}
+              />
+            </label>
+
+            {phone ? (
+              <div style={{ fontSize: 11.5, color: 'var(--forest-2)' }}>
+                Numara: <span className="wl-mono">{phone}</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 11.5, color: 'var(--ink-45)' }}>
+                Listeden seçin — numarası kendiliğinden gelir. Kayıtlı değilse
+                "Yeni danışan"a geçin.
+              </div>
+            )}
+          </>
         )}
 
         <label style={labelStyle}>

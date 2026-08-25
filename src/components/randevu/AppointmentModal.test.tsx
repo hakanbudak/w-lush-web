@@ -38,33 +38,66 @@ const göster = () =>
     />,
   );
 
-describe('AppointmentModal · danışan seçimi', () => {
-  it('listeden seçilen danışanın numarası kendiliğinden doluyor', async () => {
+const yeniyeGec = () => fireEvent.click(screen.getByText('Yeni danışan'));
+
+describe('AppointmentModal · kayıtlı danışan', () => {
+  it('kayıtlı danışan modu açık başlıyor', async () => {
+    göster();
+    expect(await screen.findByLabelText('Danışan')).toBeTruthy();
+    // Yeni danışan alanları görünmemeli.
+    expect(screen.queryByPlaceholderText('Ad soyad')).toBeNull();
+  });
+
+  it('seçilen danışanın numarası kendiliğinden geliyor', async () => {
     göster();
     const alan = await screen.findByLabelText('Danışan');
     fireEvent.change(alan, { target: { value: 'Ayşe' } });
     fireEvent.mouseDown(await screen.findByText(/Ayşe Yılmaz · 05321112233/));
 
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText('905321112233')).toHaveProperty(
-        'value',
-        '05321112233',
-      ),
-    );
+    expect(await screen.findByText('05321112233')).toBeTruthy();
     expect(alan).toHaveProperty('value', 'Ayşe Yılmaz');
   });
 
   it('adsız danışan numarasıyla listeleniyor', async () => {
     göster();
-    const alan = await screen.findByLabelText('Danışan');
-    fireEvent.change(alan, { target: { value: '0533' } });
+    fireEvent.change(await screen.findByLabelText('Danışan'), {
+      target: { value: '0533' },
+    });
     expect(await screen.findByText('05339998877')).toBeTruthy();
   });
 
-  it('listede olmayan yeni danışan da yazılabiliyor', async () => {
+  it('ad elle değiştirilince seçilen numara düşüyor', async () => {
+    // Yoksa yanlış kişiye randevu yazılırdı.
     göster();
     const alan = await screen.findByLabelText('Danışan');
-    fireEvent.change(alan, { target: { value: 'Yeni Kişi' } });
+    fireEvent.change(alan, { target: { value: 'Ayşe' } });
+    fireEvent.mouseDown(await screen.findByText(/Ayşe Yılmaz · 05321112233/));
+    await screen.findByText('05321112233');
+
+    fireEvent.change(alan, { target: { value: 'Ayşe B' } });
+    expect(screen.queryByText('05321112233')).toBeNull();
+  });
+
+  it('seçim yapılmadan kaydedilirse ne yapılacağını söylüyor', async () => {
+    göster();
+    await screen.findByLabelText('Danışan');
+    fireEvent.click(screen.getByText('Randevu oluştur'));
+    expect(
+      await screen.findByText(/Listeden bir danışan seçin/),
+    ).toBeTruthy();
+    expect(createAppointment).not.toHaveBeenCalled();
+  });
+});
+
+describe('AppointmentModal · yeni danışan', () => {
+  it('ad ve numara elle yazılıyor', async () => {
+    göster();
+    await screen.findByLabelText('Danışan');
+    yeniyeGec();
+
+    fireEvent.change(screen.getByPlaceholderText('Ad soyad'), {
+      target: { value: 'Yeni Kişi' },
+    });
     fireEvent.change(screen.getByPlaceholderText('905321112233'), {
       target: { value: '05335554433' },
     });
@@ -76,5 +109,18 @@ describe('AppointmentModal · danışan seçimi', () => {
         customer_name: 'Yeni Kişi',
       }),
     );
+  });
+
+  it('mod değişince seçilmiş numara temizleniyor', async () => {
+    // Yeni kişiyi başkasının numarasına yazmamak için.
+    göster();
+    const alan = await screen.findByLabelText('Danışan');
+    fireEvent.change(alan, { target: { value: 'Ayşe' } });
+    fireEvent.mouseDown(await screen.findByText(/Ayşe Yılmaz · 05321112233/));
+    await screen.findByText('05321112233');
+
+    yeniyeGec();
+    expect(screen.getByPlaceholderText('905321112233')).toHaveProperty('value', '');
+    expect(screen.getByPlaceholderText('Ad soyad')).toHaveProperty('value', '');
   });
 });
