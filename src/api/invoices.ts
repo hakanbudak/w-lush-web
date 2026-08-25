@@ -56,15 +56,37 @@ export const listInvoices = () => request<Invoice[]>('/api/invoices');
 export const getInvoice = (id: number) =>
   request<InvoiceDetail>(`/api/invoices/${id}`);
 
+export interface UninvoicedPayment {
+  id: number;
+  paid_at: string;
+  amount: number;
+  method: string;
+  phone: string | null;
+  customer_name: string;
+  service_name: string;
+}
+
+/** Aralıktaki, henüz faturalanmamış tahsilatlar. */
+export const listUninvoicedPayments = (start: string, end: string) =>
+  request<UninvoicedPayment[]>(
+    `/api/invoices/uninvoiced/payments?start=${start}&end=${end}`,
+  );
+
 export const createInvoice = (body: {
-  lines: InvoiceLine[];
+  lines?: InvoiceLine[];
+  /** Verilirse kalemler bu tahsilatlardan kurulur ve tahsilatlar bağlanır. */
+  payment_ids?: number[];
+  vat_rate?: number;
   customer: InvoiceCustomer;
   profile?: string;
   note?: string;
 }) =>
   request<InvoiceDetail>('/api/invoices', {
     method: 'POST',
-    body: JSON.stringify({ profile: 'EARSIVFATURA', note: '', ...body }),
+    body: JSON.stringify({
+      lines: [], payment_ids: [], vat_rate: 20,
+      profile: 'EARSIVFATURA', note: '', ...body,
+    }),
   });
 
 export const deleteInvoice = (id: number) =>

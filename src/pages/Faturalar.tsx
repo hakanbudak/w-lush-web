@@ -3,6 +3,7 @@ import {
   createInvoice, deleteInvoice, downloadInvoiceXml, listInvoices,
   type Invoice, type InvoiceLine,
 } from '../api/invoices';
+import TahsilattanKes from '../components/fatura/TahsilattanKes';
 import { Icon } from '../components/icons';
 import Select from '../components/ui/Select';
 import { kurusa, tl, toplamlar } from '../utils/fatura';
@@ -35,6 +36,8 @@ export default function Faturalar() {
   const [error, setError] = useState<string | null>(null);
   const [acik, setAcik] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Fatura toplamı tahsilat toplamından sapabiliyor; farkı gizlemiyoruz.
+  const [fark, setFark] = useState<number | null>(null);
 
   const [lines, setLines] = useState<Taslak[]>([bosKalem()]);
   const [profile, setProfile] = useState('EARSIVFATURA');
@@ -132,6 +135,39 @@ export default function Faturalar() {
         >
           {error}
         </div>
+      )}
+
+      {fark !== null && (
+        <div
+          style={{
+            fontSize: 12.5, background: 'var(--warn-soft)', color: 'var(--warn)',
+            borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 12,
+            alignItems: 'center', lineHeight: 1.5,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            Fatura toplamı tahsilat toplamından <strong>{tl(Math.abs(fark))}</strong>{' '}
+            {fark > 0 ? 'fazla' : 'eksik'} çıktı. Matrah kuruş hassasiyetinde
+            olduğu ve KDV satır başına yuvarlandığı için her tutar tam olarak
+            temsil edilemiyor.
+          </span>
+          <button
+            type="button"
+            className="wl-btn wl-btn-ghost wl-btn-sm"
+            onClick={() => setFark(null)}
+          >
+            Tamam
+          </button>
+        </div>
+      )}
+
+      {!acik && (
+        <TahsilattanKes
+          onCreated={(out, tahsilToplam) => {
+            setRows((r) => [out, ...(r ?? [])]);
+            setFark(out.total_kurus === tahsilToplam ? null : out.total_kurus - tahsilToplam);
+          }}
+        />
       )}
 
       {acik && (
