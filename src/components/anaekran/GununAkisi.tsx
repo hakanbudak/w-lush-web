@@ -27,12 +27,15 @@ export default function GununAkisi({
   slots,
   upcoming,
   colorOf,
+  day,
   onPick,
 }: {
   items: Appointment[];
   slots: string[];
   /** Hizmet rengi — takvimdeki blok rengiyle aynı kaynak. */
   colorOf: (serviceName: string) => string | null;
+  /** Akışın gösterdiği gün. 20:00'den sonra yarına geçiyor. */
+  day: { iso: string; yarin: boolean };
   /** Bugünden sonraki ilk randevular; yalnızca bugün boşken gösteriliyor. */
   upcoming: Appointment[];
   onPick: (time: string) => void;
@@ -53,7 +56,16 @@ export default function GununAkisi({
           borderBottom: '1px solid var(--line)',
         }}
       >
-        <h2 style={{ flex: 1, margin: 0, fontSize: 14.5, fontWeight: 600 }}>Günün akışı</h2>
+        <h2 style={{ flex: 1, margin: 0, fontSize: 14.5, fontWeight: 600 }}>
+          {day.yarin ? 'Yarının akışı' : 'Günün akışı'}
+          {day.yarin && (
+            <span
+              style={{ fontWeight: 400, fontSize: 11.5, color: 'var(--ink-45)' }}
+            >
+              {' '}· bugün kapandı
+            </span>
+          )}
+        </h2>
         <Link
           to="/randevu"
           className="wl-btn wl-btn-ghost wl-btn-sm"
@@ -65,8 +77,8 @@ export default function GununAkisi({
 
       {rows.length === 0 ? (
         <p style={{ margin: 0, padding: '28px 20px', fontSize: 12.5, color: 'var(--ink-45)' }}>
-          Bugün için çalışma saati tanımlı değil. Sistem ayarlarından gün saatlerini
-          girince akış burada görünür.
+          {day.yarin ? 'Yarın' : 'Bugün'} için çalışma saati tanımlı değil. Sistem
+          ayarlarından gün saatlerini girince akış burada görünür.
         </p>
       ) : (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>

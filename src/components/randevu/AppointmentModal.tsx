@@ -1,6 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { ApiError } from '../../api/client';
-import { getCustomer } from '../../api/customers';
+import {
+  getCustomer, listCustomers, type CustomerSummary,
+} from '../../api/customers';
 import {
   createAppointment,
   listServices,
@@ -10,6 +12,7 @@ import {
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
 import DatePicker from '../ui/DatePicker';
+import Combobox from '../ui/Combobox';
 import Select from '../ui/Select';
 
 const field: CSSProperties = {
@@ -47,6 +50,7 @@ export default function AppointmentModal({
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [known, setKnown] = useState(false);
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [serviceName, setServiceName] = useState('');
   const [services, setServices] = useState<Service[]>([]);
   const [day, setDay] = useState(initial.date);
@@ -62,7 +66,18 @@ export default function AppointmentModal({
     listServices()
       .then((rows) => setServices(rows.filter((s) => s.active)))
       .catch(() => setServices([]));
+    // Eski danışanı her seferinde elle yazmak yerine listeden seçmek için.
+    listCustomers()
+      .then(setCustomers)
+      .catch(() => setCustomers([]));
   }, []);
+
+  // Ada göre de numaraya göre de aranabilsin: operatör hangisini
+  // hatırlıyorsa onu yazıyor.
+  const customerOptions = customers.map((c) => ({
+    value: c.phone,
+    label: c.name ? `${c.name} · ${c.phone}` : c.phone,
+  }));
 
   // Telefon yazılmayı bıraktıktan sonra mevcut danışan aranır.
   useEffect(() => {
@@ -120,6 +135,24 @@ export default function AppointmentModal({
     <Modal title="Yeni randevu" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <label style={labelStyle}>
+          Danışan
+          <Combobox
+            value={name}
+            onChange={setName}
+            onPick={(opt) => {
+              // Seçilen kişinin numarası da doluyor; asıl mesele buydu.
+              setPhone(opt.value);
+              const secilen = customers.find((c) => c.phone === opt.value);
+              setName(secilen?.name || opt.value);
+            }}
+            options={customerOptions}
+            placeholder="Ad yazın ya da listeden seçin"
+            ariaLabel="Danışan"
+            style={field}
+          />
+        </label>
+
+        <label style={labelStyle}>
           Telefon
           <input
             value={phone}
@@ -134,11 +167,6 @@ export default function AppointmentModal({
             Mevcut danışan — geçmişi Danışan Profili'nde.
           </div>
         )}
-
-        <label style={labelStyle}>
-          Danışan adı
-          <input value={name} onChange={(e) => setName(e.target.value)} style={field} />
-        </label>
 
         <label style={labelStyle}>
           Hizmet

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { gunSatiri, kisaGun, ozetSatiri, randevuBildirimi, selamlama } from './karsilama';
+import {
+  akisGunu, gunSatiri, kisaGun, ozetSatiri, randevuBildirimi, selamlama,
+} from './karsilama';
 
 describe('gunSatiri', () => {
   it('tarihi Türkçe gün ve ay adıyla yazar', () => {
@@ -60,5 +62,31 @@ describe('randevuBildirimi', () => {
 
   it('kisaGun yılı yazmaz', () => {
     expect(kisaGun('2026-08-27')).toBe('27 Ağustos Perşembe');
+  });
+});
+
+describe('akisGunu', () => {
+  it('gün içinde bugünü gösterir', () => {
+    expect(akisGunu(new Date(2026, 7, 25, 14, 0))).toEqual({
+      iso: '2026-08-25', yarin: false,
+    });
+  });
+
+  it('19:59 hâlâ bugün', () => {
+    expect(akisGunu(new Date(2026, 7, 25, 19, 59)).yarin).toBe(false);
+  });
+
+  it('20:00 olunca yarına geçer', () => {
+    expect(akisGunu(new Date(2026, 7, 25, 20, 0))).toEqual({
+      iso: '2026-08-26', yarin: true,
+    });
+  });
+
+  it('ay sonunda ertesi aya taşar', () => {
+    expect(akisGunu(new Date(2026, 7, 31, 22, 0)).iso).toBe('2026-09-01');
+  });
+
+  it('yıl sonunda ertesi yıla taşar', () => {
+    expect(akisGunu(new Date(2026, 11, 31, 21, 0)).iso).toBe('2027-01-01');
   });
 });

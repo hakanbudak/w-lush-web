@@ -10,13 +10,18 @@ const randevu = (over: Partial<Appointment> = {}): Appointment =>
      staff_name: 'Elif', ...over } as Appointment);
 
 type Props = Parameters<typeof GununAkisi>[0];
-type Verilen = Omit<Props, 'upcoming' | 'colorOf'> &
-  Partial<Pick<Props, 'upcoming' | 'colorOf'>>;
+type Verilen = Omit<Props, 'upcoming' | 'colorOf' | 'day'> &
+  Partial<Pick<Props, 'upcoming' | 'colorOf' | 'day'>>;
 
 const ciz = (props: Verilen) =>
   render(
     <MemoryRouter>
-      <GununAkisi upcoming={[]} colorOf={() => '#0B8A57'} {...props} />
+      <GununAkisi
+        upcoming={[]}
+        colorOf={() => '#0B8A57'}
+        day={{ iso: '2026-08-25', yarin: false }}
+        {...props}
+      />
     </MemoryRouter>,
   );
 
@@ -87,5 +92,24 @@ describe('GununAkisi · hizmet renkleri', () => {
     ciz({ items: [randevu()], slots: ['11:00'], colorOf: () => null, onPick: vi.fn() });
     const satir = screen.getByText('Ayşe Yılmaz').closest('li');
     expect(satir?.getAttribute('style')).toContain('var(--neutral)');
+  });
+});
+
+describe('GununAkisi · gün sonu', () => {
+  it('gün içinde "Günün akışı" yazar', () => {
+    ciz({ items: [], slots: ['10:00'], onPick: vi.fn() });
+    expect(screen.getByText('Günün akışı')).toBeTruthy();
+  });
+
+  it('gün kapandıysa yarını gösterdiğini söyler', () => {
+    // Akşam panele bakanın sorusu "bugün ne kaldı" değil, "yarın ne var".
+    ciz({
+      items: [],
+      slots: ['10:00'],
+      day: { iso: '2026-08-26', yarin: true },
+      onPick: vi.fn(),
+    });
+    expect(screen.getByText(/Yarının akışı/)).toBeTruthy();
+    expect(screen.getByText(/bugün kapandı/)).toBeTruthy();
   });
 });
