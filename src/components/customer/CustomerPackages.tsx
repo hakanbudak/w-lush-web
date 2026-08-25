@@ -37,12 +37,20 @@ function Bar({ used, total }: { used: number; total: number }) {
  * kullan" düğmesi yok — iki ayrı düşme yolu olsaydı sayacın gerçeği
  * göstermediği durum kaçınılmazdı.
  */
-export default function CustomerPackages({ phone }: { phone: string }) {
+export default function CustomerPackages({
+  phone, customerName = '',
+}: {
+  phone: string;
+  customerName?: string;
+}) {
   const [sold, setSold] = useState<CustomerPackage[] | null>(null);
   const [catalog, setCatalog] = useState<Package[]>([]);
   const [pick, setPick] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tahsilat isteğe bağlı: paket taksitle de satılabiliyor.
+  const [tahsilat, setTahsilat] = useState(true);
+  const [amount, setAmount] = useState('');
 
   const load = useCallback(() => {
     listCustomerPackages(phone)
@@ -57,11 +65,26 @@ export default function CustomerPackages({ phone }: { phone: string }) {
       .catch(() => setCatalog([]));
   }, []);
 
+  const secili = catalog.find((p) => String(p.id) === pick) ?? null;
+
+  // Tutar önerisi paketin fiyatı; operatör indirim yaptıysa değiştiriyor.
+  useEffect(() => {
+    setAmount(secili && secili.price > 0 ? String(secili.price) : '');
+  }, [secili]);
+
   const sat = () => {
     if (!pick) return;
+    const tutar = Number(amount);
+    if (tahsilat && (!Number.isFinite(tutar) || tutar <= 0)) {
+      setError('Tahsilat tutarı sıfırdan büyük olmalı.');
+      return;
+    }
     setBusy(true);
     setError(null);
-    sellPackage(phone, Number(pick))
+    sellPackage(phone, Number(pick), {
+      customerName,
+      money: tahsilat ? { amount: tutar, method: 'cash' } : null,
+    })
       .then((out) => {
         setSold((s) => [out, ...(s ?? [])]);
         setPick('');
@@ -102,6 +125,54 @@ export default function CustomerPackages({ phone }: { phone: string }) {
           Paket sat
         </button>
       </div>
+
+      {pick && (
+        <div
+          style={{
+            padding: '10px 12px', borderRadius: 10, background: 'var(--cream-2)',
+            border: '1px solid var(--line)',
+          }}
+        >
+          <label
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={tahsilat}
+              onChange={(e) => setTahsilat(e.target.checked)}
+            />
+            Tahsilatı gelire yaz
+          </label>
+
+          {tahsilat && (
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginTop: 8,
+                fontSize: 11, color: 'var(--ink-60)',
+              }}
+            >
+              Tutar (₺)
+              <input
+                className="wl-input wl-mono"
+                type="number"
+                min={1}
+                value={amount}
+                style={{ width: 130, textAlign: 'right' }}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+          )}
+
+          <p style={{ fontSize: 11, color: 'var(--ink-45)', margin: '8px 0 0' }}>
+            {tahsilat
+              ? 'Paket ve tahsilat tek işlemde yazılıyor; biri olup diğeri olmuyor.'
+              : 'Kapalıyken paket satılır ama gelir raporuna girmez — taksitli satışta tahsilatı ayrıca girersiniz.'}
+          </p>
+        </div>
+      )}
 
       {catalog.length === 0 && (
         <p style={{ margin: 0, fontSize: 11.5, color: 'var(--ink-45)' }}>
@@ -153,7 +224,10 @@ export default function CustomerPackages({ phone }: { phone: string }) {
             {' · '}
             {money(p.price)}
             {' · '}
-            {trDate(p.sold_at.slice(0, 10))} tarihinde satıldı
+            {trDate(p.sold_on)} tarihinde satıldı
+            {p.payment_id === null && !p.cancelled && (
+              <span style={{ color: 'var(--warn)' }}> · tahsilat girilmedi</span>
+            )}
           </div>
         </div>
       ))}
