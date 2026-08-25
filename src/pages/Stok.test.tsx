@@ -22,7 +22,7 @@ import { listCategories } from '../api/expenses';
 
 const hareket = (over: Partial<StockMovement> = {}): StockMovement => ({
   id: 1, product_id: 1, delta: -3, reason: 'cikis', note: '',
-  quantity_after: 7, happened_on: '2026-08-24',
+  quantity_after: 7, happened_on: '2026-08-24', unit_cost: 180,
   created_at: '2026-08-24T10:00:00', payment_id: null, expense_id: null, ...over,
 });
 
@@ -188,5 +188,26 @@ describe('Stok · para kaydı', () => {
     ciz();
     await hareketAc();
     expect(await screen.findByText(/gelire yazıldı/)).toBeTruthy();
+  });
+});
+
+describe('Stok · geçmiş maliyet', () => {
+  it('alış fiyatı değişmiş hareketin o günkü maliyetini yazar', async () => {
+    // Ürünün güncel alışı 180; hareket 250'yken yapılmış.
+    vi.mocked(listMovements).mockResolvedValue([
+      hareket({ reason: 'satis', unit_cost: 250, payment_id: 3 }),
+    ]);
+    ciz();
+    await hareketAc();
+    expect(await screen.findByText(/o günkü alış ₺250/)).toBeTruthy();
+  });
+
+  it('fiyat değişmemişse fazladan bir şey yazmaz', async () => {
+    vi.mocked(listMovements).mockResolvedValue([
+      hareket({ reason: 'satis', unit_cost: 180 }),
+    ]);
+    ciz();
+    await hareketAc();
+    expect(screen.queryByText(/o günkü alış/)).toBeNull();
   });
 });

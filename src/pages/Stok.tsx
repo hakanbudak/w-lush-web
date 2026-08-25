@@ -7,7 +7,9 @@ import {
 import { listCategories, type ExpenseCategory } from '../api/expenses';
 import { Icon } from '../components/icons';
 import Select from '../components/ui/Select';
-import { durum, ozet, REASON_LABEL, signed } from '../utils/stok';
+import {
+  durum, maliyetDegismis, ozet, REASON_LABEL, signed,
+} from '../utils/stok';
 
 const money = (n: number): string => `₺ ${n.toLocaleString('tr-TR')}`;
 
@@ -520,6 +522,14 @@ function Detay({
               {(m.payment_id || m.expense_id) && (
                 <span style={{ color: 'var(--forest)' }}>
                   {' '}· {m.payment_id ? 'gelire yazıldı' : 'gidere yazıldı'}
+                </span>
+              )}
+              {maliyetDegismis(m, product.cost) && (
+                <span
+                  style={{ color: 'var(--ink-45)' }}
+                  title="Bu hareket o günkü alış fiyatıyla kaydedildi; kâr hesabı bunu kullanıyor."
+                >
+                  {' '}· o günkü alış ₺{m.unit_cost.toLocaleString('tr-TR')}
                 </span>
               )}
             </span>

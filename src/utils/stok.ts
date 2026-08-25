@@ -30,3 +30,11 @@ export function ozet(m: StockMovement, unit: string): string {
   const bas = `${REASON_LABEL[m.reason]} ${signed(m.delta)} ${unit}`;
   return m.note ? `${bas} · ${m.note}` : bas;
 }
+
+/**
+ * Ürünün güncel alış fiyatı, geçmiş bir hareketin maliyetinden farklıysa
+ * true. Panel bunu gösteriyor: aksi hâlde eski satırın yanındaki rakamın
+ * neden bugünkü fiyatla uyuşmadığı anlaşılmıyor.
+ */
+export const maliyetDegismis = (m: StockMovement, guncelCost: number): boolean =>
+  m.unit_cost > 0 && m.unit_cost !== guncelCost;
