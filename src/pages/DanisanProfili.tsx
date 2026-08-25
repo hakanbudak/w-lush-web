@@ -429,7 +429,12 @@ export default function DanisanProfili() {
                 </div>
               )}
 
-              {tab === 'paketler' && <CustomerPackages phone={detail.phone} />}
+              {tab === 'paketler' && (
+                <CustomerPackages
+                  phone={detail.phone}
+                  customerName={detail.name ?? ''}
+                />
+              )}
 
               {tab === 'onam' && (
                 <CustomerConsents
