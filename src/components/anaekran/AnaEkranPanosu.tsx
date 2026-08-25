@@ -21,7 +21,6 @@ import BekleyenIsler from './BekleyenIsler';
 import BugunPanel, { type BugunVerisi } from './BugunPanel';
 import DailyRevenueChart from './DailyRevenueChart';
 import GununAkisi from './GununAkisi';
-import NasilCalisir from './NasilCalisir';
 import QuickActions from './QuickActions';
 import Tour, { type TourStep } from './Tour';
 
@@ -33,7 +32,6 @@ interface Loaded {
   slots: string[];
   monthRevenue: number;
   prevMonthToDateRevenue: number;
-  waConnected: boolean;
   services: Service[];
   days: { day: string; amount: number }[];
 }
@@ -122,7 +120,6 @@ export default function AnaEkranPanosu() {
           slots,
           monthRevenue: monthS.total,
           prevMonthToDateRevenue: prevMonthS.total,
-          waConnected,
           services,
           // Grafik ayın tamamını çiziyor; bugünde kesmek yarım ayı
           // çöküş gibi gösteriyordu.
@@ -216,8 +213,6 @@ export default function AnaEkranPanosu() {
           </button>
         </div>
       )}
-
-      {!data.waConnected && <NasilCalisir />}
 
       <div
         style={{
