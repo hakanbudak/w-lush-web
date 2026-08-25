@@ -70,10 +70,15 @@ describe('CustomerPackages · tahsilat', () => {
     price: 8000, save_percent: 0, active: true, sort_order: 0,
   }];
 
-  const secVeSat = async () => {
-    fireEvent.click(await screen.findByRole('combobox'));
+  /**
+   * Katalog gelmeden listeyi açmak boş bir liste açıyor: Select o hâlde
+   * "Tanımlı paket yok" yer tutucusuyla kapalı duruyor. Önce yer tutucunun
+   * değiştiğini bekliyoruz.
+   */
+  const listeyiAc = async () => {
+    await screen.findByText('Paket seçin');
+    fireEvent.click(screen.getByRole('combobox'));
     fireEvent.mouseDown(await screen.findByText(/Lazer 10 seans/));
-    fireEvent.click(screen.getByText('Paket sat'));
   };
 
   it('tahsilatı paketin fiyatından önerir ve satışla birlikte gönderir', async () => {
@@ -81,8 +86,7 @@ describe('CustomerPackages · tahsilat', () => {
     vi.mocked(sellPackage).mockResolvedValue(paket({ payment_id: 9 }));
     render(<CustomerPackages phone="05321112233" customerName="Ayşe" />);
 
-    fireEvent.click(await screen.findByRole('combobox'));
-    fireEvent.mouseDown(await screen.findByText(/Lazer 10 seans/));
+    await listeyiAc();
     expect((await screen.findByDisplayValue('8000')).tagName).toBe('INPUT');
 
     fireEvent.click(screen.getByText('Paket sat'));
@@ -99,8 +103,7 @@ describe('CustomerPackages · tahsilat', () => {
     vi.mocked(sellPackage).mockResolvedValue(paket({ payment_id: null }));
     render(<CustomerPackages phone="05321112233" />);
 
-    fireEvent.click(await screen.findByRole('combobox'));
-    fireEvent.mouseDown(await screen.findByText(/Lazer 10 seans/));
+    await listeyiAc();
     fireEvent.click(screen.getByLabelText('Tahsilatı gelire yaz'));
     fireEvent.click(screen.getByText('Paket sat'));
 
@@ -113,6 +116,5 @@ describe('CustomerPackages · tahsilat', () => {
     vi.mocked(listCustomerPackages).mockResolvedValue([paket({ payment_id: null })]);
     render(<CustomerPackages phone="05321112233" />);
     expect(await screen.findByText(/tahsilat girilmedi/)).toBeTruthy();
-    expect(secVeSat).toBeTruthy();
   });
 });
