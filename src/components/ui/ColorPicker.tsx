@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import Popover, { rectOf, type Rect } from './Popover';
+import { useCallback, useRef, useState } from 'react';
+import Popover, { rectOf, type Rect, useCloseOnOutsideScroll } from './Popover';
 
 /**
  * Hizmet renkleri. Katalogdaki grup renkleriyle aynı — merkez kendi
@@ -33,16 +33,10 @@ export default function ColorPicker({
   const [anchor, setAnchor] = useState<Rect | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!anchor) return;
-    const kapat = () => setAnchor(null);
-    window.addEventListener('resize', kapat);
-    window.addEventListener('scroll', kapat, true);
-    return () => {
-      window.removeEventListener('resize', kapat);
-      window.removeEventListener('scroll', kapat, true);
-    };
-  }, [anchor]);
+  useCloseOnOutsideScroll(
+    anchor !== null,
+    useCallback(() => setAnchor(null), []),
+  );
 
   const secili = SERVICE_COLORS.find((c) => c.hex === value);
 

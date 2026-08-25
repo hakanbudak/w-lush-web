@@ -139,3 +139,27 @@ describe('Combobox', () => {
     expect(onPick).toHaveBeenCalledWith(OPTIONS[0]);
   });
 });
+
+describe('Select · panelin içinde kaydırma', () => {
+  it('panelin kendi kaydırması listeyi kapatmıyor', () => {
+    // Dinleyici yakalama fazında olmak zorunda (kaydırma köpürmüyor), o
+    // yüzden panelin kendi kaydırması da oraya düşüyordu ve uzun listeyi
+    // kaydırmaya çalışmak listeyi kapatıyordu.
+    render(<Select value="" onChange={() => {}} options={OPTIONS} />);
+    fireEvent.click(trigger());
+    const panel = document.querySelector('[data-wl-popover]');
+    expect(panel).not.toBeNull();
+
+    fireEvent.scroll(panel as Element);
+    expect(list()).not.toBeNull();
+  });
+
+  it('sayfanın kaydırması listeyi kapatıyor', () => {
+    render(<Select value="" onChange={() => {}} options={OPTIONS} />);
+    fireEvent.click(trigger());
+    expect(list()).not.toBeNull();
+
+    fireEvent.scroll(document.body);
+    expect(list()).toBeNull();
+  });
+});

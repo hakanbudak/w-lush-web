@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import {
   addDays,
   inRange,
@@ -8,7 +8,7 @@ import {
   sameDay,
   trDate,
 } from '../../utils/calendar';
-import Popover, { rectOf, type Rect } from './Popover';
+import Popover, { rectOf, type Rect, useCloseOnOutsideScroll } from './Popover';
 
 const GUNLER = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pa'];
 
@@ -72,17 +72,7 @@ export default function DatePicker({
     close(true);
   };
 
-  // Sayfa kayarsa panel çapasından kopar; kovalamak yerine kapatıyoruz.
-  useEffect(() => {
-    if (!open) return;
-    const shut = () => setAnchor(null);
-    window.addEventListener('scroll', shut, true);
-    window.addEventListener('resize', shut);
-    return () => {
-      window.removeEventListener('scroll', shut, true);
-      window.removeEventListener('resize', shut);
-    };
-  }, [open]);
+  useCloseOnOutsideScroll(open, useCallback(() => setAnchor(null), []));
 
   const move = (days: number) => setCursor((c) => addDays(c, days));
   const moveMonth = (n: number) =>
