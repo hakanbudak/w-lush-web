@@ -6,8 +6,15 @@ const rescheduleAppointment = vi.fn();
 const cancelAppointment = vi.fn();
 const confirmAppointment = vi.fn();
 
+const listCustomerConsents = vi.fn();
+
+vi.mock('../../api/consent', () => ({
+  listCustomerConsents: (...a: unknown[]) => listCustomerConsents(...a),
+}));
+
 vi.mock('../../api/clinic', () => ({
   assignAppointmentStaff: vi.fn(),
+  completeAppointment: vi.fn(),
   cancelAppointment: (...a: unknown[]) => cancelAppointment(...a),
   confirmAppointment: (...a: unknown[]) => confirmAppointment(...a),
   getSettings: () => Promise.resolve({ slot_times: ['10:00', '11:00', '12:00'] }),
@@ -33,6 +40,7 @@ const APPT = {
 const onChanged = vi.fn();
 
 beforeEach(() => {
+  listCustomerConsents.mockReset().mockResolvedValue([]);
   rescheduleAppointment.mockReset().mockResolvedValue({ ...APPT, appt_date: '2026-09-03' });
   onChanged.mockReset();
 });
@@ -101,5 +109,29 @@ describe('AppointmentDetail — erteleme', () => {
 
     expect(screen.queryByText('Taşı')).toBeNull();
     expect(rescheduleAppointment).not.toHaveBeenCalled();
+  });
+});
+
+describe('AppointmentDetail · onam', () => {
+  const bekleyen = {
+    id: 1, phone: '905321110001', customer_name: 'Ayşe Yılmaz',
+    title: 'Lazer epilasyon onamı', token: 'abc', signed: false,
+    signed_name: '', signed_at: null, created_at: '2026-08-25T09:00:00',
+  };
+
+  it('imza bekleyen onamı uyarı olarak gösterir', async () => {
+    listCustomerConsents.mockResolvedValue([bekleyen]);
+    göster();
+    expect(await screen.findByText(/Lazer epilasyon onamı/)).toBeTruthy();
+    expect(screen.getByText('Tablette imzalat')).toBeTruthy();
+  });
+
+  it('imzalanmış onam uyarı üretmiyor', async () => {
+    listCustomerConsents.mockResolvedValue([
+      { ...bekleyen, signed: true, signed_name: 'Ayşe', signed_at: '2026-08-25T10:00:00' },
+    ]);
+    göster();
+    await screen.findByText('Ayşe Yılmaz');
+    expect(screen.queryByText('Tablette imzalat')).toBeNull();
   });
 });
