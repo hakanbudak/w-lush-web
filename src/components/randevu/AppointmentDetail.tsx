@@ -10,6 +10,9 @@ import {
   type Appointment,
 } from '../../api/clinic';
 import { listConversations } from '../../api/conversations';
+import {
+  listCustomerConsents, type ConsentSignature,
+} from '../../api/consent';
 import DatePicker from '../ui/DatePicker';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
@@ -74,6 +77,10 @@ export default function AppointmentDetail({
   // Konuşması olmayan numaraya API yazmaya izin vermiyor; düğmeyi boşuna
   // göstermek yerine nedenini yazıyoruz.
   const [hasThread, setHasThread] = useState<boolean | null>(null);
+  // İmza bekleyen onam formları. Randevu açılırken hizmete bağlı form
+  // varsa sunucu kendiliğinden oluşturuyor; operatörün burada görmesi
+  // gerekiyor, yoksa danışan gittikten sonra hatırlanıyor.
+  const [consents, setConsents] = useState<ConsentSignature[]>([]);
 
   useEffect(() => {
     // Saat listesi kliniğin kendi slot_times ayarından; sunucu bu listede
@@ -87,6 +94,12 @@ export default function AppointmentDetail({
     listConversations()
       .then((rows) => setHasThread(rows.some((r) => r.phone === appointment.phone)))
       .catch(() => setHasThread(false));
+  }, [appointment.phone]);
+
+  useEffect(() => {
+    listCustomerConsents(appointment.phone)
+      .then((rows) => setConsents(rows.filter((r) => !r.signed)))
+      .catch(() => setConsents([]));
   }, [appointment.phone]);
 
   const run = (fn: () => Promise<Appointment>, message: string) => {
@@ -196,6 +209,30 @@ export default function AppointmentDetail({
           </div>
           <CustomerNotes phone={appointment.phone} />
         </div>
+
+        {consents.length > 0 && (
+          <div
+            style={{
+              background: 'var(--warn-soft)', color: 'var(--warn)',
+              borderRadius: 10, padding: '10px 12px', fontSize: 12,
+              display: 'flex', alignItems: 'center', gap: 10, lineHeight: 1.5,
+            }}
+          >
+            <span style={{ flex: 1 }}>
+              <strong>İmza bekleyen onam:</strong>{' '}
+              {consents.map((c) => c.title).join(', ')}
+            </span>
+            <a
+              href={`/onam/${consents[0].token}`}
+              target="_blank"
+              rel="noreferrer"
+              className="wl-btn wl-btn-ghost wl-btn-sm"
+              style={{ borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}
+            >
+              Tablette imzalat
+            </a>
+          </div>
+        )}
 
         {hasThread === false && (
           <div style={{ fontSize: 11, color: 'var(--ink-45)' }}>
