@@ -73,3 +73,35 @@ export function randevuBildirimi(
     : ', ancak danışana mesaj iletilemedi.';
   return { text: ne + posta, baskaGun: a.appt_date !== today };
 }
+
+
+/** Günün bittiği sayılan saat. */
+export const GUN_SONU = 20;
+
+export interface AkisGunu {
+  /** Akışta gösterilecek gün (ISO). */
+  iso: string;
+  /** Bugün mü, yarın mı. */
+  yarin: boolean;
+}
+
+/**
+ * Akışın hangi günü göstereceği.
+ *
+ * Saat 20:00'yi geçtiyse gün bitmiş sayılıyor ve akış ertesi güne
+ * geçiyor: akşam panele bakan operatörün sorusu "bugün ne kaldı" değil,
+ * "yarın ne var".
+ *
+ * Yalnızca akış kayıyor; günün tahsilatı ve sayıları bugüne ait kalıyor,
+ * çünkü o rakamlar gerçekten bugün oldu.
+ */
+export function akisGunu(now: Date, gunSonu: number = GUN_SONU): AkisGunu {
+  const iso = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+      d.getDate(),
+    ).padStart(2, '0')}`;
+  if (now.getHours() < gunSonu) return { iso: iso(now), yarin: false };
+  const yarin = new Date(now);
+  yarin.setDate(yarin.getDate() + 1);
+  return { iso: iso(yarin), yarin: true };
+}

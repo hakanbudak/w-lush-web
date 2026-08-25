@@ -15,7 +15,8 @@ import {
 } from '../../utils/dashboard';
 import { gorevler, type Gorev } from '../../utils/gorevler';
 import {
-  gunSatiri, ozetSatiri, randevuBildirimi, selamlama, type RandevuBildirimi,
+  akisGunu, gunSatiri, ozetSatiri, randevuBildirimi, selamlama,
+  type RandevuBildirimi,
 } from '../../utils/karsilama';
 import BekleyenIsler from './BekleyenIsler';
 import BugunPanel, { type BugunVerisi } from './BugunPanel';
@@ -33,6 +34,8 @@ interface Loaded {
   monthRevenue: number;
   prevMonthToDateRevenue: number;
   services: Service[];
+  /** Akışın gösterdiği gün — 20:00'den sonra yarın. */
+  akis: { iso: string; yarin: boolean };
   days: { day: string; amount: number }[];
 }
 
@@ -68,6 +71,8 @@ export default function AnaEkranPanosu() {
   const load = useCallback(() => {
     const today = new Date();
     const t = dayRange(0, today);
+    // Akış 20:00'den sonra yarına geçiyor; sayılar bugüne ait kalıyor.
+    const akis = akisGunu(today);
     const month = monthRange(today);
     const prevMonth = prevMonthToDate(today);
 
@@ -75,9 +80,9 @@ export default function AnaEkranPanosu() {
       getSummary(t.start, t.end),
       getSummary(month.start, month.end),
       getSummary(prevMonth.start, prevMonth.end),
-      listAppointments(t.start, t.end),
-      // Yaklaşanlar için ayrı çağrı: bugünü boş gören ekran sıradakini de söylesin.
-      listAppointments(t.start, monthFull(today).end),
+      listAppointments(akis.iso, akis.iso),
+      // Yaklaşanlar için ayrı çağrı: gün boşsa sıradakini de söylesin.
+      listAppointments(akis.iso, monthFull(today).end),
       getSettings(),
       listStaff(),
       listCustomers(),
@@ -116,11 +121,12 @@ export default function AnaEkranPanosu() {
             lowStockCount: lowStock.length,
           }),
           appts,
-          upcoming: yaklasanlar(ileri, t.start),
+          upcoming: yaklasanlar(ileri, akis.iso),
           slots,
           monthRevenue: monthS.total,
           prevMonthToDateRevenue: prevMonthS.total,
           services,
+          akis,
           // Grafik ayın tamamını çiziyor; bugünde kesmek yarım ayı
           // çöküş gibi gösteriyordu.
           days: dailyTotals(monthPayments, monthFull(today).start, monthFull(today).end),
@@ -226,6 +232,7 @@ export default function AnaEkranPanosu() {
             slots={data.slots}
             upcoming={data.upcoming}
             colorOf={(name) => data.services.find((s) => s.name === name)?.color ?? null}
+            day={data.akis}
             onPick={setOpenAt}
           />
         </div>
