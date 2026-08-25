@@ -5,15 +5,6 @@ import { kisaGun } from '../../utils/karsilama';
 import { displayName } from '../../utils/people';
 import { Icon } from '../icons';
 
-const STATUS: Record<string, string> = {
-  confirmed: 'Onaylı',
-  completed: 'Tamamlandı',
-  pending: 'Bekliyor',
-};
-
-const initials = (name: string): string =>
-  name.split(' ').map((s) => s[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR') || '••';
-
 /** Hizmeti silinmiş eski randevunun rengi. */
 const NOTR = 'var(--neutral)';
 
@@ -41,7 +32,7 @@ export default function GununAkisi({
   onPick: (time: string) => void;
 }) {
   const rows = gunAkisi(slots, items);
-  const bosGun = rows.every((r) => r.appointment === null);
+  const bosGun = rows.every((r) => r.appointments.length === 0);
 
   return (
     <section
@@ -82,98 +73,97 @@ export default function GununAkisi({
         </p>
       ) : (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-          {rows.map((r, i) => {
-            const a = r.appointment;
-            const who = a ? displayName({ name: a.customer_name, phone: a.phone }) : '';
-            const st = a ? STATUS[a.status] ?? a.status : null;
-            const renk = a ? colorOf(a.service_name) ?? NOTR : null;
-            return (
-              <li
-                key={`${r.time}-${a?.id ?? 'bos'}`}
+          {rows.map((r, i) => (
+            <li
+              key={r.time}
+              style={{
+                display: 'grid', gridTemplateColumns: '68px minmax(0, 1fr)',
+                alignItems: 'stretch', gap: 12, padding: '8px 20px',
+                borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                background: r.appointments.length ? 'transparent' : 'var(--cream-2)',
+              }}
+            >
+              <span
+                className="wl-mono"
                 style={{
-                  display: 'grid', gridTemplateColumns: '68px minmax(0, 1fr) auto',
-                  alignItems: 'center', gap: 12, padding: '11px 20px',
-                  borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-                  // Dolu satır hizmet rengiyle **dolduruluyor**. Dar bir sol
-                  // çubuk, günün nasıl geçtiğini uzaktan okutmuyordu.
-                  background: a ? (renk ?? NOTR) : 'var(--cream-2)',
-                  color: a ? '#FFFFFF' : 'inherit',
+                  fontSize: 12.5, paddingTop: 9,
+                  color: r.appointments.length ? 'var(--ink)' : 'var(--ink-45)',
                 }}
               >
-                <span
-                  className="wl-mono"
-                  style={{ fontSize: 12.5, color: a ? '#FFFFFF' : 'var(--ink-45)' }}
+                {r.time}
+              </span>
+
+              {r.appointments.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onPick(r.time)}
+                  style={{
+                    justifySelf: 'start', alignSelf: 'center', border: 'none',
+                    background: 'transparent', font: 'inherit', fontSize: 12.5,
+                    color: 'var(--ink-45)', cursor: 'pointer', padding: '4px 0',
+                  }}
                 >
-                  {r.time}
+                  Boş — randevu ekle
+                </button>
+              ) : (
+                // Aynı saatteki randevular yan yana. Tek randevu tüm genişliği
+                // kaplıyor, yani sık durumda görüntü boyalı bir satırdan
+                // ayırt edilmiyor; dördü olduğunda genişliği paylaşıyorlar.
+                <span
+                  style={{
+                    display: 'flex', flexWrap: 'wrap', gap: 6, minWidth: 0,
+                  }}
+                >
+                  {r.appointments.map((a) => {
+                    const who = displayName({ name: a.customer_name, phone: a.phone });
+                    const renk = colorOf(a.service_name) ?? NOTR;
+                    const bekliyor = a.status === 'pending';
+                    return (
+                      <span
+                        key={a.id}
+                        title={`${who} · ${a.service_name}${
+                          a.staff_name ? ` · ${a.staff_name}` : ' · uzman atanmadı'
+                        }${bekliyor ? ' · onay bekliyor' : ''}`}
+                        style={{
+                          flex: '1 1 150px', minWidth: 0, borderRadius: 9,
+                          padding: '7px 10px', background: renk, color: '#FFFFFF',
+                          border: bekliyor
+                            ? '1px dashed rgba(255, 255, 255, 0.85)'
+                            : '1px solid transparent',
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'block', fontSize: 12.5, fontWeight: 600,
+                            overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {a.status === 'completed' && '✓ '}
+                          {who}
+                        </span>
+                        <span
+                          style={{
+                            display: 'block', fontSize: 11,
+                            color: 'rgba(255, 255, 255, 0.82)',
+                            overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {a.service_name}
+                          {/* Uzman adı yalnızca aynı saatte birden fazla
+                              randevu varken ayırt edici; tek randevuda yer
+                              kaplamasın diye gizli. */}
+                          {r.appointments.length > 1 &&
+                            (a.staff_name ? ` · ${a.staff_name}` : ' · atanmadı')}
+                        </span>
+                      </span>
+                    );
+                  })}
                 </span>
-
-                {a ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 30, height: 30, borderRadius: 999, flexShrink: 0,
-                        background: 'rgba(255, 255, 255, 0.22)', color: '#FFFFFF',
-                        display: 'grid', placeItems: 'center',
-                        fontSize: 10.5, fontWeight: 600,
-                      }}
-                    >
-                      {initials(who)}
-                    </span>
-                    <span style={{ minWidth: 0 }}>
-                      <span
-                        style={{
-                          display: 'block', fontSize: 13, fontWeight: 600,
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {who}
-                      </span>
-                      <span
-                        style={{
-                          display: 'block', fontSize: 11.5,
-                          color: 'rgba(255, 255, 255, 0.82)',
-                        }}
-                      >
-                        {a.service_name}
-                        {a.staff_name ? ` · ${a.staff_name}` : ' · uzman atanmadı'}
-                      </span>
-                    </span>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onPick(r.time)}
-                    style={{
-                      justifySelf: 'start', border: 'none', background: 'transparent',
-                      font: 'inherit', fontSize: 12.5, color: 'var(--ink-45)',
-                      cursor: 'pointer', padding: 0,
-                    }}
-                  >
-                    Boş — randevu ekle
-                  </button>
-                )}
-
-                {st && (
-                  <span
-                    style={{
-                      fontSize: 10.5, fontWeight: 600, padding: '3px 9px',
-                      borderRadius: 999, whiteSpace: 'nowrap',
-                      background: a?.status === 'pending'
-                        ? 'transparent'
-                        : 'rgba(255, 255, 255, 0.22)',
-                      border: a?.status === 'pending'
-                        ? '1px dashed rgba(255, 255, 255, 0.7)'
-                        : '1px solid transparent',
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    {st}
-                  </span>
-                )}
-              </li>
-            );
-          })}
+              )}
+            </li>
+          ))}
         </ul>
       )}
 

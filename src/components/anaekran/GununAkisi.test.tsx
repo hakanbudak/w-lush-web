@@ -35,17 +35,40 @@ describe('GununAkisi', () => {
     expect(onPick).toHaveBeenCalledWith('11:00');
   });
 
-  it('dolu saatte danışanı, hizmeti ve durumu gösterir', () => {
+  it('dolu saatte danışanı ve hizmeti gösterir', () => {
     ciz({ items: [randevu({ status: 'pending' })], slots: ['11:00'], onPick: vi.fn() });
     expect(screen.getByText('Ayşe Yılmaz')).toBeTruthy();
-    expect(screen.getByText('Cilt bakımı · Elif')).toBeTruthy();
-    expect(screen.getByText('Bekliyor')).toBeTruthy();
+    // Tek randevuda uzman adı yer kaplamıyor; hizmet adı yeter.
+    expect(screen.getByText('Cilt bakımı')).toBeTruthy();
     expect(screen.queryByText('Boş — randevu ekle')).toBeNull();
   });
 
-  it('uzman atanmamışsa bunu yazar', () => {
-    ciz({ items: [randevu({ staff_name: '' })], slots: ['11:00'], onPick: vi.fn() });
-    expect(screen.getByText('Cilt bakımı · uzman atanmadı')).toBeTruthy();
+  it('aynı saatte birden fazla randevu varsa uzmanı yazar', () => {
+    // Ayırt edici olan uzman; tek randevuda gereksiz.
+    ciz({
+      items: [
+        randevu({ id: 1, staff_name: 'Elif' }),
+        randevu({ id: 2, staff_name: '' }),
+      ],
+      slots: ['11:00'],
+      onPick: vi.fn(),
+    });
+    expect(screen.getByText('Cilt bakımı · Elif')).toBeTruthy();
+    expect(screen.getByText('Cilt bakımı · atanmadı')).toBeTruthy();
+  });
+
+  it('dört randevuyu tek saat satırında topluyor', () => {
+    ciz({
+      items: [1, 2, 3, 4].map((id) =>
+        randevu({ id, customer_name: `Danışan ${id}`, staff_name: `Uzman ${id}` }),
+      ),
+      slots: ['11:00', '12:00'],
+      onPick: vi.fn(),
+    });
+    // İki slot var, dört randevu; satır sayısı yine iki olmalı.
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByText(/^11:00$/)).toHaveLength(1);
+    expect(screen.getByText('Danışan 4')).toBeTruthy();
   });
 
   it('adsız danışanı telefonuyla gösterir', () => {
@@ -83,15 +106,15 @@ describe('GununAkisi · hizmet renkleri', () => {
       colorOf: (ad) => (ad === 'Cilt bakımı' ? '#C2185B' : null),
       onPick: vi.fn(),
     });
-    const satir = screen.getByText('Ayşe Yılmaz').closest('li');
-    // Satırın tamamı hizmet rengiyle doluyor; jsdom hex'i rgb'ye çeviriyor.
-    expect(satir?.style.background).toBe('rgb(194, 24, 91)');
+    // Blok hizmet rengiyle doluyor; jsdom hex'i rgb'ye çeviriyor.
+    const blok = screen.getByText('Ayşe Yılmaz').parentElement as HTMLElement;
+    expect(blok.style.background).toBe('rgb(194, 24, 91)');
   });
 
   it('hizmeti silinmiş randevu nötr kalır, renksiz kalmaz', () => {
     ciz({ items: [randevu()], slots: ['11:00'], colorOf: () => null, onPick: vi.fn() });
-    const satir = screen.getByText('Ayşe Yılmaz').closest('li');
-    expect(satir?.getAttribute('style')).toContain('var(--neutral)');
+    const blok = screen.getByText('Ayşe Yılmaz').parentElement as HTMLElement;
+    expect(blok.getAttribute('style')).toContain('var(--neutral)');
   });
 });
 
