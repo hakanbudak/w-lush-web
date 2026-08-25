@@ -25,6 +25,11 @@ export interface StockMovement {
   reason: MovementReason;
   note: string;
   quantity_after: number;
+  /**
+   * Hareket anındaki birim maliyet. Ürünün güncel alış fiyatı değil:
+   * geçmiş kâr, fiyat güncellenince değişmemeli.
+   */
+  unit_cost: number;
   /** Hareketin takvim günü, kliniğin saat diliminde. */
   happened_on: string;
   created_at: string; // ISO
