@@ -1,4 +1,6 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect, useLayoutEffect, useRef, useState, type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 /** Tetikleyicinin ekrandaki yeri. */
@@ -58,6 +60,9 @@ export default function Popover({
   return createPortal(
     <div
       ref={ref}
+      // Panelin kendisini işaretliyor: sayfa kayınca kapanan çağıranlar,
+      // panelin *içindeki* kaydırmayı bundan ayırt ediyor.
+      data-wl-popover=""
       {...rest}
       style={{
         position: 'fixed',
@@ -78,4 +83,29 @@ export default function Popover({
     </div>,
     document.body,
   );
+}
+
+/**
+ * Panelin dışında kalan kaydırmaları dinler.
+ *
+ * Sayfa kayınca açık panel çapasından kopuyor ve kapatmak konumu
+ * kovalamaktan basit. Ama dinleyici yakalama fazında olmak zorunda (kaydırma
+ * olayı köpürmüyor), o yüzden panelin *kendi* kaydırması da buraya
+ * düşüyordu ve uzun bir listeyi kaydırmak listeyi kapatıyordu.
+ */
+export function useCloseOnOutsideScroll(open: boolean, close: () => void): void {
+  useEffect(() => {
+    if (!open) return;
+    const shut = (e: Event) => {
+      const target = e.target as Element | null;
+      if (target?.closest?.('[data-wl-popover]')) return;
+      close();
+    };
+    window.addEventListener('scroll', shut, true);
+    window.addEventListener('resize', shut);
+    return () => {
+      window.removeEventListener('scroll', shut, true);
+      window.removeEventListener('resize', shut);
+    };
+  }, [open, close]);
 }

@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useId, useRef, useState, type CSSProperties } from 'react';
 import { indexOfValue, moveIndex, type Option } from '../../utils/listbox';
 import OptionList, { type Rect } from './OptionList';
+import { useCloseOnOutsideScroll } from './Popover';
 
 /**
  * Listeden seçim alanı — native `<select>`in yerine.
@@ -53,18 +54,7 @@ export default function Select({
     close(true);
   };
 
-  // Sayfa kayarsa panel çapasından kopar. Konumu kovalamak yerine kapatmak
-  // hem basit hem dürüst: kullanıcı zaten listeden uzaklaşmış oluyor.
-  useEffect(() => {
-    if (!open) return;
-    const shut = () => setAnchor(null);
-    window.addEventListener('scroll', shut, true);
-    window.addEventListener('resize', shut);
-    return () => {
-      window.removeEventListener('scroll', shut, true);
-      window.removeEventListener('resize', shut);
-    };
-  }, [open]);
+  useCloseOnOutsideScroll(open, useCallback(() => setAnchor(null), []));
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open) {

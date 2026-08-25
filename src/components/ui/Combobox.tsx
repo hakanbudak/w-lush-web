@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useId, useRef, useState, type CSSProperties } from 'react';
 import { filterOptions, moveIndex, type Option } from '../../utils/listbox';
 import OptionList, { type Rect } from './OptionList';
+import { useCloseOnOutsideScroll } from './Popover';
 
 /**
  * Yazılabilir seçim alanı — `<datalist>`in yerine.
@@ -54,16 +55,7 @@ export default function Combobox({
     close(true);
   };
 
-  useEffect(() => {
-    if (!open) return;
-    const shut = () => setAnchor(null);
-    window.addEventListener('scroll', shut, true);
-    window.addEventListener('resize', shut);
-    return () => {
-      window.removeEventListener('scroll', shut, true);
-      window.removeEventListener('resize', shut);
-    };
-  }, [open]);
+  useCloseOnOutsideScroll(open, useCallback(() => setAnchor(null), []));
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
