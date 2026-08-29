@@ -186,7 +186,17 @@ export default function SlotGrid({
                               : item.status === 'pending'
                                 ? '1px dashed rgba(255, 255, 255, 0.85)'
                                 : '1px solid transparent',
-                            outline: selectedId === item.id ? '2px solid var(--forest)' : 'none',
+                            // Seçim çerçevesi beyaz: blok artık hizmet
+                            // rengiyle dolu ve `--forest` yeşil bir bloğun
+                            // üstünde neredeyse görünmüyordu. Beyaz on bir
+                            // rengin hepsinde okunuyor (palet beyaz metin
+                            // için seçildi).
+                            outline:
+                              selectedId === item.id
+                                ? cancelled
+                                  ? '2px solid var(--forest)'
+                                  : '2px solid #FFFFFF'
+                                : 'none',
                             opacity: cancelled ? 0.55 : dragging === item.id ? 0.4 : 1,
                             cursor: onMove !== undefined && !cancelled ? 'grab' : 'pointer',
                           }}
