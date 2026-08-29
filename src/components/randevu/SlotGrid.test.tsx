@@ -68,3 +68,17 @@ describe('SlotGrid · sürükleyerek taşıma', () => {
     expect(hedef.getAttribute('style')).not.toContain('var(--forest-3)');
   });
 });
+
+describe('SlotGrid · seçim', () => {
+  it('dolu blokta seçim çerçevesi beyaz', () => {
+    // --forest, yeşil bir hizmet bloğunun üstünde neredeyse görünmüyordu.
+    ciz({ selectedId: 7 });
+    expect(blok().style.outline).toContain('#FFFFFF');
+  });
+
+  it('iptal edilmiş blokta yeşil kalıyor', () => {
+    // İptal bloğu krem zeminde; beyaz çerçeve orada kaybolurdu.
+    ciz({ items: [item({ status: 'cancelled' })], selectedId: 7 });
+    expect(blok().style.outline).toContain('var(--forest)');
+  });
+});
