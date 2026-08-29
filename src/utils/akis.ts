@@ -1,13 +1,18 @@
 import type { Appointment } from '../api/clinic';
 
-/** "Günün akışı" listesinin tek satırı: ya bir randevu ya da boş bir slot. */
+/** "Günün akışı" listesinin tek satırı: bir saat ve o saatteki randevular. */
 export interface AkisSatiri {
   time: string;
-  appointment: Appointment | null;
+  /** Boş saatte boş dizi. */
+  appointments: Appointment[];
 }
 
 /**
  * Çalışma saatleriyle günün randevularını tek listede birleştirir.
+ *
+ * Satır **saat başına**, randevu başına değil. Randevu başına olsaydı dört
+ * uzmanlı bir merkezde saat 10:00 dört kez tekrar ediyor, dolu bir gün de
+ * otuz satıra çıkıyordu — akış listesi tam da bunu okunamaz kılar.
  *
  * Tanımlı slotların dışına düşen randevu da listeye giriyor: ertelenen
  * randevu slot ızgarasına oturmayabiliyor ve o randevuyu gizlemek
@@ -16,14 +21,10 @@ export interface AkisSatiri {
 export function gunAkisi(slots: string[], appts: Appointment[]): AkisSatiri[] {
   const aktif = appts.filter((a) => a.status !== 'cancelled');
   const saatler = [...new Set([...slots, ...aktif.map((a) => a.appt_time)])].sort();
-  const satirlar: AkisSatiri[] = [];
-  for (const time of saatler) {
-    const o = aktif.filter((a) => a.appt_time === time);
-    if (o.length === 0) satirlar.push({ time, appointment: null });
-    // Aynı saatte birden fazla uzman çalışabiliyor; hepsi ayrı satır.
-    else for (const a of o) satirlar.push({ time, appointment: a });
-  }
-  return satirlar;
+  return saatler.map((time) => ({
+    time,
+    appointments: aktif.filter((a) => a.appt_time === time),
+  }));
 }
 
 export const bosSlotSayisi = (slots: string[], appts: Appointment[]): number => {

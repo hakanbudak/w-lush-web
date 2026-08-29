@@ -10,8 +10,8 @@ const randevu = (time: string, status = 'confirmed', id = 1, date = '2026-08-23'
 describe('gunAkisi', () => {
   it('boş slotları randevularla sıralı biçimde birleştirir', () => {
     const out = gunAkisi(['10:00', '11:00', '12:00'], [randevu('11:00')]);
-    expect(out.map((r) => [r.time, r.appointment !== null])).toEqual([
-      ['10:00', false], ['11:00', true], ['12:00', false],
+    expect(out.map((r) => [r.time, r.appointments.length])).toEqual([
+      ['10:00', 0], ['11:00', 1], ['12:00', 0],
     ]);
   });
 
@@ -20,15 +20,29 @@ describe('gunAkisi', () => {
     expect(out.map((r) => r.time)).toEqual(['10:00', '10:30']);
   });
 
-  it('aynı saatteki iki randevuyu ayrı satıra koyar', () => {
-    const out = gunAkisi(['10:00'], [randevu('10:00', 'confirmed', 1), randevu('10:00', 'pending', 2)]);
-    expect(out).toHaveLength(2);
-    expect(out.every((r) => r.appointment !== null)).toBe(true);
+  it('aynı saatteki randevuları tek satırda topluyor', () => {
+    // Dört uzmanlı merkezde 10:00 dört kez tekrar etmemeli.
+    const out = gunAkisi(['10:00'], [
+      randevu('10:00', 'confirmed', 1),
+      randevu('10:00', 'pending', 2),
+      randevu('10:00', 'confirmed', 3),
+      randevu('10:00', 'confirmed', 4),
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].appointments).toHaveLength(4);
+  });
+
+  it('dolu bir gün slot sayısı kadar satır veriyor', () => {
+    const slots = ['10:00', '11:00', '12:00'];
+    const dolu = slots.flatMap((s, i) =>
+      [1, 2, 3, 4].map((n) => randevu(s, 'confirmed', i * 4 + n)),
+    );
+    expect(gunAkisi(slots, dolu)).toHaveLength(3);
   });
 
   it('iptal edilen randevu slotu boş bırakır', () => {
     const out = gunAkisi(['10:00'], [randevu('10:00', 'cancelled')]);
-    expect(out).toEqual([{ time: '10:00', appointment: null }]);
+    expect(out).toEqual([{ time: '10:00', appointments: [] }]);
     expect(bosSlotSayisi(['10:00'], [randevu('10:00', 'cancelled')])).toBe(1);
   });
 });
