@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   createInvoice, deleteInvoice, downloadInvoiceXml, listInvoices,
   type Invoice, type InvoiceLine,
 } from '../api/invoices';
 import TahsilattanKes from '../components/fatura/TahsilattanKes';
+import { getSettings } from '../api/clinic';
 import { Icon } from '../components/icons';
 import Select from '../components/ui/Select';
 import { kurusa, tl, toplamlar } from '../utils/fatura';
@@ -38,6 +40,16 @@ export default function Faturalar() {
   const [busy, setBusy] = useState(false);
   // Fatura toplamı tahsilat toplamından sapabiliyor; farkı gizlemiyoruz.
   const [fark, setFark] = useState<number | null>(null);
+  /**
+   * Satıcı bilgilerinden eksik olanlar.
+   *
+   * Sunucu bunları fatura kesilirken denetliyor ve doğrusu bu — eksik
+   * bilgiyle üretilen XML'i portal reddeder. Ama hata ancak bütün kalemler
+   * yazıldıktan sonra çıkıyordu; operatör formu doldurup gönderiyor ve
+   * "önce başka bir ekranı doldur" cevabını alıyordu. Ekran artık bunu
+   * baştan söylüyor.
+   */
+  const [eksik, setEksik] = useState<string[] | null>(null);
 
   const [lines, setLines] = useState<Taslak[]>([bosKalem()]);
   const [profile, setProfile] = useState('EARSIVFATURA');
@@ -53,6 +65,30 @@ export default function Faturalar() {
       .catch((e: Error) => setError(e.message));
   }, []);
   useEffect(load, [load]);
+
+  useEffect(() => {
+    // Alan adları ve etiketleri sunucudaki `SELLER_KEYS` ile aynı; ikisi
+    // ayrışırsa panel eksik olmayan bir alanı isteyebilir, o yüzden
+    // hata mesajı yine sunucudan geliyor — bu yalnızca önden uyarı.
+    const ZORUNLU: [string, string][] = [
+      ['invoice_title', 'Ünvan'],
+      ['invoice_tax_id', 'VKN / TCKN'],
+      ['invoice_tax_office', 'Vergi dairesi'],
+      ['invoice_address', 'Adres'],
+      ['invoice_city', 'İl'],
+      ['invoice_prefix', 'Fatura öneki'],
+    ];
+    getSettings()
+      .then((s) => {
+        const rec = s as unknown as Record<string, unknown>;
+        setEksik(
+          ZORUNLU.filter(([k]) => !String(rec[k] ?? '').trim()).map(([, ad]) => ad),
+        );
+      })
+      // Ayar okunamadıysa uyarı gösterilmiyor: olmayan bir eksiği
+      // bildirmektense sunucunun gerçek cevabını beklemek daha doğru.
+      .catch(() => setEksik([]));
+  }, []);
 
   const kalemler: InvoiceLine[] = lines
     .filter((l) => l.name.trim())
@@ -119,12 +155,36 @@ export default function Faturalar() {
             type="button"
             className="wl-btn wl-btn-sm"
             style={{ borderRadius: 8 }}
+            disabled={eksik !== null && eksik.length > 0}
             onClick={() => setAcik(true)}
           >
             {Icon.plus}Fatura kes
           </button>
         )}
       </header>
+
+      {eksik !== null && eksik.length > 0 && (
+        <div
+          style={{
+            fontSize: 12.5, background: 'var(--warn-soft)', color: 'var(--warn)',
+            borderRadius: 10, padding: '12px 14px', display: 'flex',
+            alignItems: 'center', gap: 12, lineHeight: 1.5,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            Fatura kesebilmek için önce satıcı bilgileriniz gerekiyor.{' '}
+            <strong>Eksik: {eksik.join(', ')}.</strong> Portal, bunlardan biri
+            boşken üretilen faturayı kabul etmiyor.
+          </span>
+          <Link
+            to="/sistem?sec=fatura"
+            className="wl-btn wl-btn-ghost wl-btn-sm"
+            style={{ borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}
+          >
+            Doldur
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div
@@ -161,7 +221,10 @@ export default function Faturalar() {
         </div>
       )}
 
-      {!acik && (
+      {/* Bilgiler eksikken bu panel de gizli: seçim yaptırıp sonunda
+          reddetmek, "Fatura kes" düğmesini kilitleyip bu yolu açık
+          bırakmaktan farksız olurdu. */}
+      {!acik && eksik !== null && eksik.length === 0 && (
         <TahsilattanKes
           onCreated={(out, tahsilToplam) => {
             setRows((r) => [out, ...(r ?? [])]);
