@@ -10,8 +10,10 @@ vi.mock('../../api/clinic', () => ({
 }));
 
 const createPayment = vi.fn();
+const deletePayment = vi.fn();
 vi.mock('../../api/payments', () => ({
   createPayment: (...a: unknown[]) => createPayment(...a),
+  deletePayment: (...a: unknown[]) => deletePayment(...a),
 }));
 
 const randevu = (over = {}) => ({
@@ -24,6 +26,7 @@ const randevu = (over = {}) => ({
 beforeEach(() => {
   listUnpaidAppointments.mockReset().mockResolvedValue([randevu()]);
   createPayment.mockReset().mockResolvedValue({ id: 1 });
+  deletePayment.mockReset().mockResolvedValue(undefined);
 });
 afterEach(cleanup);
 
@@ -44,6 +47,9 @@ describe('AcikHesaplar', () => {
     const onPaid = vi.fn();
     render(<AcikHesaplar onPaid={onPaid} />);
     fireEvent.click(await screen.findByText('Tahsil et'));
+    // Tek tık artık yazmıyor; önce onay soruluyor.
+    expect(createPayment).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Tahsilatı kaydet'));
 
     await waitFor(() =>
       expect(createPayment.mock.calls[0][0]).toMatchObject({
@@ -57,7 +63,9 @@ describe('AcikHesaplar', () => {
   it('tahsil edilen satır listeden çıkıyor', async () => {
     render(<AcikHesaplar onPaid={() => {}} />);
     fireEvent.click(await screen.findByText('Tahsil et'));
-    await waitFor(() => expect(screen.queryByText(/Ayşe Yılmaz/)).toBeNull());
+    fireEvent.click(screen.getByText('Tahsilatı kaydet'));
+    // Satır gidiyor ama geri alma şeridi kişiyi hâlâ anıyor.
+    await waitFor(() => expect(screen.queryByText('Tahsil et')).toBeNull());
   });
 
   it('fiyatı olmayan hizmette tutar boş kalıyor', async () => {
@@ -72,5 +80,49 @@ describe('AcikHesaplar', () => {
     fireEvent.click(screen.getByText('Tahsil et'));
     expect(await screen.findByText('Tutar sıfırdan büyük olmalı.')).toBeTruthy();
     expect(createPayment).not.toHaveBeenCalled();
+  });
+});
+
+describe('AcikHesaplar · onay ve geri alma', () => {
+  it('vazgeçince hiçbir şey yazılmıyor', async () => {
+    render(<AcikHesaplar onPaid={() => {}} />);
+    fireEvent.click(await screen.findByText('Tahsil et'));
+    fireEvent.click(screen.getByText('Vazgeç'));
+
+    expect(createPayment).not.toHaveBeenCalled();
+    expect(screen.getByText('Tahsil et')).toBeTruthy();
+  });
+
+  it('onay kutusu ne yazılacağını gösteriyor', async () => {
+    render(<AcikHesaplar onPaid={() => {}} />);
+    fireEvent.click(await screen.findByText('Tahsil et'));
+    expect(screen.getByText('Tahsilatı kaydet')).toBeTruthy();
+    // Onay kutusu tutarı ve ödeme yöntemini birlikte gösteriyor.
+    expect(screen.getByText(/₺ 500 · Nakit/)).toBeTruthy();
+  });
+
+  it('geri alma ödemeyi siliyor ve satırı listeye döndürüyor', async () => {
+    const onPaid = vi.fn();
+    render(<AcikHesaplar onPaid={onPaid} />);
+    fireEvent.click(await screen.findByText('Tahsil et'));
+    fireEvent.click(screen.getByText('Tahsilatı kaydet'));
+
+    fireEvent.click(await screen.findByText('Geri al'));
+    await waitFor(() => expect(deletePayment).toHaveBeenCalledWith(1));
+    expect(await screen.findByText('Tahsil et')).toBeTruthy();
+    await waitFor(() => expect(onPaid).toHaveBeenCalledTimes(2));
+  });
+
+  it('geri alma başarısızsa satır geri gelmiyor ve sebep yazılıyor', async () => {
+    // Ödeme hâlâ duruyorsa açık hesap da dönmemeli; yoksa iki kez
+    // tahsil edilebilir görünürdü.
+    deletePayment.mockRejectedValueOnce(new Error('Ödeme silinemedi.'));
+    render(<AcikHesaplar onPaid={() => {}} />);
+    fireEvent.click(await screen.findByText('Tahsil et'));
+    fireEvent.click(screen.getByText('Tahsilatı kaydet'));
+    fireEvent.click(await screen.findByText('Geri al'));
+
+    expect(await screen.findByText('Ödeme silinemedi.')).toBeTruthy();
+    expect(screen.queryByText('Tahsil et')).toBeNull();
   });
 });

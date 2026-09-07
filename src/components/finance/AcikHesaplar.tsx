@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   listServices, listUnpaidAppointments, type Appointment, type Service,
 } from '../../api/clinic';
-import { createPayment, type PaymentMethod } from '../../api/payments';
+import {
+  createPayment, deletePayment, type PaymentMethod,
+} from '../../api/payments';
+import { Modal } from '../modals';
 import { trDate } from '../../utils/calendar';
 import { displayName } from '../../utils/people';
 import Select from '../ui/Select';
@@ -30,6 +33,21 @@ export default function AcikHesaplar({ onPaid }: { onPaid: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [tutar, setTutar] = useState<Record<number, string>>({});
   const [yontem, setYontem] = useState<PaymentMethod>('cash');
+  // Onay kutusu: tahsilat tek tıkla yazılıyordu ve yanlış satıra basmak
+  // sessizce gelir kaydı üretiyordu.
+  const [onay, setOnay] = useState<{ appt: Appointment; amount: number } | null>(
+    null,
+  );
+  /**
+   * Son tahsilat, geri alınabilsin diye tutuluyor.
+   *
+   * Ödeme kaydı Gelir listesinden silinebiliyordu ama operatörün onu orada
+   * bulup silmesi gerekiyordu; yanlış tıktan sonra "geri alamıyorum"
+   * hissi buradan geliyordu.
+   */
+  const [sonIslem, setSonIslem] = useState<
+    { paymentId: number; appt: Appointment; amount: number } | null
+  >(null);
 
   const load = useCallback(() => {
     listUnpaidAppointments()
@@ -51,14 +69,20 @@ export default function AcikHesaplar({ onPaid }: { onPaid: () => void }) {
     return tutar[a.id] ?? (s?.price ? String(s.price) : '');
   };
 
-  const tahsilEt = (a: Appointment) => {
+  const sor = (a: Appointment) => {
     const n = Number(oneri(a));
     if (!Number.isFinite(n) || n <= 0) {
       setError('Tutar sıfırdan büyük olmalı.');
       return;
     }
+    setError(null);
+    setOnay({ appt: a, amount: n });
+  };
+
+  const tahsilEt = (a: Appointment, n: number) => {
     setBusy(a.id);
     setError(null);
+    setOnay(null);
     createPayment({
       paid_at: bugun(),
       amount: n,
@@ -69,15 +93,34 @@ export default function AcikHesaplar({ onPaid }: { onPaid: () => void }) {
       service_name: a.service_name,
       note: '',
     })
-      .then(() => {
+      .then((p) => {
         setRows((r) => (r ?? []).filter((x) => x.id !== a.id));
+        setSonIslem({ paymentId: p.id, appt: a, amount: n });
         onPaid();
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusy(null));
   };
 
-  if (rows !== null && rows.length === 0) return null;
+  const geriAl = () => {
+    if (!sonIslem) return;
+    const { paymentId, appt } = sonIslem;
+    setError(null);
+    deletePayment(paymentId)
+      .then(() => {
+        // Satır listeye dönüyor: açık hesap ödemeden türetiliyor, ödeme
+        // silinince randevu yeniden açık sayılıyor.
+        setRows((r) => [appt, ...(r ?? [])]);
+        setSonIslem(null);
+        onPaid();
+      })
+      .catch((e: Error) => setError(e.message));
+  };
+
+  // Son açık hesap da tahsil edilince panel kapanıyor — ama geri alma
+  // şeridi duruyorsa değil: onunla birlikte kaybolsa, yanlış tıkı geri
+  // almanın yolu yine kalmazdı.
+  if (rows !== null && rows.length === 0 && sonIslem === null) return null;
 
   const toplam = (rows ?? []).reduce((s, a) => s + (Number(oneri(a)) || 0), 0);
 
@@ -128,6 +171,41 @@ export default function AcikHesaplar({ onPaid }: { onPaid: () => void }) {
         </p>
       )}
 
+      {sonIslem && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
+            background: 'var(--forest-3)', color: 'var(--forest-2)', fontSize: 12.5,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            {displayName({
+              name: sonIslem.appt.customer_name, phone: sonIslem.appt.phone,
+            })}{' '}
+            · <strong>{money(sonIslem.amount)}</strong> tahsil edildi.
+          </span>
+          <button
+            type="button"
+            className="wl-btn wl-btn-ghost wl-btn-sm"
+            style={{ borderRadius: 8 }}
+            onClick={geriAl}
+          >
+            Geri al
+          </button>
+          <button
+            type="button"
+            aria-label="Bildirimi kapat"
+            onClick={() => setSonIslem(null)}
+            style={{
+              border: 'none', background: 'transparent', font: 'inherit',
+              fontSize: 15, color: 'inherit', cursor: 'pointer', padding: '0 2px',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {(rows ?? []).map((a, i) => (
         <div
           key={a.id}
@@ -157,12 +235,56 @@ export default function AcikHesaplar({ onPaid }: { onPaid: () => void }) {
             className="wl-btn wl-btn-sm"
             style={{ borderRadius: 8 }}
             disabled={busy === a.id}
-            onClick={() => tahsilEt(a)}
+            onClick={() => sor(a)}
           >
             {busy === a.id ? '…' : 'Tahsil et'}
           </button>
         </div>
       ))}
+
+      {onay && (
+        <Modal
+          title="Tahsilatı onayla"
+          onClose={() => setOnay(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="wl-btn wl-btn-ghost wl-btn-sm"
+                onClick={() => setOnay(null)}
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                className="wl-btn wl-btn-sm"
+                onClick={() => tahsilEt(onay.appt, onay.amount)}
+              >
+                Tahsilatı kaydet
+              </button>
+            </>
+          }
+        >
+          <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+            <div>
+              <strong>
+                {displayName({
+                  name: onay.appt.customer_name, phone: onay.appt.phone,
+                })}
+              </strong>{' '}
+              · {onay.appt.service_name}
+            </div>
+            <div>
+              {money(onay.amount)} ·{' '}
+              {yontem === 'cash' ? 'Nakit' : yontem === 'card' ? 'Kart' : 'Havale'}
+            </div>
+            <p style={{ fontSize: 11.5, color: 'var(--ink-45)', margin: '10px 0 0' }}>
+              Gelire bugünün tarihiyle yazılır. Yanlışlıkla kaydedersen hemen
+              ardından "Geri al" ile silebilirsin.
+            </p>
+          </div>
+        </Modal>
+      )}
 
       {rows !== null && rows.length > 0 && (
         <footer
