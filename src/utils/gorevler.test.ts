@@ -10,6 +10,7 @@ const hazir: GorevGirdisi = {
   monthPaymentCount: 3,
   lowStockCount: 0,
   unpaidCount: 0,
+  pricelessServices: 0,
 };
 
 const anahtarlar = (g: Partial<GorevGirdisi>) =>
@@ -74,5 +75,24 @@ describe('gorevler · açık hesap', () => {
 
   it('hepsi tahsil edilmişse uyarı yok', () => {
     expect(anahtarlar({})).not.toContain('tahsilat');
+  });
+});
+
+describe('gorevler · fiyatsız hizmet', () => {
+  it('fiyatı girilmemiş hizmetleri sayıyor', () => {
+    const g = gorevler({ ...hazir, pricelessServices: 4 })
+      .find((x) => x.key === 'fiyat');
+    expect(g?.title).toBe('4 hizmetin fiyatı girilmemiş');
+    expect(g?.to).toBe('/sistem?sec=hizmet');
+  });
+
+  it('hepsinin fiyatı varsa uyarı yok', () => {
+    expect(anahtarlar({})).not.toContain('fiyat');
+  });
+
+  it('hiç hizmet yokken fiyat uyarısı çıkmaz', () => {
+    // O durumda söylenecek şey "hizmet gir", "fiyat gir" değil.
+    expect(anahtarlar({ serviceCount: 0, pricelessServices: 0, waConnected: false }))
+      .not.toContain('fiyat');
   });
 });

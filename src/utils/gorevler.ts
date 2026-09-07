@@ -27,6 +27,8 @@ export interface GorevGirdisi {
   lowStockCount: number;
   /** Hizmeti verilmiş ama parası alınmamış randevu sayısı. */
   unpaidCount: number;
+  /** Fiyatı girilmemiş aktif hizmet sayısı. */
+  pricelessServices: number;
 }
 
 export function gorevler(g: GorevGirdisi): Gorev[] {
@@ -66,6 +68,21 @@ export function gorevler(g: GorevGirdisi): Gorev[] {
       tone: 'warn',
       to: '/sistem?sec=klinik',
       cta: 'Doldur',
+    });
+  }
+
+  // Fiyatsız hizmet sessiz bir arıza: seans kapatma formu boş açılıyor,
+  // bot fiyat sorusuna cevap veremiyor ve fatura tutarı elle yazılıyor.
+  // Kurulum sihirbazı fiyatı bilerek boş bırakıyor (uydurma fiyat
+  // yazmamak için) ama sonrasında hiçbir şey hatırlatmıyordu.
+  if (g.serviceCount > 0 && g.pricelessServices > 0) {
+    out.push({
+      key: 'fiyat',
+      title: `${g.pricelessServices} hizmetin fiyatı girilmemiş`,
+      sub: 'Seans kapatırken tutar boş geliyor, bot da fiyat söyleyemiyor.',
+      tone: 'warn',
+      to: '/sistem?sec=hizmet',
+      cta: 'Gir',
     });
   }
 
