@@ -30,7 +30,10 @@ export default function Layout() {
             }}
           >
             <TopBar />
+            {/* wl-scroll-area: çocukların sıkışmasını durduruyor, yoksa
+                uzun listeler kaydırılamıyor (bkz. design-system.css). */}
             <div
+              className="wl-scroll-area"
               style={{
                 flex: 1,
                 minHeight: 0,
