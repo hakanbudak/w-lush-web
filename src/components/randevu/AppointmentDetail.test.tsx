@@ -161,7 +161,7 @@ describe('AppointmentDetail · seansı kapatma', () => {
 
   it('tutarı hizmetin fiyatından öneriyor', async () => {
     göster();
-    fireEvent.click(await screen.findByText('Tamamlandı'));
+    fireEvent.click(await screen.findByText('Seans yapıldı'));
     expect(await screen.findByDisplayValue('400')).toBeTruthy();
   });
 
@@ -172,19 +172,19 @@ describe('AppointmentDetail · seansı kapatma', () => {
     ]);
     göster();
     await screen.findByText('Ayşe Yılmaz');
-    fireEvent.click(screen.getByText('Tamamlandı'));
+    fireEvent.click(screen.getByText('Seans yapıldı'));
     expect(screen.queryByText('Tahsil edildi')).toBeNull();
   });
 
   it('tahsilat girilmeden de kapatılabiliyor', async () => {
     göster();
-    fireEvent.click(await screen.findByText('Tamamlandı'));
+    fireEvent.click(await screen.findByText('Seans yapıldı'));
     expect(await screen.findByText('Tahsilat sonra')).toBeTruthy();
   });
 
   it('tutar sıfırken tahsilat düğmesi kapalı', async () => {
     göster();
-    fireEvent.click(await screen.findByText('Tamamlandı'));
+    fireEvent.click(await screen.findByText('Seans yapıldı'));
     const alan = await screen.findByDisplayValue('400');
     fireEvent.change(alan, { target: { value: '0' } });
     expect((screen.getByText('Tahsil edildi') as HTMLButtonElement).disabled).toBe(true);

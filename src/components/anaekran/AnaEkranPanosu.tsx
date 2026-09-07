@@ -127,6 +127,7 @@ export default function AnaEkranPanosu() {
             monthPaymentCount: monthS.count,
             lowStockCount: lowStock.length,
             unpaidCount: unpaid.length,
+            pricelessServices: services.filter((s) => s.active && !s.price).length,
           }),
           appts,
           upcoming: yaklasanlar(ileri, akis.iso),

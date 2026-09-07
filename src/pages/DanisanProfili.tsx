@@ -18,7 +18,7 @@ type Tab = 'randevular' | 'mesajlar' | 'paketler' | 'onam' | 'notlar';
 
 const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
   confirmed: { label: 'Onaylı', tone: 'good' },
-  completed: { label: 'Tamamlandı', tone: 'good' },
+  completed: { label: 'Seans yapıldı', tone: 'good' },
   pending: { label: 'Bekliyor', tone: 'warn' },
   cancelled: { label: 'İptal', tone: 'bad' },
 };

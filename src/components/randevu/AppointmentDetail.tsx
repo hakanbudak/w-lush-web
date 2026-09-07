@@ -35,7 +35,7 @@ const fieldStyle: CSSProperties = {
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: 'Onaylı', bg: 'var(--forest-3)', color: 'var(--forest-2)' },
-  completed: { label: 'Tamamlandı', bg: 'var(--forest)', color: 'var(--paper)' },
+  completed: { label: 'Seans yapıldı', bg: 'var(--forest)', color: 'var(--paper)' },
   pending: { label: 'Bekliyor', bg: 'var(--warn-soft)', color: 'var(--warn)' },
   cancelled: { label: 'İptal', bg: 'var(--neutral-soft)', color: 'var(--neutral)' },
 };
@@ -285,9 +285,9 @@ export default function AppointmentDetail({
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 600 }}>
-              Seansı kapat
+              Seans yapıldı, tahsilat
               <span style={{ fontWeight: 400, color: 'var(--ink-45)' }}>
-                {' '}· tahsilat girilirse gelire yazılır
+                {' '}· girilirse gelire yazılır, girilmezse açık hesapta kalır
               </span>
             </div>
 
@@ -334,8 +334,10 @@ export default function AppointmentDetail({
             </label>
 
             {servicePrice === 0 && (
-              <div style={{ fontSize: 11, color: 'var(--ink-45)' }}>
-                Bu hizmetin fiyatı girilmemiş, tutarı siz yazın.
+              <div style={{ fontSize: 11, color: 'var(--warn)' }}>
+                "{appointment.service_name}" hizmetinin fiyatı girilmemiş, bu
+                yüzden tutar boş geldi. Sistem → Hizmetler'den girerseniz bir
+                daha sorulmaz.
               </div>
             )}
 
@@ -358,7 +360,7 @@ export default function AppointmentDetail({
                         if (r.invoice_error) setError(r.invoice_error);
                         return r.appointment;
                       }),
-                    'Seans kapatıldı, tahsilat gelire yazıldı.',
+                    'Seans yapıldı, tahsilat gelire yazıldı.',
                   )
                 }
               >
@@ -372,7 +374,7 @@ export default function AppointmentDetail({
                   run(
                     () =>
                       completeAppointment(appointment.id).then((r) => r.appointment),
-                    'Seans kapatıldı, tahsilat girilmedi — ödeme bekliyor.',
+                    'Seans yapıldı, tahsilat girilmedi — açık hesapta bekliyor.',
                   )
                 }
               >
@@ -490,14 +492,14 @@ export default function AppointmentDetail({
                 if (packageCovers) {
                   run(
                     () => completeAppointment(appointment.id).then((r) => r.appointment),
-                    'Randevu tamamlandı, paketten bir seans düşüldü.',
+                    'Seans yapıldı olarak işaretlendi, paketten bir seans düşüldü.',
                   );
                 } else {
                   setClosing(true);
                 }
               }}
             >
-              Tamamlandı
+              Seans yapıldı
             </button>
           )}
           {appointment.status !== 'cancelled' && !moving && (
