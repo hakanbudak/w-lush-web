@@ -6,6 +6,7 @@ import {
   completeAppointment,
   confirmAppointment,
   getSettings,
+  listServices,
   rescheduleAppointment,
   type Appointment,
 } from '../../api/clinic';
@@ -13,6 +14,7 @@ import { listConversations } from '../../api/conversations';
 import {
   listCustomerConsents, type ConsentSignature,
 } from '../../api/consent';
+import { listCustomerPackages } from '../../api/packages';
 import DatePicker from '../ui/DatePicker';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
@@ -81,6 +83,16 @@ export default function AppointmentDetail({
   // varsa sunucu kendiliğinden oluşturuyor; operatörün burada görmesi
   // gerekiyor, yoksa danışan gittikten sonra hatırlanıyor.
   const [consents, setConsents] = useState<ConsentSignature[]>([]);
+  /**
+   * Tamamlama formu. Randevu bir söz, para değil — gelir ancak burada,
+   * hizmet verildiği söylendiğinde ve tahsilat girildiğinde yazılıyor.
+   */
+  const [closing, setClosing] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('cash');
+  const [invoice, setInvoice] = useState(false);
+  const [servicePrice, setServicePrice] = useState<number | null>(null);
+  const [packageCovers, setPackageCovers] = useState(false);
 
   useEffect(() => {
     // Saat listesi kliniğin kendi slot_times ayarından; sunucu bu listede
@@ -95,6 +107,31 @@ export default function AppointmentDetail({
       .then((rows) => setHasThread(rows.some((r) => r.phone === appointment.phone)))
       .catch(() => setHasThread(false));
   }, [appointment.phone]);
+
+  // Hizmetin liste fiyatı tahsilat tutarını önden dolduruyor; paketi
+  // kapsayan seansta tahsilat hiç sorulmuyor, çünkü parası paket
+  // satışında alındı.
+  useEffect(() => {
+    listServices()
+      .then((rows) => {
+        const svc = rows.find((s) => s.name === appointment.service_name);
+        setServicePrice(svc?.price ?? null);
+        setAmount(svc?.price ? String(svc.price) : '');
+      })
+      .catch(() => setServicePrice(null));
+    listCustomerPackages(appointment.phone)
+      .then((rows) =>
+        setPackageCovers(
+          rows.some(
+            (p) =>
+              !p.cancelled &&
+              p.remaining > 0 &&
+              p.service_name === appointment.service_name,
+          ),
+        ),
+      )
+      .catch(() => setPackageCovers(false));
+  }, [appointment.phone, appointment.service_name]);
 
   useEffect(() => {
     listCustomerConsents(appointment.phone)
@@ -240,6 +277,118 @@ export default function AppointmentDetail({
           </div>
         )}
 
+        {closing && (
+          <div
+            style={{
+              borderTop: '1px solid var(--line)', paddingTop: 12,
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>
+              Seansı kapat
+              <span style={{ fontWeight: 400, color: 'var(--ink-45)' }}>
+                {' '}· tahsilat girilirse gelire yazılır
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                Tutar (₺)
+                <input
+                  className="wl-input wl-mono"
+                  type="number"
+                  min={0}
+                  value={amount}
+                  style={{ width: 120, textAlign: 'right', marginTop: 4 }}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </label>
+              <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                Ödeme
+                <Select
+                  value={method}
+                  onChange={setMethod}
+                  options={[
+                    { value: 'cash', label: 'Nakit' },
+                    { value: 'card', label: 'Kart' },
+                    { value: 'transfer', label: 'Havale' },
+                  ]}
+                  ariaLabel="Ödeme yöntemi"
+                  style={{ width: 120 }}
+                />
+              </label>
+            </div>
+
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={invoice}
+                onChange={(e) => setInvoice(e.target.checked)}
+              />
+              Faturasını da kes
+            </label>
+
+            {servicePrice === 0 && (
+              <div style={{ fontSize: 11, color: 'var(--ink-45)' }}>
+                Bu hizmetin fiyatı girilmemiş, tutarı siz yazın.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="wl-btn wl-btn-sm"
+                disabled={busy || !Number(amount)}
+                onClick={() =>
+                  run(
+                    () =>
+                      completeAppointment(appointment.id, {
+                        amount: Number(amount),
+                        method,
+                        invoice,
+                      }).then((r) => {
+                        // Fatura kesilemediyse tahsilat yine de yazıldı;
+                        // sebebi gizlemek operatörü faturası var sanmaya
+                        // bırakırdı.
+                        if (r.invoice_error) setError(r.invoice_error);
+                        return r.appointment;
+                      }),
+                    'Seans kapatıldı, tahsilat gelire yazıldı.',
+                  )
+                }
+              >
+                Tahsil edildi
+              </button>
+              <button
+                type="button"
+                className="wl-btn wl-btn-ghost wl-btn-sm"
+                disabled={busy}
+                onClick={() =>
+                  run(
+                    () =>
+                      completeAppointment(appointment.id).then((r) => r.appointment),
+                    'Seans kapatıldı, tahsilat girilmedi — ödeme bekliyor.',
+                  )
+                }
+              >
+                Tahsilat sonra
+              </button>
+              <button
+                type="button"
+                className="wl-btn wl-btn-ghost wl-btn-sm"
+                onClick={() => setClosing(false)}
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        )}
+
         {moving && (
           <div
             style={{
@@ -328,17 +477,25 @@ export default function AppointmentDetail({
           )}
           {/* Seans, tarihin geçmesine değil operatörün "geldi" demesine
               bağlı: gelmeyen danışanın paketinden seans düşmemeli. */}
-          {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+          {appointment.status !== 'cancelled'
+            && appointment.status !== 'completed'
+            && !closing && (
             <button
               type="button"
               className="wl-btn wl-btn-sm"
               disabled={busy}
-              onClick={() =>
-                run(
-                  () => completeAppointment(appointment.id),
-                  'Randevu tamamlandı. Danışanın paketi varsa bir seans düşüldü.',
-                )
-              }
+              onClick={() => {
+                // Paketi kapsayan seansta form açılmıyor: sorulacak bir
+                // tahsilat yok ve sormak aynı geliri iki kez yazdırırdı.
+                if (packageCovers) {
+                  run(
+                    () => completeAppointment(appointment.id).then((r) => r.appointment),
+                    'Randevu tamamlandı, paketten bir seans düşüldü.',
+                  );
+                } else {
+                  setClosing(true);
+                }
+              }}
             >
               Tamamlandı
             </button>

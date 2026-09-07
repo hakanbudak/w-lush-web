@@ -106,12 +106,36 @@ export const listAppointments = (start?: string, end?: string) => {
   return request<Appointment[]>(`/api/appointments${q ? `?${q}` : ''}`);
 };
 
+/** Hizmeti verilmiş ama parası alınmamış randevular. */
+export const listUnpaidAppointments = () =>
+  request<Appointment[]>('/api/appointments/unpaid');
+
 export const confirmAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/confirm`, { method: 'POST' });
 
-/** Randevuyu tamamlandı işaretler; danışanın paketi varsa seans düşer. */
-export const completeAppointment = (id: number) =>
-  request<Appointment>(`/api/appointments/${id}/complete`, { method: 'POST' });
+/** Tamamlamada gerçekten ne olduğu. */
+export interface CompleteResult {
+  appointment: Appointment;
+  /** Paketten seans düştü mü. Düştüyse tahsilat alınmıyor. */
+  session_used: boolean;
+  payment_id: number | null;
+  invoice_number: string | null;
+  /** Tahsilat yazıldı ama fatura kesilemediyse sebebi. */
+  invoice_error: string | null;
+}
+
+/**
+ * Randevuyu tamamlandı işaretler; paketten seans düşer, tahsilat verilirse
+ * gelire yazılır ve istenirse faturası kesilir.
+ */
+export const completeAppointment = (
+  id: number,
+  payment?: { amount: number; method?: string; invoice?: boolean } | null,
+) =>
+  request<CompleteResult>(`/api/appointments/${id}/complete`, {
+    method: 'POST',
+    body: JSON.stringify({ payment: payment ?? null }),
+  });
 
 export const cancelAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/cancel`, { method: 'POST' });

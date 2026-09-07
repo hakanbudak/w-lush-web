@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  getSettings, listAppointments, listServices, type Appointment, type Service,
+  getSettings, listAppointments, listServices, listUnpaidAppointments,
+  type Appointment, type Service,
 } from '../../api/clinic';
 import { listConversations } from '../../api/conversations';
 import { listCustomers } from '../../api/customers';
@@ -96,10 +97,11 @@ export default function AnaEkranPanosu() {
       listServices().catch(() => []),
       getConnection().then((c) => c.status === 'connected').catch(() => false),
       listLowStock().catch(() => []),
+      listUnpaidAppointments().catch(() => []),
     ])
       .then(([
         todayS, monthS, prevMonthS, appts, ileri, settings, staff, customers,
-        conversations, monthPayments, services, waConnected, lowStock,
+        conversations, monthPayments, services, waConnected, lowStock, unpaid,
       ]) => {
         const slots = settings.slot_times ?? [];
         const activeStaff = staff.filter((s) => s.active).length;
@@ -124,6 +126,7 @@ export default function AnaEkranPanosu() {
             pendingAppointments: appts.filter((a) => a.status === 'pending').length,
             monthPaymentCount: monthS.count,
             lowStockCount: lowStock.length,
+            unpaidCount: unpaid.length,
           }),
           appts,
           upcoming: yaklasanlar(ileri, akis.iso),

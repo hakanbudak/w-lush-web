@@ -9,6 +9,7 @@ const hazir: GorevGirdisi = {
   pendingAppointments: 0,
   monthPaymentCount: 3,
   lowStockCount: 0,
+  unpaidCount: 0,
 };
 
 const anahtarlar = (g: Partial<GorevGirdisi>) =>
@@ -61,5 +62,17 @@ describe('gorevler · stok', () => {
 
   it('stok yeterliyken uyarı çıkmaz', () => {
     expect(anahtarlar({})).not.toContain('stok');
+  });
+});
+
+describe('gorevler · açık hesap', () => {
+  it('tahsilatı alınmamış seansları sayıyor', () => {
+    const g = gorevler({ ...hazir, unpaidCount: 3 }).find((x) => x.key === 'tahsilat');
+    expect(g?.title).toBe('3 seansın tahsilatı alınmadı');
+    expect(g?.to).toBe('/gelir');
+  });
+
+  it('hepsi tahsil edilmişse uyarı yok', () => {
+    expect(anahtarlar({})).not.toContain('tahsilat');
   });
 });

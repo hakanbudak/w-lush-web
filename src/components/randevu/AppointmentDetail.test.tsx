@@ -5,6 +5,7 @@ import AppointmentDetail from './AppointmentDetail';
 const rescheduleAppointment = vi.fn();
 const cancelAppointment = vi.fn();
 const confirmAppointment = vi.fn();
+const completeAppointment = vi.fn();
 
 const listCustomerConsents = vi.fn();
 
@@ -12,12 +13,19 @@ vi.mock('../../api/consent', () => ({
   listCustomerConsents: (...a: unknown[]) => listCustomerConsents(...a),
 }));
 
+const listCustomerPackages = vi.fn();
+vi.mock('../../api/packages', () => ({
+  listCustomerPackages: (...a: unknown[]) => listCustomerPackages(...a),
+}));
+
 vi.mock('../../api/clinic', () => ({
   assignAppointmentStaff: vi.fn(),
-  completeAppointment: vi.fn(),
+  completeAppointment: (...a: unknown[]) => completeAppointment(...a),
   cancelAppointment: (...a: unknown[]) => cancelAppointment(...a),
   confirmAppointment: (...a: unknown[]) => confirmAppointment(...a),
   getSettings: () => Promise.resolve({ slot_times: ['10:00', '11:00', '12:00'] }),
+  listServices: () =>
+    Promise.resolve([{ id: 1, name: 'Kontrol', price: 400, active: true }]),
   rescheduleAppointment: (...a: unknown[]) => rescheduleAppointment(...a),
 }));
 
@@ -41,6 +49,12 @@ const onChanged = vi.fn();
 
 beforeEach(() => {
   listCustomerConsents.mockReset().mockResolvedValue([]);
+  listCustomerPackages.mockReset().mockResolvedValue([]);
+  completeAppointment.mockReset().mockResolvedValue({
+    appointment: { ...APPT, status: 'completed' },
+    session_used: false, payment_id: null,
+    invoice_number: null, invoice_error: null,
+  });
   rescheduleAppointment.mockReset().mockResolvedValue({ ...APPT, appt_date: '2026-09-03' });
   onChanged.mockReset();
 });
@@ -133,5 +147,46 @@ describe('AppointmentDetail · onam', () => {
     göster();
     await screen.findByText('Ayşe Yılmaz');
     expect(screen.queryByText('Tablette imzalat')).toBeNull();
+  });
+});
+
+describe('AppointmentDetail · seansı kapatma', () => {
+  beforeEach(() => {
+    completeAppointment.mockReset().mockResolvedValue({
+      appointment: { ...APPT, status: 'completed' },
+      session_used: false, payment_id: 5,
+      invoice_number: null, invoice_error: null,
+    });
+  });
+
+  it('tutarı hizmetin fiyatından öneriyor', async () => {
+    göster();
+    fireEvent.click(await screen.findByText('Tamamlandı'));
+    expect(await screen.findByDisplayValue('400')).toBeTruthy();
+  });
+
+  it('paketi kapsayan seansta tahsilat hiç sorulmuyor', async () => {
+    // Sormak aynı geliri iki kez yazdırırdı.
+    listCustomerPackages.mockResolvedValue([
+      { id: 1, service_name: 'Kontrol', remaining: 5, cancelled: false },
+    ]);
+    göster();
+    await screen.findByText('Ayşe Yılmaz');
+    fireEvent.click(screen.getByText('Tamamlandı'));
+    expect(screen.queryByText('Tahsil edildi')).toBeNull();
+  });
+
+  it('tahsilat girilmeden de kapatılabiliyor', async () => {
+    göster();
+    fireEvent.click(await screen.findByText('Tamamlandı'));
+    expect(await screen.findByText('Tahsilat sonra')).toBeTruthy();
+  });
+
+  it('tutar sıfırken tahsilat düğmesi kapalı', async () => {
+    göster();
+    fireEvent.click(await screen.findByText('Tamamlandı'));
+    const alan = await screen.findByDisplayValue('400');
+    fireEvent.change(alan, { target: { value: '0' } });
+    expect((screen.getByText('Tahsil edildi') as HTMLButtonElement).disabled).toBe(true);
   });
 });

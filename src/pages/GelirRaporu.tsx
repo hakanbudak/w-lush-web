@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import AcikHesaplar from '../components/finance/AcikHesaplar';
 import {
   deletePayment,
   getSummary,
@@ -76,6 +77,11 @@ export default function GelirRaporu() {
 
   return (
     <>
+      {/* Açık hesap gelirin bir parçası değil ama gelir ekranına ait:
+          tahsil edilmeyi bekleyen para burada aranıyor. Hiç yoksa panel
+          kendini çizmiyor. */}
+      <AcikHesaplar onPaid={load} />
+
       {error && (
         <div style={{ marginTop: 16, fontSize: 13, color: 'var(--ink-60)' }}>
           {error}{' '}
