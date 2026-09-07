@@ -34,7 +34,7 @@ export interface AppointmentBrief {
   appt_date: string;
   appt_time: string;
   service_name: string;
-  status: string; // pending | confirmed | cancelled
+  status: string; // pending | confirmed | completed | cancelled
 }
 
 export interface CustomerStats {
