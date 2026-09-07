@@ -6,7 +6,7 @@ import {
 import { listConversations } from '../../api/conversations';
 import { listCustomers } from '../../api/customers';
 import { getSummary, listPayments } from '../../api/payments';
-import { listStaff } from '../../api/staff';
+import { listStaff, type StaffMember } from '../../api/staff';
 import { listLowStock } from '../../api/stock';
 import { getConnection } from '../../api/whatsapp';
 import { bosSlotSayisi, yaklasanlar } from '../../utils/akis';
@@ -23,6 +23,7 @@ import BugunPanel, { type BugunVerisi } from './BugunPanel';
 import DailyRevenueChart from './DailyRevenueChart';
 import GununAkisi from './GununAkisi';
 import QuickActions from './QuickActions';
+import AppointmentDetail from '../randevu/AppointmentDetail';
 import Tour, { type TourStep } from './Tour';
 
 interface Loaded {
@@ -34,6 +35,7 @@ interface Loaded {
   monthRevenue: number;
   prevMonthToDateRevenue: number;
   services: Service[];
+  staff: StaffMember[];
   /** Akışın gösterdiği gün — 20:00'den sonra yarın. */
   akis: { iso: string; yarin: boolean };
   days: { day: string; amount: number }[];
@@ -57,6 +59,9 @@ export default function AnaEkranPanosu() {
   const [error, setError] = useState(false);
   const [notice, setNotice] = useState<RandevuBildirimi | null>(null);
   const [openAt, setOpenAt] = useState<string | null>(null);
+  // Akıştan açılan randevu. Detay modali erteleme, onaylama ve iptali
+  // taşıyor; buraya bağlanmadan önce oraya ancak takvimden gidilebiliyordu.
+  const [secili, setSecili] = useState<Appointment | null>(null);
   const [params, setParams] = useSearchParams();
   const [tourOn, setTourOn] = useState(params.get('tour') === '1');
 
@@ -126,6 +131,7 @@ export default function AnaEkranPanosu() {
           monthRevenue: monthS.total,
           prevMonthToDateRevenue: prevMonthS.total,
           services,
+          staff,
           akis,
           // Grafik ayın tamamını çiziyor; bugünde kesmek yarım ayı
           // çöküş gibi gösteriyordu.
@@ -234,6 +240,7 @@ export default function AnaEkranPanosu() {
             colorOf={(name) => data.services.find((s) => s.name === name)?.color ?? null}
             day={data.akis}
             onPick={setOpenAt}
+            onOpen={setSecili}
           />
         </div>
         <div
@@ -251,6 +258,21 @@ export default function AnaEkranPanosu() {
         prevMonthToDate={data.prevMonthToDateRevenue}
         today={dayRange(0).start}
       />
+
+      {secili && (
+        <AppointmentDetail
+          appointment={secili}
+          staff={data.staff}
+          onClose={() => setSecili(null)}
+          onChanged={(guncel) => {
+            setSecili(guncel.status === 'cancelled' ? null : guncel);
+            load();
+          }}
+          onMessage={(_phone, name) =>
+            setNotice({ text: `${name} için mesaj ekranını açın.`, baskaGun: false })
+          }
+        />
+      )}
 
       {tourOn && <Tour steps={TOUR} onDone={endTour} />}
     </>

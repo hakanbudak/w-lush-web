@@ -10,8 +10,8 @@ const randevu = (over: Partial<Appointment> = {}): Appointment =>
      staff_name: 'Elif', ...over } as Appointment);
 
 type Props = Parameters<typeof GununAkisi>[0];
-type Verilen = Omit<Props, 'upcoming' | 'colorOf' | 'day'> &
-  Partial<Pick<Props, 'upcoming' | 'colorOf' | 'day'>>;
+type Verilen = Omit<Props, 'upcoming' | 'colorOf' | 'day' | 'onOpen'> &
+  Partial<Pick<Props, 'upcoming' | 'colorOf' | 'day' | 'onOpen'>>;
 
 const ciz = (props: Verilen) =>
   render(
@@ -20,6 +20,7 @@ const ciz = (props: Verilen) =>
         upcoming={[]}
         colorOf={() => '#0B8A57'}
         day={{ iso: '2026-08-25', yarin: false }}
+        onOpen={() => {}}
         {...props}
       />
     </MemoryRouter>,
@@ -134,5 +135,28 @@ describe('GununAkisi · gün sonu', () => {
     });
     expect(screen.getByText(/Yarının akışı/)).toBeTruthy();
     expect(screen.getByText(/bugün kapandı/)).toBeTruthy();
+  });
+});
+
+describe('GununAkisi · randevuyu açma', () => {
+  it('randevuya tıklayınca onu bildiriyor', () => {
+    // Erteleme, onaylama ve iptal detayda; blok tıklanamazken oraya
+    // ancak takvimden gidilebiliyordu.
+    const onOpen = vi.fn();
+    const a = randevu({ id: 42 });
+    ciz({ items: [a], slots: ['11:00'], onOpen, onPick: vi.fn() });
+
+    fireEvent.click(screen.getByText('Ayşe Yılmaz'));
+    expect(onOpen).toHaveBeenCalledWith(a);
+  });
+
+  it('boş saate tıklamak randevu açmıyor, form istiyor', () => {
+    const onOpen = vi.fn();
+    const onPick = vi.fn();
+    ciz({ items: [], slots: ['11:00'], onOpen, onPick });
+
+    fireEvent.click(screen.getByText('Boş — randevu ekle'));
+    expect(onPick).toHaveBeenCalledWith('11:00');
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });

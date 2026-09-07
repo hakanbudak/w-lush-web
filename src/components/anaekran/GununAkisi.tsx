@@ -20,6 +20,7 @@ export default function GununAkisi({
   colorOf,
   day,
   onPick,
+  onOpen,
 }: {
   items: Appointment[];
   slots: string[];
@@ -27,6 +28,12 @@ export default function GununAkisi({
   colorOf: (serviceName: string) => string | null;
   /** Akışın gösterdiği gün. 20:00'den sonra yarına geçiyor. */
   day: { iso: string; yarin: boolean };
+  /**
+   * Randevuya tıklanınca. Erteleme, onaylama ve iptal detayda duruyor;
+   * akıştaki blok tıklanamaz olduğu sürece oraya ancak takvimden
+   * gidilebiliyordu.
+   */
+  onOpen: (appointment: Appointment) => void;
   /** Bugünden sonraki ilk randevular; yalnızca bugün boşken gösteriliyor. */
   upcoming: Appointment[];
   onPick: (time: string) => void;
@@ -119,17 +126,20 @@ export default function GununAkisi({
                     const renk = colorOf(a.service_name) ?? NOTR;
                     const bekliyor = a.status === 'pending';
                     return (
-                      <span
+                      <button
                         key={a.id}
+                        type="button"
+                        onClick={() => onOpen(a)}
                         title={`${who} · ${a.service_name}${
                           a.staff_name ? ` · ${a.staff_name}` : ' · uzman atanmadı'
-                        }${bekliyor ? ' · onay bekliyor' : ''}`}
+                        }${bekliyor ? ' · onay bekliyor' : ''} — açmak için tıklayın`}
                         style={{
                           flex: '1 1 150px', minWidth: 0, borderRadius: 9,
                           padding: '7px 10px', background: renk, color: '#FFFFFF',
                           border: bekliyor
                             ? '1px dashed rgba(255, 255, 255, 0.85)'
                             : '1px solid transparent',
+                          font: 'inherit', textAlign: 'left', cursor: 'pointer',
                         }}
                       >
                         <span
@@ -157,7 +167,7 @@ export default function GununAkisi({
                           {r.appointments.length > 1 &&
                             (a.staff_name ? ` · ${a.staff_name}` : ' · atanmadı')}
                         </span>
-                      </span>
+                      </button>
                     );
                   })}
                 </span>
