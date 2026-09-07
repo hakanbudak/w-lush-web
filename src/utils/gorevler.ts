@@ -25,6 +25,8 @@ export interface GorevGirdisi {
   monthPaymentCount: number;
   /** Uyarı eşiğinin altına düşmüş ürün sayısı. */
   lowStockCount: number;
+  /** Hizmeti verilmiş ama parası alınmamış randevu sayısı. */
+  unpaidCount: number;
 }
 
 export function gorevler(g: GorevGirdisi): Gorev[] {
@@ -75,6 +77,17 @@ export function gorevler(g: GorevGirdisi): Gorev[] {
       tone: 'warn',
       to: '/mesajlar',
       cta: 'Aç',
+    });
+  }
+
+  if (g.unpaidCount > 0) {
+    out.push({
+      key: 'tahsilat',
+      title: `${g.unpaidCount} seansın tahsilatı alınmadı`,
+      sub: 'Hizmet verildi, para girilmedi — gelir raporunda görünmüyor.',
+      tone: 'warn',
+      to: '/gelir',
+      cta: 'Gelir',
     });
   }
 

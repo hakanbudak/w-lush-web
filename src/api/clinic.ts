@@ -106,6 +106,10 @@ export const listAppointments = (start?: string, end?: string) => {
   return request<Appointment[]>(`/api/appointments${q ? `?${q}` : ''}`);
 };
 
+/** Hizmeti verilmiş ama parası alınmamış randevular. */
+export const listUnpaidAppointments = () =>
+  request<Appointment[]>('/api/appointments/unpaid');
+
 export const confirmAppointment = (id: number) =>
   request<Appointment>(`/api/appointments/${id}/confirm`, { method: 'POST' });
 
