@@ -350,3 +350,17 @@ body {
 /* Kenar menü bağlantısı. Aktif renk NavLink'ten satır içi geliyor; hover
    yalnızca CSS'te tanımlanabildiği için burada. */
 .wl-nav-link:hover { background: #19293A !important; color: #FFFFFF !important; }
+
+/* Kabuğun kayan içerik alanı.
+
+   Alan `display: flex; flex-direction: column` (bölümler arası boşluk için)
+   ve `overflow-y: auto`. Bu birleşimde çocuklar varsayılan
+   `flex-shrink: 1` ile kapsayıcıya **sığacak kadar sıkışıyor**: kapsayıcının
+   içeriği hiç taşmadığı için kaydırma çubuğu çıkmıyor, uzun listeler ise
+   ezilip kırpılıyor. Uzun bir "Açık hesaplar" ya da "Son ödemeler" paneli
+   tam olarak böyle kaydırılamaz hâle geliyordu.
+
+   Çocuklar küçülmeyi bırakınca içerik gerçekten taşıyor ve alan kayıyor. */
+.wl-scroll-area > * {
+  flex-shrink: 0;
+}
