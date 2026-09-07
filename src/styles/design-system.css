@@ -15,28 +15,35 @@
   --navy-hover: #1E3446;
   --navy-ink: #F4F2EC;     /* lacivert üzerindeki metin */
 
-  /* --- Klinik yeşili (accent / CTA) --- */
-  --forest: #2E7D5B;
-  --forest-hover: #24654A;
-  --forest-2: #1F5C42;     /* koyu metin */
-  --forest-3: #E4EFE9;     /* açık zemin */
-  --accent-soft: #8FC0A6;  /* lacivert üstünde açık ton */
+  /* --- Klinik yeşili (accent / CTA) ---
+     Hizmet paletiyle (ui/ColorPicker) aynı aile. Blok yeşili #0B8A57;
+     düğme bir tık koyu, çünkü blok beyaz metin taşıyor ve UI eşiği 3:1
+     iken düğme etiketi 4.5:1 istiyor — #0B8A57 krem metinle 3.98'de
+     kalıyordu, eskisinden (4.54) kötü. #0A7C4E 4.76 veriyor ve yan yana
+     tek yeşil okunuyor. */
+  --forest: #0A7C4E;
+  --forest-hover: #086238;
+  --forest-2: #06603C;     /* koyu metin */
+  --forest-3: #E3F2EA;     /* açık zemin */
+  --accent-soft: #7FD3AA;  /* lacivert üstünde açık ton */
 
   /* --- Yardımcı renkler --- */
-  --blue: #4A85B5;
-  --blue-soft: #E3EEF7;
-  --ai: #5B4FA3;
-  --ai-soft: #EDEBF7;
-  --ai-band: #F3F0FA;
-  --ai-dark: #463C85;
+  /* Mavi ve mor doğrudan hizmet paletinden; ikisi de beyaz metinle
+     4.5'in üstünde, ayrıca koyulaştırmaya gerek yok. */
+  --blue: #1667C7;
+  --blue-soft: #E4EDFA;
+  --ai: #6837C9;
+  --ai-soft: #EDE7FA;
+  --ai-band: #F4F0FC;
+  --ai-dark: #4F27A0;
   --warn: #8A6416;
   --warn-soft: #FBF0DE;
   /* Bekleyen iş noktaları: dikkat (kehribar) ve acele (kızıl). */
   --dot-warn: #D9A227;
-  --dot-urgent: #C2582F;
+  --dot-urgent: #D24A0B;
   --bad: #C66B65;
   --bad-soft: #FBEAE8;
-  --good: #2E7D5B;
+  --good: #0A7C4E;
   --neutral: #8B8778;
   --neutral-soft: #EFEDE6;
 
