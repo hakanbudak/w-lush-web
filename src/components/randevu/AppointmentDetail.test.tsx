@@ -5,6 +5,7 @@ import AppointmentDetail from './AppointmentDetail';
 const rescheduleAppointment = vi.fn();
 const cancelAppointment = vi.fn();
 const confirmAppointment = vi.fn();
+const completeAppointment = vi.fn();
 
 const listCustomerConsents = vi.fn();
 
@@ -19,7 +20,7 @@ vi.mock('../../api/packages', () => ({
 
 vi.mock('../../api/clinic', () => ({
   assignAppointmentStaff: vi.fn(),
-  completeAppointment: vi.fn(),
+  completeAppointment: (...a: unknown[]) => completeAppointment(...a),
   cancelAppointment: (...a: unknown[]) => cancelAppointment(...a),
   confirmAppointment: (...a: unknown[]) => confirmAppointment(...a),
   getSettings: () => Promise.resolve({ slot_times: ['10:00', '11:00', '12:00'] }),
@@ -49,6 +50,11 @@ const onChanged = vi.fn();
 beforeEach(() => {
   listCustomerConsents.mockReset().mockResolvedValue([]);
   listCustomerPackages.mockReset().mockResolvedValue([]);
+  completeAppointment.mockReset().mockResolvedValue({
+    appointment: { ...APPT, status: 'completed' },
+    session_used: false, payment_id: null,
+    invoice_number: null, invoice_error: null,
+  });
   rescheduleAppointment.mockReset().mockResolvedValue({ ...APPT, appt_date: '2026-09-03' });
   onChanged.mockReset();
 });
@@ -145,8 +151,6 @@ describe('AppointmentDetail · onam', () => {
 });
 
 describe('AppointmentDetail · seansı kapatma', () => {
-  const completeAppointment = vi.fn();
-
   beforeEach(() => {
     completeAppointment.mockReset().mockResolvedValue({
       appointment: { ...APPT, status: 'completed' },
