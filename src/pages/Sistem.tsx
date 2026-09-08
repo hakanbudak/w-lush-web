@@ -13,17 +13,19 @@ import FaturaBilgisi from '../components/sistem/FaturaBilgisi';
 import OnamSection from '../components/sistem/OnamSection';
 import OnlineRandevuSection from '../components/sistem/OnlineRandevuSection';
 import SablonSection from '../components/sistem/SablonSection';
+import MetinlerSection from '../components/sistem/MetinlerSection';
 
 /* ───────── bölümler ───────── */
 type Section =
   | 'klinik' | 'personel' | 'hizmet' | 'online' | 'onam' | 'fatura'
-  | 'whatsapp' | 'ai' | 'guvenlik';
+  | 'whatsapp' | 'metinler' | 'ai' | 'guvenlik';
 const SECTIONS: { key: Section; label: string; icon: keyof typeof Icon; sub: string }[] = [
   { key: 'klinik', label: 'Klinik bilgisi', icon: 'home', sub: 'Tip, iletişim, çalışma saatleri' },
   { key: 'personel', label: 'Personel', icon: 'users', sub: 'Uzmanlar ve roller' },
   { key: 'hizmet', label: 'Hizmetler & paketler', icon: 'sparkle', sub: 'Fiyatlandırma' },
   { key: 'online', label: 'Online randevu', icon: 'calendar', sub: 'Danışan kendi alsın' },
   { key: 'whatsapp', label: 'WhatsApp şablonları', icon: 'whatsapp', sub: 'Otomatik mesajlar' },
+  { key: 'metinler', label: 'Bot metinleri', icon: 'whatsapp', sub: 'Danışanın okuduğu cümleler' },
   { key: 'onam', label: 'Onam formları', icon: 'check', sub: 'Danışanın imzaladığı metinler' },
   { key: 'fatura', label: 'Fatura bilgileri', icon: 'wallet', sub: 'UBL-TR için satıcı bilgileri' },
   { key: 'ai', label: 'AI asistan', icon: 'sparkle', sub: 'Davranış tercihleri' },
@@ -114,6 +116,12 @@ export default function Sistem() {
                 </div>
                 <AkisSemasi />
               </div>
+            </div>
+          )}
+
+          {sec === 'metinler' && (
+            <div style={{ maxWidth: 760 }}>
+              <MetinlerSection />
             </div>
           )}
 
