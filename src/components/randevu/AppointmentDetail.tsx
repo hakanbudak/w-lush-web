@@ -15,6 +15,7 @@ import {
   listCustomerConsents, type ConsentSignature,
 } from '../../api/consent';
 import { listCustomerPackages } from '../../api/packages';
+import { createPromise } from '../../api/payments';
 import DatePicker from '../ui/DatePicker';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
@@ -93,6 +94,15 @@ export default function AppointmentDetail({
   const [invoice, setInvoice] = useState(false);
   const [servicePrice, setServicePrice] = useState<number | null>(null);
   const [packageCovers, setPackageCovers] = useState(false);
+  /**
+   * Ödeme sözü. "Tahsilat sonra" tek başına seansı açık hesaba atıyordu
+   * ama ne zaman ödeneceği hiçbir yerde yazmıyordu; vadesi geçen para
+   * kimsenin dönüp bakmadığı bir listede kalıyordu.
+   */
+  const [promising, setPromising] = useState(false);
+  const [promiseAmount, setPromiseAmount] = useState('');
+  const [promiseDue, setPromiseDue] = useState('');
+  const [promiseNote, setPromiseNote] = useState('');
 
   useEffect(() => {
     // Saat listesi kliniğin kendi slot_times ayarından; sunucu bu listede
@@ -370,13 +380,7 @@ export default function AppointmentDetail({
                 type="button"
                 className="wl-btn wl-btn-ghost wl-btn-sm"
                 disabled={busy}
-                onClick={() =>
-                  run(
-                    () =>
-                      completeAppointment(appointment.id).then((r) => r.appointment),
-                    'Seans yapıldı, tahsilat girilmedi — açık hesapta bekliyor.',
-                  )
-                }
+                onClick={() => setPromising(true)}
               >
                 Tahsilat sonra
               </button>
@@ -388,6 +392,88 @@ export default function AppointmentDetail({
                 Vazgeç
               </button>
             </div>
+
+            {promising && (
+              <div
+                style={{
+                  borderTop: '1px solid var(--line)', paddingTop: 10,
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                }}
+              >
+                <div style={{ fontSize: 11.5, color: 'var(--ink-60)' }}>
+                  Ne zaman, ne kadar ödenecek? Vadesi gelince uyarı düşer.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                    Tutar
+                    <input
+                      value={promiseAmount}
+                      onChange={(e) => setPromiseAmount(e.target.value)}
+                      inputMode="numeric"
+                      aria-label="Söz verilen tutar"
+                      style={fieldStyle}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: 'var(--ink-60)' }}>
+                    Vade
+                    <DatePicker
+                      value={promiseDue}
+                      onChange={setPromiseDue}
+                      ariaLabel="Ödeme vadesi"
+                      style={fieldStyle}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: 'var(--ink-60)', flex: '1 1 140px' }}>
+                    Not
+                    <input
+                      value={promiseNote}
+                      onChange={(e) => setPromiseNote(e.target.value)}
+                      placeholder="Kart sorunu"
+                      aria-label="Ödeme sözü notu"
+                      style={{ ...fieldStyle, width: '100%' }}
+                    />
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="wl-btn wl-btn-sm"
+                    disabled={busy || !Number(promiseAmount) || !promiseDue}
+                    onClick={() =>
+                      run(
+                        () =>
+                          completeAppointment(appointment.id)
+                            .then((r) =>
+                              createPromise({
+                                appointment_id: appointment.id,
+                                amount: Number(promiseAmount),
+                                due_on: promiseDue,
+                                note: promiseNote,
+                              }).then(() => r.appointment),
+                            ),
+                        'Seans yapıldı, ödeme sözü kaydedildi.',
+                      )
+                    }
+                  >
+                    Sözü kaydet
+                  </button>
+                  <button
+                    type="button"
+                    className="wl-btn wl-btn-ghost wl-btn-sm"
+                    disabled={busy}
+                    onClick={() =>
+                      run(
+                        () =>
+                          completeAppointment(appointment.id).then((r) => r.appointment),
+                        'Seans yapıldı, tahsilat girilmedi — açık hesapta bekliyor.',
+                      )
+                    }
+                  >
+                    Vade girmeden geç
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

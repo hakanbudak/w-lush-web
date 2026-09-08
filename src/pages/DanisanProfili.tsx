@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import OdemeVeFatura from '../components/customer/OdemeVeFatura';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   getCustomer,
@@ -14,7 +15,7 @@ import { Avatar, Chip } from '../components/ui';
 import { clockTime, relativeTime } from '../utils/time';
 import { displayName } from '../utils/people';
 
-type Tab = 'randevular' | 'mesajlar' | 'paketler' | 'onam' | 'notlar';
+type Tab = 'randevular' | 'odeme' | 'mesajlar' | 'paketler' | 'onam' | 'notlar';
 
 const STATUS: Record<string, { label: string; tone: 'good' | 'warn' | 'bad' }> = {
   confirmed: { label: 'Onaylı', tone: 'good' },
@@ -341,6 +342,7 @@ export default function DanisanProfili() {
               <div style={{ display: 'flex', borderBottom: '1px solid var(--line)' }}>
                 {([
                   ['randevular', 'Randevu geçmişi'],
+                  ['odeme', 'Ödeme & fatura'],
                   ['mesajlar', 'Mesaj geçmişi'],
                   ['paketler', 'Paketler'],
                   ['onam', 'Onam'],
@@ -399,6 +401,10 @@ export default function DanisanProfili() {
                     );
                   })}
                 </div>
+              )}
+
+              {tab === 'odeme' && (
+                <OdemeVeFatura detail={detail} onChanged={loadDetail} />
               )}
 
               {tab === 'mesajlar' && (

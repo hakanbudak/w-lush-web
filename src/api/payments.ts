@@ -81,3 +81,43 @@ export const createPayment = (input: PaymentInput) =>
 
 export const deletePayment = (id: number) =>
   request<void>(`/api/payments/${id}`, { method: 'DELETE' });
+
+// --- Ödeme sözleri ---
+
+export interface PaymentPromise {
+  id: number;
+  appointment_id: number | null;
+  phone: string | null;
+  customer_name: string;
+  service_name: string;
+  amount: number;
+  due_on: string;
+  note: string;
+  created_on: string;
+  settled_on: string | null;
+}
+
+export const listPromises = (params: { phone?: string; open_only?: boolean } = {}) => {
+  const q = new URLSearchParams();
+  if (params.phone) q.set('phone', params.phone);
+  if (params.open_only === false) q.set('open_only', 'false');
+  const tail = q.toString();
+  return request<PaymentPromise[]>(`/api/payments/promises${tail ? `?${tail}` : ''}`);
+};
+
+export const createPromise = (body: {
+  amount: number;
+  due_on: string;
+  appointment_id?: number | null;
+  phone?: string;
+  customer_name?: string;
+  service_name?: string;
+  note?: string;
+}) =>
+  request<PaymentPromise>('/api/payments/promises', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export const settlePromise = (id: number) =>
+  request<PaymentPromise>(`/api/payments/promises/${id}/settle`, { method: 'POST' });
