@@ -30,6 +30,16 @@ export interface ConsentSignatureDetail extends ConsentSignature {
   signature: string;
 }
 
+/** Hazır onam metni; şablon olarak eklenmeden önce düzenlenebiliyor. */
+export interface ConsentPreset {
+  title: string;
+  service_name: string;
+  body: string;
+}
+
+export const listConsentPresets = () =>
+  request<ConsentPreset[]>('/api/consent-templates/presets');
+
 export const listConsentTemplates = () =>
   request<ConsentTemplate[]>('/api/consent-templates');
 

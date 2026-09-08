@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
-  createConsentTemplate, deleteConsentTemplate, listConsentTemplates,
-  updateConsentTemplate, type ConsentTemplate,
+  createConsentTemplate, deleteConsentTemplate, listConsentPresets,
+  listConsentTemplates, updateConsentTemplate,
+  type ConsentPreset, type ConsentTemplate,
 } from '../../api/consent';
 import { listServices, type Service } from '../../api/clinic';
 import Select from '../ui/Select';
@@ -27,6 +28,8 @@ export default function OnamSection() {
   const [services, setServices] = useState<Service[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
+  const [presets, setPresets] = useState<ConsentPreset[]>([]);
+  const [presetAcik, setPresetAcik] = useState(false);
 
   useEffect(() => {
     listConsentTemplates()
@@ -35,6 +38,9 @@ export default function OnamSection() {
     listServices()
       .then(setServices)
       .catch(() => setServices([]));
+    listConsentPresets()
+      .then(setPresets)
+      .catch(() => setPresets([]));
   }, []);
 
   const patch = (i: number, p: Partial<Row>) =>
@@ -91,13 +97,23 @@ export default function OnamSection() {
             Danışan profilinden gönderilir, danışan bağlantıdan imzalar.
           </div>
         </div>
+        {presets.length > 0 && (
+          <button
+            type="button"
+            className="wl-btn wl-btn-ghost wl-btn-sm"
+            style={{ borderRadius: 8 }}
+            onClick={() => setPresetAcik((a) => !a)}
+          >
+            Hazır formlar
+          </button>
+        )}
         <button
           type="button"
           className="wl-btn wl-btn-ghost wl-btn-sm"
           style={{ borderRadius: 8 }}
           onClick={() => setRows((r) => [...r, bos(r.length)])}
         >
-          {Icon.plus}Form ekle
+          {Icon.plus}Boş form
         </button>
       </div>
 
@@ -105,9 +121,71 @@ export default function OnamSection() {
         <div style={{ fontSize: 12, color: 'var(--bad)', marginBottom: 10 }}>{error}</div>
       )}
 
+      {presetAcik && (
+        <div
+          style={{
+            border: '1px solid var(--line-strong)', borderRadius: 12,
+            padding: 14, marginBottom: 12,
+          }}
+        >
+          <div style={{ fontSize: 12.5, fontWeight: 600 }}>
+            Hazır onam metinleri
+          </div>
+          <p style={{ fontSize: 11.5, color: 'var(--warn)', margin: '6px 0 10px',
+                      lineHeight: 1.6 }}>
+            Bunlar <strong>taslak</strong>. Onam formu hukuki bir belge ve
+            uyguladığınız teknik, cihaz ve ürünler kliniğe göre değişiyor.
+            Kullanmadan önce hekiminizin ve hukuk danışmanınızın gözden
+            geçirmesi gerekiyor — eklendikten sonra metni düzenleyebilirsiniz.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {presets.map((f) => {
+              const zatenVar = rows.some((r) => r.title === f.title);
+              return (
+                <div
+                  key={f.title}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    fontSize: 12.5, padding: '6px 0',
+                    borderTop: '1px solid var(--line)',
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    {f.title}
+                    <span style={{ color: 'var(--ink-45)' }}>
+                      {' '}· {f.body.length.toLocaleString('tr-TR')} karakter
+                      {f.service_name ? ` · ${f.service_name}` : ' · genel'}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className="wl-btn wl-btn-ghost wl-btn-sm"
+                    style={{ borderRadius: 8 }}
+                    disabled={zatenVar}
+                    onClick={() =>
+                      setRows((r) => [
+                        ...r,
+                        {
+                          id: -Date.now(), title: f.title, body: f.body,
+                          service_name: f.service_name, active: true,
+                          sort_order: r.length, _new: true,
+                        },
+                      ])
+                    }
+                  >
+                    {zatenVar ? 'Eklendi' : 'Ekle'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {rows.length === 0 && (
         <p style={{ fontSize: 12.5, color: 'var(--ink-45)' }}>
-          Henüz form yok — "Form ekle" ile başlayın.
+          Henüz form yok — "Hazır formlar"dan seçin ya da boş form açın.
         </p>
       )}
 
