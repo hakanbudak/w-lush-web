@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  getPublicConsent, signConsent, type PublicConsent,
+  getPublicConsent, requestConsentCode, signConsent, verifyConsentCode,
+  type PublicConsent,
 } from '../api/consent';
 import SignaturePad from '../components/ui/SignaturePad';
 import './auth.css';
@@ -23,6 +24,15 @@ export default function OnamFormu() {
   const [signature, setSignature] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  /**
+   * SMS koduyla onay. Varsayılan imza: SMS kodu güvenli elektronik imza
+   * değil, yani ıslak imzanın yerini tutmuyor. Klinik hangi formlarda
+   * kabul ettiğini kendisi seçiyor; sayfa da yalnızca izinliyse sunuyor.
+   */
+  const [sms, setSms] = useState(false);
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
 
   useEffect(() => {
     getPublicConsent(token)
@@ -51,6 +61,28 @@ export default function OnamFormu() {
       </Kabuk>
     );
   }
+
+  const kodIste = () => {
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    requestConsentCode(token)
+      .then(() => {
+        setCodeSent(true);
+        setInfo('Onay kodu telefonunuza gönderildi.');
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false));
+  };
+
+  const koduDogrula = () => {
+    setBusy(true);
+    setError(null);
+    verifyConsentCode(token, name, code)
+      .then(setForm)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false));
+  };
 
   const imzala = () => {
     setBusy(true);
@@ -113,27 +145,84 @@ export default function OnamFormu() {
             />
           </label>
 
-          <div>
-            <div style={{ fontSize: 11.5, color: 'var(--ink-60)', marginBottom: 4 }}>
-              İmzanız
+          {sms ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {!codeSent ? (
+                <button
+                  type="button"
+                  className="wl-btn"
+                  style={{ width: '100%', borderRadius: 10 }}
+                  disabled={busy || !name.trim()}
+                  onClick={kodIste}
+                >
+                  {busy ? 'Gönderiliyor…' : 'Telefonuma onay kodu gönder'}
+                </button>
+              ) : (
+                <label style={{ fontSize: 11.5, color: 'var(--ink-60)' }}>
+                  Onay kodu
+                  <input
+                    className="wl-input"
+                    value={code}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    aria-label="Onay kodu"
+                    onChange={(e) => setCode(e.target.value)}
+                    style={{ width: '100%', marginTop: 4 }}
+                  />
+                </label>
+              )}
             </div>
-            <SignaturePad onChange={setSignature} />
-          </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-60)', marginBottom: 4 }}>
+                İmzanız
+              </div>
+              <SignaturePad onChange={setSignature} />
+            </div>
+          )}
 
+          {form.sms_allowed && (
+            <button
+              type="button"
+              onClick={() => {
+                setSms(!sms);
+                setError(null);
+                setInfo(null);
+              }}
+              style={{
+                border: 'none', background: 'transparent', font: 'inherit',
+                fontSize: 11.5, color: 'var(--ink-45)', cursor: 'pointer',
+                padding: 0, textAlign: 'left',
+              }}
+            >
+              {sms ? 'İmzayla onaylamak istiyorum' : 'SMS koduyla onaylamak istiyorum'}
+            </button>
+          )}
+
+          {info && (
+            <p style={{ fontSize: 12.5, color: 'var(--forest)', margin: 0 }}>{info}</p>
+          )}
           {error && <p style={{ fontSize: 12.5, color: 'var(--bad)', margin: 0 }}>{error}</p>}
 
-          <button
-            type="button"
-            className="wl-btn"
-            style={{ width: '100%', borderRadius: 10 }}
-            disabled={busy || !name.trim() || !signature}
-            onClick={imzala}
-          >
-            {busy ? 'Kaydediliyor…' : 'Okudum, onaylıyorum'}
-          </button>
+          {(!sms || codeSent) && (
+            <button
+              type="button"
+              className="wl-btn"
+              style={{ width: '100%', borderRadius: 10 }}
+              disabled={
+                busy || !name.trim() || (sms ? code.trim().length < 6 : !signature)
+              }
+              onClick={sms ? koduDogrula : imzala}
+            >
+              {busy ? 'Kaydediliyor…' : 'Okudum, onaylıyorum'}
+            </button>
+          )}
           <p style={{ fontSize: 11.5, color: 'var(--ink-45)', margin: 0 }}>
-            Onayladığınızda adınız, imzanız ve tarih kaydedilir. Bu form bir kez
-            imzalanır.
+            {sms
+              ? 'Onayladığınızda adınız, telefon numaranız, onay saati ve metnin' +
+                ' bir özeti kaydedilir. Bu form bir kez onaylanır.'
+              : 'Onayladığınızda adınız, imzanız ve tarih kaydedilir. Bu form bir' +
+                ' kez imzalanır.'}
           </p>
         </div>
       )}

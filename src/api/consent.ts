@@ -10,6 +10,12 @@ export interface ConsentTemplate {
   service_name: string;
   active: boolean;
   sort_order: number;
+  /**
+   * SMS koduyla onaylanabilir mi. Varsayılan kapalı: SMS kodu güvenli
+   * elektronik imza değil, tıbbi işlem onamında ıslak imzanın yerini
+   * tutmuyor.
+   */
+  sms_allowed: boolean;
 }
 export type ConsentTemplateInput = Omit<ConsentTemplate, 'id'>;
 
@@ -89,6 +95,8 @@ export interface PublicConsent {
   signed_name: string;
   signed_at: string | null;
   signature: string;
+  sms_allowed: boolean;
+  signed_by_sms: boolean;
 }
 
 /**
@@ -117,4 +125,25 @@ export const signConsent = (token: string, signedName: string, signature: string
   ask<PublicConsent>(`/api/consent/${encodeURIComponent(token)}/sign`, {
     method: 'POST',
     body: JSON.stringify({ signed_name: signedName, signature }),
+  });
+
+/** Onay kodu ister. Kod yanıtta dönmüyor; SMS ile gidiyor. */
+export const requestConsentCode = async (token: string): Promise<void> => {
+  const res = await fetch(
+    `${BASE}/api/consent/${encodeURIComponent(token)}/sms-code`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+  );
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((b) => (typeof b?.detail === 'string' ? b.detail : null))
+      .catch(() => null);
+    throw new Error(detail ?? 'Onay kodu gönderilemedi.');
+  }
+};
+
+export const verifyConsentCode = (token: string, signedName: string, code: string) =>
+  ask<PublicConsent>(`/api/consent/${encodeURIComponent(token)}/sms-verify`, {
+    method: 'POST',
+    body: JSON.stringify({ signed_name: signedName, code }),
   });

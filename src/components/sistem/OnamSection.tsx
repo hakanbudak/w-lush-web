@@ -13,7 +13,7 @@ type Row = ConsentTemplate & { _new?: boolean };
 
 const bos = (sort: number): Row => ({
   id: -Date.now(), title: '', body: '', service_name: '',
-  active: true, sort_order: sort, _new: true,
+  active: true, sort_order: sort, sms_allowed: false, _new: true,
 });
 
 /**
@@ -57,7 +57,7 @@ export default function OnamSection() {
     const body = {
       title: row.title.trim(), body: row.body,
       service_name: row.service_name, active: row.active,
-      sort_order: row.sort_order,
+      sort_order: row.sort_order, sms_allowed: row.sms_allowed,
     };
     try {
       const saved = row._new
@@ -169,7 +169,7 @@ export default function OnamSection() {
                         {
                           id: -Date.now(), title: f.title, body: f.body,
                           service_name: f.service_name, active: true,
-                          sort_order: r.length, _new: true,
+                          sort_order: r.length, sms_allowed: false, _new: true,
                         },
                       ])
                     }
@@ -218,6 +218,30 @@ export default function OnamSection() {
               />
               <Toggle on={r.active} onClick={() => patch(i, { active: !r.active })} />
             </div>
+
+            <label
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                fontSize: 11.5, color: 'var(--ink-60)', lineHeight: 1.5,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={r.sms_allowed}
+                onChange={() => patch(i, { sms_allowed: !r.sms_allowed })}
+                aria-label={`${r.title || 'Form'} SMS ile onaylanabilsin`}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                SMS koduyla onaylanabilsin
+                <span style={{ display: 'block', color: 'var(--ink-45)' }}>
+                  SMS kodu <strong>ıslak imza yerine geçmiyor</strong>: yazılı
+                  şekil şartını yalnızca güvenli elektronik imza karşılıyor.
+                  Tıbbi işlem onamlarında imzayı bırakmayın; KVKK aydınlatma
+                  gibi metinlerde SMS delil olarak kullanılabilir.
+                </span>
+              </span>
+            </label>
 
             <textarea
               className="wl-input"
