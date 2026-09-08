@@ -13,10 +13,24 @@ import { getFlowGraph, type FlowGraph, type FlowNode } from '../../api/whatsapp'
  * eklendiğinde o durum sessizce şemadan düşerdi.
  */
 
+/** Durumun ait olduğu öbek: kartın rengini ve üstündeki etiketi
+ *  belirliyor. Renk süs değil — randevu dalı, randevularım dalı ve
+ *  operatöre devredilmiş konuşmalar şemada bir bakışta ayrılıyor. */
+const KINDS: { match: (s: string) => boolean; label: string; hue: string }[] = [
+  { match: (s) => s === 'MENU', label: 'Giriş', hue: 'var(--forest)' },
+  { match: (s) => s.startsWith('BOOK_') || s === 'ASK_NAME', label: 'Randevu', hue: 'var(--blue)' },
+  { match: (s) => s.startsWith('MYAPPTS_'), label: 'Randevularım', hue: 'var(--ai)' },
+  { match: (s) => s === 'SILENT' || s.startsWith('WAITING_'), label: 'Operatör', hue: 'var(--dot-urgent)' },
+];
+const OTHER = { label: 'Serbest', hue: 'var(--ink-60)' };
+
+const kindOf = (state: string) => KINDS.find((k) => k.match(state)) ?? OTHER;
+
+const PILL_H = 26;
 const PAD = 28;
-const ROW_GAP = 62;
-const CARD_W = 190;
-const EST_H = 64;
+const ROW_GAP = 66;
+const CARD_W = 196;
+const EST_H = 92;
 
 /** Aynı adımda kalan ve menüye dönen oklar eğri olarak çizilmiyor: on
  *  kadar geri kıvrılan eğri şemayı okunmaz hale getiriyordu. Onun yerine
@@ -138,7 +152,7 @@ export default function AkisSemasi() {
     const pa = place(a);
     const pb = place(b);
     const y1 = pa.top + (heights[from] ?? EST_H);
-    const y2 = pb.top;
+    const y2 = pb.top + PILL_H;
     const k = Math.min(Math.max(Math.abs(y2 - y1) * 0.55, 20), 70);
     return `M ${pa.cx} ${y1} C ${pa.cx} ${y1 + k}, ${pb.cx} ${y2 - k}, ${pb.cx} ${y2}`;
   };
@@ -190,7 +204,7 @@ export default function AkisSemasi() {
               key={`${e.from}-${e.to}`}
               d={curve(e)}
               fill="none"
-              stroke={lit(e) ? 'var(--forest)' : 'var(--line-strong)'}
+              stroke={lit(e) ? kindOf(e.from).hue : 'var(--line-strong)'}
               strokeWidth={lit(e) ? 1.75 : 1.25}
             />
           ))}
@@ -199,6 +213,7 @@ export default function AkisSemasi() {
         {graph.nodes.map((n) => {
           const { w, cx, top } = place(n);
           const active = selected === n.state;
+          const kind = kindOf(n.state);
           const loops = n.goes_to.includes(n.state);
           const toMenu = n.goes_to.includes('MENU') && n.state !== 'MENU';
           return (
@@ -217,6 +232,16 @@ export default function AkisSemasi() {
                 zIndex: drag.current?.id === n.state ? 2 : 1,
               }}
             >
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', height: PILL_H - 6,
+                  padding: '0 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  marginBottom: 6, color: kind.hue,
+                  background: `color-mix(in srgb, ${kind.hue} 13%, var(--cream))`,
+                }}
+              >
+                {kind.label}
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -226,21 +251,43 @@ export default function AkisSemasi() {
                 aria-pressed={active}
                 style={{
                   width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit',
-                  background: 'var(--cream)', borderRadius: 12, padding: '9px 11px',
-                  border: active ? '1.5px solid var(--forest)' : '1px solid var(--line)',
-                  boxShadow: active ? 'none' : '0 1px 3px rgba(0,0,0,0.04)',
+                  background: 'var(--cream)', borderRadius: 16, padding: 10,
+                  border: active ? `1.5px solid ${kind.hue}` : '1px solid var(--line)',
+                  boxShadow: active
+                    ? `0 0 0 3px color-mix(in srgb, ${kind.hue} 14%, transparent)`
+                    : '0 1px 4px rgba(0,0,0,0.05)',
+                  display: 'flex', gap: 9, alignItems: 'flex-start',
                 }}
               >
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>{n.label}</div>
-                <div className="wl-mono" style={{ fontSize: 10.5, color: 'var(--ink-45)', marginTop: 2 }}>
-                  {n.state}
-                </div>
-                {(loops || toMenu) && (
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                    {loops && <Rozet>aynı adımda kalabilir</Rozet>}
-                    {toMenu && <Rozet>menüye döner</Rozet>}
-                  </div>
-                )}
+                <span
+                  aria-hidden
+                  style={{
+                    flexShrink: 0, width: 30, height: 30, borderRadius: 9,
+                    display: 'grid', placeItems: 'center', marginTop: 1,
+                    background: `color-mix(in srgb, ${kind.hue} 12%, var(--cream))`,
+                    boxShadow: `0 0 0 1px color-mix(in srgb, ${kind.hue} 22%, transparent)`,
+                    color: kind.hue, fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {(layer.get(n.state) ?? 0) + 1}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>
+                    {n.label}
+                  </span>
+                  <span
+                    className="wl-mono"
+                    style={{ display: 'block', fontSize: 10, color: 'var(--ink-45)', marginTop: 1 }}
+                  >
+                    {n.state}
+                  </span>
+                  {(loops || toMenu) && (
+                    <span style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                      {loops && <Rozet>aynı adımda kalır</Rozet>}
+                      {toMenu && <Rozet>menüye döner</Rozet>}
+                    </span>
+                  )}
+                </span>
               </button>
             </div>
           );

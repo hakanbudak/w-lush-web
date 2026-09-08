@@ -52,7 +52,7 @@ describe('AkisSemasi', () => {
   it('aynı adımda kalma ve menüye dönüş rozet oluyor, ok değil', async () => {
     const { container } = render(<AkisSemasi />);
     await screen.findByText('Hizmet seçimi');
-    expect(screen.getAllByText('aynı adımda kalabilir').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('aynı adımda kalır').length).toBeGreaterThan(0);
     expect(screen.getAllByText('menüye döner').length).toBeGreaterThan(0);
     // Çizilen tek eğri BOOK_SERVICE -> BOOK_DAY; kendine dönen ve menüye
     // dönen kenarlar eğri olarak çizilmiyor.
