@@ -16,6 +16,8 @@ vi.mock('../api/invoices', () => ({
 const TAM = {
   invoice_title: 'Deneme Ltd.', invoice_tax_id: '1234567890',
   invoice_tax_office: 'Kadıköy', invoice_address: 'Bağdat Cad. 1',
+  // İlçe UBL-TR şemasında zorunlu; eksikse fatura kesilemiyor.
+  invoice_district: 'Kadıköy',
   invoice_city: 'İstanbul', invoice_prefix: 'DNM',
 };
 
