@@ -65,3 +65,24 @@ export const assignWhatsapp = (
     method: 'PUT',
     body: JSON.stringify(body),
   });
+
+// --- Konuşma akışı şeması ---
+
+export interface FlowNode {
+  state: string;
+  label: string;
+  goes_to: string[];
+}
+
+export interface FlowRule {
+  label: string;
+  goes_to: string[];
+}
+
+export interface FlowGraph {
+  nodes: FlowNode[];
+  global_rules: FlowRule[];
+  panel_rules: FlowRule[];
+}
+
+export const getFlowGraph = () => request<FlowGraph>('/api/whatsapp/flow-graph');
