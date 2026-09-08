@@ -31,6 +31,14 @@ export interface SlotItem {
   color: string | null;
 }
 
+/** Sütun başlığındaki yuvarlak için baş harfler. */
+function bas(title: string): string {
+  const parcalar = title.trim().split(/\s+/).filter(Boolean);
+  if (parcalar.length === 0) return '?';
+  if (parcalar.length === 1) return parcalar[0].slice(0, 1).toLocaleUpperCase('tr');
+  return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase('tr');
+}
+
 export default function SlotGrid({
   slots,
   columns,
@@ -85,13 +93,46 @@ export default function SlotGrid({
           <tr>
             <th style={{ width: 64 }}></th>
             {columns.map((c) => (
-              <th key={c.key} style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>{c.title}</div>
-                {c.sub && (
-                  <div style={{ fontSize: 10, color: 'var(--ink-40)', fontWeight: 400 }}>
-                    {c.sub}
-                  </div>
-                )}
+              <th key={c.key} style={{ textAlign: 'left', paddingBottom: 6 }}>
+                {/* Uzman adı sütunun kimliği: hangi randevunun kimde
+                    olduğu buradan okunuyor. 12px yarı soluk bir satır
+                    olarak takvimin gürültüsünde kayboluyordu. */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                      display: 'grid', placeItems: 'center', fontSize: 10.5,
+                      fontWeight: 700, color: 'var(--forest)',
+                      background: 'var(--cream-3)',
+                      boxShadow: '0 0 0 1px var(--line)',
+                    }}
+                  >
+                    {bas(c.title)}
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block', fontSize: 13.5, fontWeight: 600,
+                        color: 'var(--ink)', letterSpacing: '-0.01em',
+                        whiteSpace: 'nowrap', overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {c.title}
+                    </span>
+                    {c.sub && (
+                      <span
+                        style={{
+                          display: 'block', fontSize: 10.5, fontWeight: 400,
+                          color: 'var(--ink-45)',
+                        }}
+                      >
+                        {c.sub}
+                      </span>
+                    )}
+                  </span>
+                </div>
               </th>
             ))}
           </tr>

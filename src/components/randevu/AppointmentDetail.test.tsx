@@ -33,6 +33,11 @@ vi.mock('../../api/conversations', () => ({
   listConversations: () => Promise.resolve([]),
 }));
 
+const createPromise = vi.fn();
+vi.mock('../../api/payments', () => ({
+  createPromise: (...a: unknown[]) => createPromise(...a),
+}));
+
 const APPT = {
   id: 7,
   phone: '905321110001',
@@ -57,6 +62,7 @@ beforeEach(() => {
   });
   rescheduleAppointment.mockReset().mockResolvedValue({ ...APPT, appt_date: '2026-09-03' });
   onChanged.mockReset();
+  createPromise.mockReset().mockResolvedValue({ id: 1 });
 });
 afterEach(cleanup);
 
@@ -188,5 +194,61 @@ describe('AppointmentDetail · seansı kapatma', () => {
     const alan = await screen.findByDisplayValue('400');
     fireEvent.change(alan, { target: { value: '0' } });
     expect((screen.getByText('Tahsil edildi') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('ödeme sözü', () => {
+  /** DatePicker bir düğme + takvim; `change` almıyor, gün tıklanıyor. */
+  async function birGunSec(alan: string) {
+    fireEvent.click(screen.getByRole('button', { name: alan }));
+    const gunler = screen
+      .getAllByRole('button')
+      .filter((b) => /^\d{2}\.\d{2}\.\d{4}$/.test(b.getAttribute('aria-label') ?? ''));
+    const secilen = gunler.find((b) => !b.hasAttribute('disabled'))!;
+    const iso = secilen.getAttribute('aria-label')!.split('.').reverse().join('-');
+    fireEvent.click(secilen);
+    return iso;
+  }
+
+  const ac = () => {
+    göster();
+    fireEvent.click(screen.getByText('Seans yapıldı'));
+  };
+
+  it('"Tahsilat sonra" artık doğrudan kapatmıyor, vade soruyor', async () => {
+    ac();
+    fireEvent.click(await screen.findByText('Tahsilat sonra'));
+    expect(screen.getByLabelText('Söz verilen tutar')).toBeTruthy();
+    expect(completeAppointment).not.toHaveBeenCalled();
+  });
+
+  it('tutar ve vade verilince sözü kaydediyor', async () => {
+    ac();
+    fireEvent.click(await screen.findByText('Tahsilat sonra'));
+    fireEvent.change(screen.getByLabelText('Söz verilen tutar'), {
+      target: { value: '800' },
+    });
+    const gun = await birGunSec('Ödeme vadesi');
+    fireEvent.click(screen.getByText('Sözü kaydet'));
+
+    await waitFor(() => expect(createPromise).toHaveBeenCalled());
+    expect(createPromise.mock.calls[0][0]).toMatchObject({
+      appointment_id: 7, amount: 800, due_on: gun,
+    });
+  });
+
+  it('vade girmeden de geçilebiliyor', async () => {
+    ac();
+    fireEvent.click(await screen.findByText('Tahsilat sonra'));
+    fireEvent.click(screen.getByText('Vade girmeden geç'));
+
+    await waitFor(() => expect(completeAppointment).toHaveBeenCalledWith(7));
+    expect(createPromise).not.toHaveBeenCalled();
+  });
+
+  it('tutar boşken kaydedilemiyor', async () => {
+    ac();
+    fireEvent.click(await screen.findByText('Tahsilat sonra'));
+    expect((screen.getByText('Sözü kaydet') as HTMLButtonElement).disabled).toBe(true);
   });
 });

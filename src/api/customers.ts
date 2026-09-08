@@ -46,6 +46,23 @@ export interface CustomerStats {
   last_visit: string | null; // YYYY-MM-DD
 }
 
+export interface InvoiceBrief {
+  id: number;
+  number: string;
+  issue_date: string;
+  total_kurus: number;
+  profile: string;
+}
+
+export interface PromiseBrief {
+  id: number;
+  amount: number;
+  due_on: string;
+  service_name: string;
+  note: string;
+  appointment_id: number | null;
+}
+
 /** Profil ekranının tamamı tek yanıtta. */
 export interface CustomerDetail {
   phone: string;
@@ -56,6 +73,9 @@ export interface CustomerDetail {
   stats: CustomerStats;
   appointments: AppointmentBrief[];
   messages: ChatMessage[];
+  invoices: InvoiceBrief[];
+  /** Yalnızca kapanmamış ödeme sözleri. */
+  promises: PromiseBrief[];
 }
 
 // appt_date ve last_visit bilerek toUtcIso'dan geçmez: bunlar saat içermeyen

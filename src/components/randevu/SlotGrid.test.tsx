@@ -82,3 +82,27 @@ describe('SlotGrid · seçim', () => {
     expect(blok().style.outline).toContain('var(--forest)');
   });
 });
+
+describe('sütun başlığı', () => {
+  it('uzmanın adını ve rolünü gösteriyor', () => {
+    ciz({ columns: [{ key: '1', title: 'Elif Demir', sub: 'Estetisyen' }] });
+    expect(screen.getByText('Elif Demir')).toBeTruthy();
+    expect(screen.getByText('Estetisyen')).toBeTruthy();
+  });
+
+  it('baş harfleri iki adı da alıyor', () => {
+    ciz({ columns: [{ key: '1', title: 'Elif Demir' }] });
+    expect(screen.getByText('ED')).toBeTruthy();
+  });
+
+  it('tek kelimelik başlıkta tek harf', () => {
+    ciz({ columns: [{ key: 'none', title: 'Atanmamış' }] });
+    expect(screen.getByText('A')).toBeTruthy();
+  });
+
+  it('baş harfte Türkçe büyütme kullanıyor', () => {
+    // 'i' İngilizce kurallarla 'I' olurdu; Türkçede 'İ'.
+    ciz({ columns: [{ key: '1', title: 'irem şahin' }] });
+    expect(screen.getByText('İŞ')).toBeTruthy();
+  });
+});
