@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '../components/icons';
 import WhatsAppConnect from '../components/WhatsAppConnect';
+import AkisSemasi from '../components/whatsapp/AkisSemasi';
 import GiderKategoriSection from '../components/sistem/GiderKategoriSection';
 import PersonelSection from '../components/sistem/PersonelSection';
 import HizmetSection from '../components/sistem/HizmetSection';
@@ -103,6 +104,16 @@ export default function Sistem() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
               <WhatsAppConnect />
               <SablonSection />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                  Konuşma akışı
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-45)', marginBottom: 10 }}>
+                  Danışan WhatsApp'tan yazınca botun izlediği adımlar. Kartları
+                  sürükleyebilirsiniz.
+                </div>
+                <AkisSemasi />
+              </div>
             </div>
           )}
 
