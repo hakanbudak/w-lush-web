@@ -6,7 +6,7 @@ const ALANLAR: { key: string; label: string; hint?: string; width?: number }[] =
   { key: 'invoice_tax_id', label: 'VKN / TCKN', hint: 'Kurum 10, şahıs 11 hane', width: 200 },
   { key: 'invoice_tax_office', label: 'Vergi dairesi', width: 220 },
   { key: 'invoice_address', label: 'Adres' },
-  { key: 'invoice_district', label: 'İlçe', width: 180 },
+  { key: 'invoice_district', label: 'İlçe', hint: 'UBL şemasında zorunlu', width: 180 },
   { key: 'invoice_city', label: 'İl', width: 180 },
   { key: 'invoice_prefix', label: 'Fatura öneki', hint: 'Üç harf, örn. WLS', width: 140 },
 ];

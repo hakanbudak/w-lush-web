@@ -47,6 +47,10 @@ afterEach(() => {
 
 const hareketAc = async () => {
   fireEvent.click(await screen.findByText('Hareket'));
+  // Gider kategorileri yüklenirken gelen yeniden çizim, o sırada yapılan
+  // tıklamalarla yarışıyordu. Kategori seçicisi görünene kadar bekliyoruz:
+  // varsayılan hareket "giriş" olduğu için o an çiziliyor.
+  await screen.findByRole('combobox', { name: 'Gider kategorisi' });
 };
 
 /**

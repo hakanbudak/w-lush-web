@@ -75,6 +75,7 @@ export default function Faturalar() {
       ['invoice_tax_id', 'VKN / TCKN'],
       ['invoice_tax_office', 'Vergi dairesi'],
       ['invoice_address', 'Adres'],
+      ['invoice_district', 'İlçe'],
       ['invoice_city', 'İl'],
       ['invoice_prefix', 'Fatura öneki'],
     ];

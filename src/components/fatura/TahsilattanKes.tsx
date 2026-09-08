@@ -39,24 +39,60 @@ export default function TahsilattanKes({
   const secili = (rows ?? []).filter((p) => chosen.has(p.id));
   const tahsilToplam = secili.reduce((s, p) => s + p.amount, 0) * 100;
 
-  const kes = () => {
+  /**
+   * Seçilenleri danışana göre ayırır.
+   *
+   * Bir fatura tek alıcıya kesiliyor: farklı danışanların tahsilatını aynı
+   * belgeye koymak, birinin faturasına başkasının hizmetini yazmak ve o
+   * kişinin ne aldığını üçüncü birine göstermek olurdu. Aynı kişinin iki
+   * tahsilatı ise tek faturada toplanabiliyor.
+   */
+  const gruplar = (): UninvoicedPayment[][] => {
+    const harita = new Map<string, UninvoicedPayment[]>();
+    for (const p of secili) {
+      const anahtar = `${p.phone ?? ''}|${p.customer_name}`;
+      harita.set(anahtar, [...(harita.get(anahtar) ?? []), p]);
+    }
+    return [...harita.values()];
+  };
+
+  const kisiSayisi = gruplar().length;
+
+  const kes = async () => {
     setBusy(true);
     setError(null);
-    createInvoice({
-      payment_ids: [...chosen],
-      vat_rate: Number(vat),
-      customer: {
-        name: secili[0]?.customer_name ?? '',
-        phone: secili[0]?.phone ?? '',
-      },
-    })
-      .then((out) => {
-        onCreated(out, tahsilToplam);
-        setChosen(new Set());
-        load();
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setBusy(false));
+    const kume = gruplar();
+    const kesilen: string[] = [];
+    try {
+      // Sırayla: fatura numarası sayacı tek ve eşzamanlı istekler
+      // çakışabiliyor.
+      for (const grup of kume) {
+        const out = await createInvoice({
+          payment_ids: grup.map((p) => p.id),
+          vat_rate: Number(vat),
+          customer: {
+            name: grup[0].customer_name,
+            phone: grup[0].phone ?? '',
+          },
+        });
+        kesilen.push(out.number);
+        onCreated(out, grup.reduce((s, p) => s + p.amount, 0) * 100);
+      }
+      setChosen(new Set());
+    } catch (e) {
+      // Bir kısmı kesilmiş olabilir; kaçının kesildiğini söylemek şart,
+      // yoksa operatör hepsini yeniden dener ve mükerrer fatura çıkar.
+      const kalan = kume.length - kesilen.length;
+      setError(
+        kesilen.length === 0
+          ? (e as Error).message
+          : `${kesilen.length} fatura kesildi (${kesilen.join(', ')}), `
+            + `${kalan} tanesi kesilemedi: ${(e as Error).message}`,
+      );
+    } finally {
+      setBusy(false);
+      load();
+    }
   };
 
   const cevir = (id: number) =>
@@ -74,14 +110,40 @@ export default function TahsilattanKes({
         borderRadius: 14, overflow: 'hidden',
       }}
     >
-      <header style={{ padding: '15px 20px', borderBottom: '1px solid var(--line)' }}>
-        <h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 600 }}>
-          Faturalanmamış tahsilatlar
-        </h2>
-        <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--ink-45)' }}>
-          Bu ayki tahsilatlardan seçip tek faturada toplayın — tutarları elle
-          yazmanız gerekmez.
-        </p>
+      <header
+        style={{
+          padding: '15px 20px', borderBottom: '1px solid var(--line)',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 600 }}>
+            Faturalanmamış tahsilatlar
+          </h2>
+          <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--ink-45)' }}>
+            Seçtiklerinizin faturası <strong>danışan başına ayrı</strong>
+            kesilir; tutarları elle yazmanız gerekmez.
+          </p>
+        </div>
+        {(rows ?? []).length > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setChosen((c) =>
+                c.size === (rows ?? []).length
+                  ? new Set()
+                  : new Set((rows ?? []).map((p) => p.id)),
+              )
+            }
+            style={{
+              border: 'none', background: 'transparent', font: 'inherit',
+              fontSize: 11.5, color: 'var(--ink-45)', cursor: 'pointer',
+              padding: 0, flexShrink: 0,
+            }}
+          >
+            {chosen.size === (rows ?? []).length ? 'Seçimi kaldır' : 'Hepsini seç'}
+          </button>
+        )}
       </header>
 
       {error && (
@@ -150,6 +212,11 @@ export default function TahsilattanKes({
           <span style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-60)' }}>
             {chosen.size} tahsilat ·{' '}
             <strong className="wl-mono">{tl(tahsilToplam)}</strong>
+            {kisiSayisi > 1 && (
+              <span style={{ color: 'var(--ink-45)' }}>
+                {' '}· {kisiSayisi} danışan, {kisiSayisi} ayrı fatura
+              </span>
+            )}
           </span>
           <button
             type="button"
@@ -158,7 +225,11 @@ export default function TahsilattanKes({
             disabled={busy}
             onClick={kes}
           >
-            {busy ? 'Kesiliyor…' : 'Seçilenlerden fatura kes'}
+            {busy
+              ? 'Kesiliyor…'
+              : kisiSayisi > 1
+                ? `${kisiSayisi} fatura kes`
+                : 'Fatura kes'}
           </button>
         </footer>
       )}
