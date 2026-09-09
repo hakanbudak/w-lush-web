@@ -96,6 +96,11 @@ export interface Appointment {
   staff_name: string; // atanmamışsa ""
   status: string;
   created_at: string;
+  /** Bu randevuya bağlı tahsilat toplamı; alınmadıysa null. */
+  paid_amount: number | null;
+  /** "Tahsilat sonra" denmişse bekleyen sözün tutarı ve vadesi. */
+  promise_amount: number | null;
+  promise_due: string | null;
 }
 // Aralık verilmezse backend eski davranışını korur (tüm randevular, yeniden eskiye).
 export const listAppointments = (start?: string, end?: string) => {
