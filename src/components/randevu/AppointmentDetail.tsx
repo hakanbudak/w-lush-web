@@ -16,6 +16,7 @@ import {
 } from '../../api/consent';
 import { listCustomerPackages } from '../../api/packages';
 import { createPromise } from '../../api/payments';
+import { trDate } from '../../utils/calendar';
 import DatePicker from '../ui/DatePicker';
 import type { StaffMember } from '../../api/staff';
 import { Modal } from '../modals';
@@ -247,6 +248,11 @@ export default function AppointmentDetail({
         </div>
 
         {error && <div style={{ fontSize: 12, color: 'var(--bad)' }}>{error}</div>}
+
+        {/* Paranın durumu. Operatör randevuyu açtığında tahsilatın alınıp
+            alınmadığını görmeden karar veremiyordu — "tamamlandı" işareti
+            hizmetin verildiğini söylüyor, parayı değil. */}
+        <ParaDurumu appointment={appointment} />
 
         {/* Not kişiye ait, bu randevuya değil: seansa girmeden önce
             hatırlanması gereken şey burada da görünsün. */}
@@ -588,7 +594,11 @@ export default function AppointmentDetail({
               Seans yapıldı
             </button>
           )}
-          {appointment.status !== 'cancelled' && !moving && (
+          {/* Yapılmış bir seansı ertelemek anlamsız: hizmet verildi.
+              İptal duruyor, çünkü yanlış işaretlenmiş olabilir. */}
+          {appointment.status !== 'cancelled'
+            && appointment.status !== 'completed'
+            && !moving && (
             <button
               type="button"
               className="wl-btn wl-btn-ghost wl-btn-sm"
@@ -627,5 +637,64 @@ export default function AppointmentDetail({
         </div>
       </div>
     </Modal>
+  );
+}
+
+
+/** Randevunun para durumu: tahsil edildi mi, söz verildi mi, hiçbiri mi. */
+function ParaDurumu({ appointment }: { appointment: Appointment }) {
+  const tl = (n: number) => `₺ ${n.toLocaleString('tr-TR')}`;
+
+  // `!= null` bilerek: alan hiç gelmezse (eski yanıt, farklı uç)
+  // `undefined` oluyordu ve modal tamamen çöküyordu.
+  if (appointment.paid_amount != null) {
+    return (
+      <Durum tone="ok">
+        <strong>Tahsil edildi</strong> · {tl(appointment.paid_amount)}
+      </Durum>
+    );
+  }
+  if (appointment.promise_amount != null && appointment.promise_due) {
+    return (
+      <Durum tone="warn">
+        <strong>Ödeme sözü</strong> · {tl(appointment.promise_amount)} ·{' '}
+        {trDate(appointment.promise_due)} vadeli
+      </Durum>
+    );
+  }
+  if (appointment.status === 'completed') {
+    return (
+      <Durum tone="warn">
+        <strong>Tahsilat alınmadı</strong> · açık hesapta bekliyor
+      </Durum>
+    );
+  }
+  return (
+    <Durum tone="quiet">Tahsilat henüz alınmadı — seans yapılmadı.</Durum>
+  );
+}
+
+function Durum({
+  tone,
+  children,
+}: {
+  tone: 'ok' | 'warn' | 'quiet';
+  children: React.ReactNode;
+}) {
+  const renk = {
+    ok: { bg: 'var(--forest-3)', fg: 'var(--forest)' },
+    warn: { bg: 'var(--warn-soft)', fg: 'var(--warn)' },
+    quiet: { bg: 'transparent', fg: 'var(--ink-45)' },
+  }[tone];
+  return (
+    <div
+      style={{
+        background: renk.bg, color: renk.fg, borderRadius: 10,
+        padding: tone === 'quiet' ? '2px 0' : '9px 12px',
+        fontSize: 12, lineHeight: 1.5,
+      }}
+    >
+      {children}
+    </div>
   );
 }

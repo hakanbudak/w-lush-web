@@ -48,6 +48,9 @@ const APPT = {
   status: 'confirmed',
   staff_id: null,
   created_at: '2026-08-20T09:00:00Z',
+  paid_amount: null,
+  promise_amount: null,
+  promise_due: null,
 };
 
 const onChanged = vi.fn();
@@ -250,5 +253,53 @@ describe('ödeme sözü', () => {
     ac();
     fireEvent.click(await screen.findByText('Tahsilat sonra'));
     expect((screen.getByText('Sözü kaydet') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('para durumu', () => {
+  const ile = (over: Record<string, unknown>) =>
+    göster({ ...APPT, ...over } as never);
+
+  it('tahsil edilmişse tutarıyla söylüyor', () => {
+    ile({ paid_amount: 800, status: 'completed' });
+    expect(screen.getByText('Tahsil edildi')).toBeTruthy();
+    expect(screen.getByText(/800/)).toBeTruthy();
+  });
+
+  it('söz verilmişse vadesini gösteriyor', () => {
+    ile({ promise_amount: 800, promise_due: '2026-09-15', status: 'completed' });
+    expect(screen.getByText('Ödeme sözü')).toBeTruthy();
+  });
+
+  it('yapılmış ama parası alınmamışsa uyarıyor', () => {
+    ile({ status: 'completed' });
+    expect(screen.getByText('Tahsilat alınmadı')).toBeTruthy();
+  });
+
+  it('alan hiç gelmezse çökmüyor', () => {
+    // Eski bir yanıt ya da farklı bir uç alanları taşımayabilir; modalın
+    // tamamen kararması bundan kötü.
+    const eksik = { ...APPT } as Record<string, unknown>;
+    delete eksik.paid_amount;
+    delete eksik.promise_amount;
+    göster(eksik as never);
+    expect(screen.getByText('Ayşe Yılmaz')).toBeTruthy();
+  });
+});
+
+describe('tamamlanmış randevu', () => {
+  it('ertele düğmesi çıkmıyor', () => {
+    göster({ ...APPT, status: 'completed' } as never);
+    expect(screen.queryByText('Ertele')).toBeNull();
+  });
+
+  it('iptal düğmesi duruyor — yanlış işaretlenmiş olabilir', () => {
+    göster({ ...APPT, status: 'completed' } as never);
+    expect(screen.getByText('İptal et')).toBeTruthy();
+  });
+
+  it('planlanmış randevuda ertele hâlâ var', () => {
+    göster();
+    expect(screen.getByText('Ertele')).toBeTruthy();
   });
 });
